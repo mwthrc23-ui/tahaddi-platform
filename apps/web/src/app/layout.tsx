@@ -1,6 +1,15 @@
 import { APP_CONFIG } from '@tahaddi/config';
 import type { Metadata } from 'next';
+import { IBM_Plex_Sans_Arabic } from 'next/font/google';
+import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
+
+const arabicFont = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-arabic',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://mwthrc23-ui.github.io'),
@@ -39,8 +48,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang={APP_CONFIG.defaultLocale} dir={APP_CONFIG.direction}>
-      <body>{children}</body>
+    <html lang={APP_CONFIG.defaultLocale} dir={APP_CONFIG.direction} data-theme="dark" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('tahaddi-theme')||'dark';var d=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=d;document.documentElement.style.colorScheme=d}catch(e){}})()` }} /></head>
+      <body className={arabicFont.variable}><ThemeProvider>{children}</ThemeProvider></body>
     </html>
   );
 }

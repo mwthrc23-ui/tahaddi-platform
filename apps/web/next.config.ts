@@ -5,6 +5,7 @@ const isGitHubPages = process.env.GITHUB_ACTIONS === 'true';
 
 const nextConfig: NextConfig = {
   output: 'export',
+  allowedDevOrigins: ['127.0.0.1'],
   trailingSlash: true,
   basePath: isGitHubPages ? '/tahaddi-platform' : '',
   images: {

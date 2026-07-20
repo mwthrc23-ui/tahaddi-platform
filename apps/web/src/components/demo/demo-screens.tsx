@@ -1,0 +1,22 @@
+'use client';
+
+import { ArrowLeft, BarChart3, LogOut, Share2, Trophy, Users } from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
+import { SiteLayout } from '@/components/layout';
+import { AnswerOption, LeaderboardItem, PlayerJoinCard, QuestionCard, QuestionProgress, QuizTimer, RoomCode, ScoreDisplay, WinnerPodium } from '@/components/quiz';
+import { Alert, Badge, Button, Card, Progress } from '@/components/ui';
+import { players, question } from '@/mocks';
+
+export function WaitingScreen() { return <SiteLayout><div className="demo-page"><div className="container"><div className="demo-heading"><div><Badge>غرفة مفتوحة</Badge><h1>كأس المعرفة العربية</h1><p>شارك الرمز مع اللاعبين، وستبدأ الجولة عندما يكون الجميع مستعدًا.</p></div><Button variant="destructive"><LogOut />مغادرة</Button></div><div className="waiting-grid"><RoomCode code="582914" /><Card className="players-panel"><div className="inline-between"><h2><Users />اللاعبون</h2><Badge>{players.length} / 50</Badge></div><div className="players-grid">{players.map((player) => <PlayerJoinCard key={player.id} {...player} />)}</div></Card></div><Alert variant="info">ننتظر المضيف لبدء المسابقة… أبقِ هذه الصفحة مفتوحة.</Alert><DemoSteps current="waiting" /></div></div></SiteLayout>; }
+
+export function QuestionScreen() {
+  const [selected, setSelected] = useState<string>();
+  return <SiteLayout><div className="demo-page question-screen"><div className="container"><div className="question-top"><div><Badge>كأس المعرفة العربية</Badge><QuestionProgress current={question.number} total={question.total} /></div><QuizTimer total={20} remaining={12} size="lg" /></div><QuestionCard {...question}><div className="answers-list">{question.answers.map((answer) => <AnswerOption key={answer.id} {...answer} state={selected === answer.id ? 'selected' : 'default'} onSelect={() => setSelected(answer.id)} />)}</div></QuestionCard><div className="inline-between"><ScoreDisplay score={3240} streak={3} multiplier={1.5} /><Button disabled={!selected} size="lg">تأكيد الإجابة<ArrowLeft /></Button></div><DemoSteps current="question" /></div></div></SiteLayout>;
+}
+
+export function ResultsScreen() { return <SiteLayout><div className="demo-page results-screen"><div className="container narrow"><div className="result-hero"><span>إجابة صحيحة!</span><h1>الجزائر</h1><p>هي أكبر دولة عربية وإفريقية من حيث المساحة.</p></div><Card><h2><BarChart3 />توزيع الإجابات</h2><div className="result-bars">{question.answers.map((answer) => <div key={answer.id}><div className="inline-between"><span>{answer.label} · {answer.text}</span><strong dir="ltr">{answer.percentage}%</strong></div><Progress value={answer.percentage} /><small>{answer.percentage === 64 ? 'الإجابة الصحيحة' : ''}</small></div>)}</div></Card><div className="result-stats"><ScoreDisplay score={4240} earned={1000} streak={4} multiplier={1.5} /><Card className="rank-card"><small>ترتيبك الحالي</small><strong># ٤</strong><span>تقدّمت مركزين</span></Card></div><Card><div className="inline-between"><h2>أفضل خمسة لاعبين</h2><Trophy /></div>{players.map((player) => <LeaderboardItem key={player.id} {...player} />)}</Card><Link className="button button-primary button-lg button-full" href="/demo/winners">متابعة إلى الفائزين<ArrowLeft /></Link><DemoSteps current="results" /></div></div></SiteLayout>; }
+
+export function WinnersScreen() { return <SiteLayout><div className="demo-page winners-screen"><div className="container"><div className="centered-heading"><Badge>انتهت المسابقة</Badge><h1>أبطال كأس المعرفة العربية</h1><p>مبارك للفائزين، وشكرًا لكل من شارك في التحدّي.</p></div><WinnerPodium winners={players.slice(0, 3)} /><Card className="full-ranking"><h2>الترتيب الكامل</h2>{players.map((player) => <LeaderboardItem key={player.id} {...player} />)}</Card><div className="center-actions"><Button variant="gold"><Share2 />مشاركة النتيجة</Button><Link className="button button-outline button-md" href="/">العودة للرئيسية</Link></div><DemoSteps current="winners" /></div></div></SiteLayout>; }
+
+function DemoSteps({ current }: { current: 'waiting' | 'question' | 'results' | 'winners' }) { const pages = [{ id: 'waiting', label: 'الانتظار' }, { id: 'question', label: 'السؤال' }, { id: 'results', label: 'النتائج' }, { id: 'winners', label: 'الفائزون' }]; return <nav className="demo-steps" aria-label="الشاشات التجريبية">{pages.map((page) => <Link key={page.id} className={page.id === current ? 'active' : ''} href={`/demo/${page.id}`}>{page.label}</Link>)}</nav>; }
