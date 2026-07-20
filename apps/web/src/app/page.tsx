@@ -1,7 +1,7 @@
 'use client';
 
 import { APP_CONFIG } from '@tahaddi/config';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   BarChart3,
@@ -55,9 +55,15 @@ const features = [
 ];
 
 const steps = [
-  { number: '01', title: 'أنشئ مسابقتك', text: 'أضف الأسئلة وحدد الوقت والنقاط.' },
-  { number: '02', title: 'شارك رمز الغرفة', text: 'ينضم اللاعبون فورًا من أي جهاز.' },
-  { number: '03', title: 'ابدأ الحماس', text: 'اعرض الأسئلة وتابع الترتيب مباشرة.' },
+  { number: '٠١', title: 'أنشئ مسابقتك', text: 'أضف الأسئلة وحدد الوقت والنقاط.' },
+  { number: '٠٢', title: 'شارك رمز الغرفة', text: 'ينضم اللاعبون فورًا من أي جهاز.' },
+  { number: '٠٣', title: 'ابدأ الحماس', text: 'اعرض الأسئلة وتابع الترتيب مباشرة.' },
+];
+
+const highlights = [
+  { value: 'عربي ١٠٠٪', label: 'من الإنشاء حتى النتائج' },
+  { value: 'من أي جهاز', label: 'دون تنزيل تطبيق' },
+  { value: 'لحظة بلحظة', label: 'أسئلة ونقاط وترتيب' },
 ];
 
 const audiences = [
@@ -96,6 +102,23 @@ export default function Home() {
   const [roomCode, setRoomCode] = useState('');
   const [joinError, setJoinError] = useState('');
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!modal) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setModal(null);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [modal]);
 
   const handleJoin = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -144,42 +167,41 @@ export default function Home() {
       <section className="hero" id="top">
         <div className="hero-orb hero-orb-one" aria-hidden="true" />
         <div className="hero-orb hero-orb-two" aria-hidden="true" />
-        <div className="hero-grid" aria-hidden="true" />
 
         <div className="shell hero-layout">
           <div className="hero-copy">
             <div className="eyebrow">
               <Sparkles size={15} aria-hidden="true" />
-              منصة مسابقات عربية، صُممت للحماس
+              منصة مسابقات عربية مباشرة
             </div>
             <h1>
-              اصنع لحظةً
-              <span> لا تُنسى.</span>
+              سؤال يشعل الحماس.
+              <span> وترتيب يصنع الصدارة.</span>
             </h1>
             <p className="hero-lead">
-              أنشئ مسابقتك، اجمع اللاعبين، وشاهد الترتيب يتغيّر لحظة بلحظة — في تجربة عربية سريعة
-              وممتعة للجميع.
+              أنشئ مسابقة احترافية، شارك رمز الغرفة، وتابع إجابات اللاعبين والترتيب مباشرة — من
+              شاشة عربية واضحة تعمل على كل جهاز.
             </p>
 
             <div className="hero-actions">
               <button className="button button-primary button-large" type="button" onClick={() => setModal({ type: 'create' })}>
-                أنشئ مسابقة مجانًا
+                أنشئ أول مسابقة
                 <ArrowLeft size={19} aria-hidden="true" />
               </button>
               <button className="button button-ghost button-large" type="button" onClick={() => setModal({ type: 'demo' })}>
                 <span className="play-dot">
                   <Play size={15} fill="currentColor" aria-hidden="true" />
                 </span>
-                شاهد كيف تعمل
+                جرّب الجولة السريعة
               </button>
             </div>
 
             <div className="trust-line" aria-label="مزايا الانضمام">
               <span>
-                <CheckCircle2 size={17} aria-hidden="true" /> بلا بطاقة ائتمانية
+                <CheckCircle2 size={17} aria-hidden="true" /> إعداد في دقائق
               </span>
               <span>
-                <CheckCircle2 size={17} aria-hidden="true" /> انضمام الضيف بلا حساب
+                <CheckCircle2 size={17} aria-hidden="true" /> دخول الضيف بلا حساب
               </span>
             </div>
           </div>
@@ -293,6 +315,8 @@ export default function Home() {
               maxLength={8}
               placeholder="أدخل الرمز هنا"
               value={roomCode}
+              autoComplete="off"
+              pattern="[0-9٠-٩]*"
               aria-describedby={joinError ? 'room-code-error' : undefined}
               aria-invalid={Boolean(joinError)}
               onChange={(event) => {
@@ -305,6 +329,15 @@ export default function Home() {
             </button>
             {joinError && <span className="join-error" id="room-code-error">{joinError}</span>}
           </form>
+        </div>
+
+        <div className="shell hero-highlights" aria-label="مزايا أساسية">
+          {highlights.map((item) => (
+            <div key={item.value}>
+              <strong>{item.value}</strong>
+              <span>{item.label}</span>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -440,7 +473,7 @@ export default function Home() {
             aria-labelledby="modal-title"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <button className="modal-close" type="button" onClick={closeModal} aria-label="إغلاق النافذة">
+            <button className="modal-close" type="button" onClick={closeModal} aria-label="إغلاق النافذة" autoFocus>
               <X size={20} aria-hidden="true" />
             </button>
 
