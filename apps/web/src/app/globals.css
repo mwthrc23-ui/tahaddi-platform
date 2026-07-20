@@ -1242,8 +1242,12 @@ input:focus-visible {
     width: 35px;
     height: 35px;
   }
+  .header-actions {
+    gap: 10px;
+  }
   .text-link {
-    display: none;
+    display: inline-flex;
+    font-size: 12px;
   }
   .button-small {
     min-height: 39px;
