@@ -2,12 +2,14 @@ import path from 'node:path';
 import type { NextConfig } from 'next';
 
 const isGitHubPages = process.env.GITHUB_ACTIONS === 'true';
+const deployTarget = process.env.TAHADDI_DEPLOY_TARGET ?? 'node';
+const isStaticExport = deployTarget === 'static';
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  output: isStaticExport ? 'export' : undefined,
   allowedDevOrigins: ['127.0.0.1'],
   trailingSlash: true,
-  basePath: isGitHubPages ? '/tahaddi-platform' : '',
+  basePath: isStaticExport && isGitHubPages ? '/tahaddi-platform' : '',
   images: {
     unoptimized: true,
   },

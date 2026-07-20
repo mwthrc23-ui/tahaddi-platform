@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tahaddi?schema=public
+      TAHADDI_DEPLOY_TARGET: node
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -53,21 +54,21 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Build static site
+      - name: Build web app
         run: pnpm build
 
       - name: Configure Pages
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.TAHADDI_DEPLOY_TARGET == 'static'
         uses: actions/configure-pages@v6
 
       - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.TAHADDI_DEPLOY_TARGET == 'static'
         uses: actions/upload-pages-artifact@v5
         with:
           path: apps/web/out
 
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.TAHADDI_DEPLOY_TARGET == 'static'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
