@@ -8,6 +8,7 @@ import { siteConfig } from '@/config/site';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '../theme-toggle';
 import { Button } from '../ui';
+import { SignOutButton } from '../auth/sign-out-button';
 
 export function Logo() { return <Link className="logo" href="/" aria-label={`${siteConfig.name} — الصفحة الرئيسية`}><span><Trophy /></span><strong>{siteConfig.name}</strong></Link>; }
 
@@ -23,7 +24,7 @@ export function Breadcrumb({ items }: { items: string[] }) { return <nav classNa
 
 export function DashboardLayout({ children, title = 'لوحة التحكم' }: { children: ReactNode; title?: string }) {
   const [collapsed, setCollapsed] = useState(false);
-  return <div className={cn('dashboard-layout', collapsed && 'sidebar-collapsed')}><aside className="sidebar"><Logo /><Button variant="ghost" size="icon" aria-label={collapsed ? 'توسيع الشريط الجانبي' : 'تصغير الشريط الجانبي'} onClick={() => setCollapsed(!collapsed)}>{collapsed ? <PanelRightOpen /> : <PanelRightClose />}</Button><nav>{primaryNavigation.map((item) => <Link href={item.href} key={item.href}><item.icon /><span>{item.label}</span></Link>)}</nav></aside><div className="dashboard-main"><header className="dashboard-header"><div><Breadcrumb items={[title]} /><h1>{title}</h1></div><ThemeToggle /></header><main>{children}</main></div></div>;
+  return <div className={cn('dashboard-layout', collapsed && 'sidebar-collapsed')}><aside className="sidebar"><Logo /><Button variant="ghost" size="icon" aria-label={collapsed ? 'توسيع الشريط الجانبي' : 'تصغير الشريط الجانبي'} onClick={() => setCollapsed(!collapsed)}>{collapsed ? <PanelRightOpen /> : <PanelRightClose />}</Button><nav>{primaryNavigation.map((item) => <Link href={item.href} key={item.href}><item.icon /><span>{item.label}</span></Link>)}</nav><SignOutButton /></aside><div className="dashboard-main"><header className="dashboard-header"><div><Breadcrumb items={[title]} /><h1>{title}</h1></div><ThemeToggle /></header><main>{children}</main></div></div>;
 }
 
 export function HostLayout({ children, players = 24, connected = true }: { children: ReactNode; players?: number; connected?: boolean }) { return <div className="host-layout"><header><Logo /><div><span className={connected ? 'online' : 'offline'}><Radio />{connected ? 'متصل' : 'غير متصل'}</span><span>{players} لاعبًا</span><Button variant="ghost" size="icon" aria-label="كتم الصوت"><Volume2 /></Button><ThemeToggle /></div></header><main>{children}</main></div>; }
