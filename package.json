@@ -1,0 +1,36 @@
+{
+  "name": "tahaddi-platform",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": "^20.19.0 || ^22.12.0 || >=24.0.0 <25",
+    "pnpm": ">=11"
+  },
+  "scripts": {
+    "postinstall": "prisma generate",
+    "dev": "turbo dev",
+    "dev:web": "pnpm --filter @tahaddi/web dev",
+    "dev:realtime": "pnpm --filter @tahaddi/realtime dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "dotenv": "^17.4.2",
+    "prettier": "^3.9.5",
+    "prisma": "^7.8.0",
+    "tsx": "^4.23.1",
+    "turbo": "^2.10.5",
+    "typescript": "^5.9.3"
+  }
+}
