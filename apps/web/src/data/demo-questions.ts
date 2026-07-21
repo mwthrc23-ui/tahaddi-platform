@@ -1,12 +1,6 @@
-import { config } from 'dotenv';
-import { createPrismaClient } from '@tahaddi/database';
+export type DemoOption = { text: string; isCorrect: boolean };
 
-config({ path: '.env', quiet: true });
-config({ path: '.env.local', override: true, quiet: true });
-
-const db = createPrismaClient(process.env.DATABASE_URL ?? '');
-
-type SeedQuestion = {
+export type DemoQuestion = {
   prompt: string;
   explanation: string;
   category: string;
@@ -14,25 +8,11 @@ type SeedQuestion = {
   type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
   timeLimit: number;
   basePoints: number;
-  options: { text: string; isCorrect: boolean }[];
+  options: DemoOption[];
 };
 
-const questions: SeedQuestion[] = [
-  {
-    prompt: 'ما هي عاصمة المملكة العربية السعودية؟',
-    explanation: 'الرياض هي العاصمة وأكبر مدن المملكة العربية السعودية.',
-    category: 'جغرافيا',
-    difficulty: 'EASY',
-    type: 'MULTIPLE_CHOICE',
-    timeLimit: 20,
-    basePoints: 1000,
-    options: [
-      { text: 'الرياض', isCorrect: true },
-      { text: 'جدة', isCorrect: false },
-      { text: 'الدمام', isCorrect: false },
-      { text: 'مكة المكرمة', isCorrect: false },
-    ],
-  },
+/** أسئلة الوضع التجريبي — السؤال الأول ثابت لضمان اجتياز اختبارات e2e */
+export const demoQuestions: DemoQuestion[] = [
   {
     prompt: 'ما هي أكبر دولة عربية من حيث المساحة؟',
     explanation: 'الجزائر هي أكبر دولة عربية وإفريقية من حيث المساحة بما يزيد على 2.3 مليون كيلومتر مربع.',
@@ -49,18 +29,18 @@ const questions: SeedQuestion[] = [
     ],
   },
   {
-    prompt: 'كم عدد أركان الإسلام؟',
-    explanation: 'أركان الإسلام خمسة: الشهادتان، الصلاة، الزكاة، الصوم، والحج.',
-    category: 'ثقافة إسلامية',
+    prompt: 'ما هي عاصمة المملكة العربية السعودية؟',
+    explanation: 'الرياض هي العاصمة وأكبر مدن المملكة العربية السعودية.',
+    category: 'جغرافيا',
     difficulty: 'EASY',
     type: 'MULTIPLE_CHOICE',
     timeLimit: 15,
-    basePoints: 1000,
+    basePoints: 800,
     options: [
-      { text: 'خمسة', isCorrect: true },
-      { text: 'أربعة', isCorrect: false },
-      { text: 'ستة', isCorrect: false },
-      { text: 'ثلاثة', isCorrect: false },
+      { text: 'الرياض', isCorrect: true },
+      { text: 'جدة', isCorrect: false },
+      { text: 'الدمام', isCorrect: false },
+      { text: 'مكة المكرمة', isCorrect: false },
     ],
   },
   {
@@ -74,6 +54,21 @@ const questions: SeedQuestion[] = [
     options: [
       { text: 'صحيح', isCorrect: true },
       { text: 'خطأ', isCorrect: false },
+    ],
+  },
+  {
+    prompt: 'كم عدد أركان الإسلام؟',
+    explanation: 'أركان الإسلام خمسة: الشهادتان، الصلاة، الزكاة، الصوم، والحج.',
+    category: 'ثقافة إسلامية',
+    difficulty: 'EASY',
+    type: 'MULTIPLE_CHOICE',
+    timeLimit: 15,
+    basePoints: 800,
+    options: [
+      { text: 'خمسة', isCorrect: true },
+      { text: 'أربعة', isCorrect: false },
+      { text: 'ستة', isCorrect: false },
+      { text: 'ثلاثة', isCorrect: false },
     ],
   },
   {
@@ -107,18 +102,16 @@ const questions: SeedQuestion[] = [
     ],
   },
   {
-    prompt: 'في أي عام هجري وقعت غزوة بدر الكبرى؟',
-    explanation: 'وقعت غزوة بدر في السنة الثانية للهجرة (2 هـ).',
-    category: 'تاريخ',
-    difficulty: 'HARD',
-    type: 'MULTIPLE_CHOICE',
-    timeLimit: 30,
-    basePoints: 1500,
+    prompt: 'اللغة العربية هي اللغة الرسمية لأكثر من 20 دولة.',
+    explanation: 'اللغة العربية لغة رسمية في 22 دولة، وهي إحدى اللغات الست الرسمية للأمم المتحدة.',
+    category: 'لغة وثقافة',
+    difficulty: 'EASY',
+    type: 'TRUE_FALSE',
+    timeLimit: 15,
+    basePoints: 800,
     options: [
-      { text: 'السنة الثانية', isCorrect: true },
-      { text: 'السنة الأولى', isCorrect: false },
-      { text: 'السنة الثالثة', isCorrect: false },
-      { text: 'السنة الخامسة', isCorrect: false },
+      { text: 'صحيح', isCorrect: true },
+      { text: 'خطأ', isCorrect: false },
     ],
   },
   {
@@ -137,16 +130,18 @@ const questions: SeedQuestion[] = [
     ],
   },
   {
-    prompt: 'اللغة العربية هي اللغة الرسمية لأكثر من 20 دولة.',
-    explanation: 'اللغة العربية لغة رسمية في 22 دولة، وهي إحدى اللغات الست الرسمية للأمم المتحدة.',
-    category: 'لغة وثقافة',
-    difficulty: 'EASY',
-    type: 'TRUE_FALSE',
-    timeLimit: 15,
-    basePoints: 800,
+    prompt: 'في أي عام هجري وقعت غزوة بدر الكبرى؟',
+    explanation: 'وقعت غزوة بدر في السنة الثانية للهجرة (2 هـ).',
+    category: 'تاريخ',
+    difficulty: 'HARD',
+    type: 'MULTIPLE_CHOICE',
+    timeLimit: 30,
+    basePoints: 1500,
     options: [
-      { text: 'صحيح', isCorrect: true },
-      { text: 'خطأ', isCorrect: false },
+      { text: 'السنة الثانية', isCorrect: true },
+      { text: 'السنة الأولى', isCorrect: false },
+      { text: 'السنة الثالثة', isCorrect: false },
+      { text: 'السنة الخامسة', isCorrect: false },
     ],
   },
   {
@@ -166,47 +161,5 @@ const questions: SeedQuestion[] = [
   },
 ];
 
-async function main() {
-  const owner = await db.user.upsert({
-    where: { email: 'seed@tahaddi.local' },
-    update: {},
-    create: {
-      email: 'seed@tahaddi.local',
-      name: 'محتوى تحدّي',
-      role: 'ADMIN',
-    },
-  });
-
-  for (const q of questions) {
-    await db.question.create({
-      data: {
-        ownerId: owner.id,
-        type: q.type,
-        status: 'PUBLISHED',
-        difficulty: q.difficulty,
-        prompt: q.prompt,
-        explanation: q.explanation,
-        category: q.category,
-        source: 'seed',
-        timeLimit: q.timeLimit,
-        basePoints: q.basePoints,
-        options: {
-          create: q.options.map((o, i) => ({
-            position: i,
-            text: o.text,
-            isCorrect: o.isCorrect,
-          })),
-        },
-      },
-    });
-  }
-
-  console.info(`✓ تمت إضافة ${questions.length} سؤالًا إلى بنك الأسئلة.`);
-}
-
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => void db.$disconnect());
+export const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
+export type OptionLabel = (typeof OPTION_LABELS)[number];
