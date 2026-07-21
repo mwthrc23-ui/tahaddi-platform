@@ -18,6 +18,7 @@ import {
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { SiteLayout } from '@/components/layout';
 import { Reveal } from '@/components/motion/reveal';
@@ -31,24 +32,40 @@ import {
   Input,
 } from '@/components/ui';
 
+const ROOM_CODE_RE = /^\d{6}$/;
+
 const games = [
-  { title: 'دقيقة ذكاء', description: 'عشرة أسئلة سريعة في ستين ثانية' },
-  { title: 'صح أم خطأ', description: 'اختبر حدسك ومعلوماتك في جولة خاطفة' },
-  { title: 'رتّبها', description: 'ضع الأحداث والعناصر في ترتيبها الصحيح' },
+  { title: 'دقيقة ذكاء', description: 'عشرة أسئلة سريعة في ستين ثانية', mode: 'speed' },
+  { title: 'صح أم خطأ', description: 'اختبر حدسك ومعلوماتك في جولة خاطفة', mode: 'truefalse' },
+  { title: 'رتّبها', description: 'ضع الأحداث والعناصر في ترتيبها الصحيح', mode: 'order' },
 ];
 
 const categories = [
-  { title: 'تاريخ', icon: <Landmark aria-hidden="true" /> },
-  { title: 'علوم', icon: <FlaskConical aria-hidden="true" /> },
-  { title: 'رياضة', icon: <Medal aria-hidden="true" /> },
-  { title: 'تقنية', icon: <Cpu aria-hidden="true" /> },
+  { title: 'تاريخ', icon: <Landmark aria-hidden="true" />, slug: 'تاريخ' },
+  { title: 'علوم', icon: <FlaskConical aria-hidden="true" />, slug: 'علوم' },
+  { title: 'رياضة', icon: <Medal aria-hidden="true" />, slug: 'رياضة' },
+  { title: 'تقنية', icon: <Cpu aria-hidden="true" />, slug: 'تقنية' },
 ];
 
 const gameIcons = [Timer, CheckCircle2, ListOrdered];
 
 export default function HomePage() {
+  const router = useRouter();
   const [code, setCode] = useState('');
-  const [joinNotice, setJoinNotice] = useState('');
+  const [codeError, setCodeError] = useState('');
+  const [joining, setJoining] = useState(false);
+
+  function handleJoin(event: React.FormEvent) {
+    event.preventDefault();
+    const clean = code.replace(/\s/g, '');
+    if (!ROOM_CODE_RE.test(clean)) {
+      setCodeError('الرمز يجب أن يتكوّن من ٦ أرقام بالضبط.');
+      return;
+    }
+    setCodeError('');
+    setJoining(true);
+    router.push(`/demo/waiting?code=${clean}`);
+  }
 
   return (
     <SiteLayout>
@@ -67,36 +84,22 @@ export default function HomePage() {
             <p>
               انضم إلى جولات مباشرة، نافس أصدقاءك، واصنع لحظات لا تُنسى في تجربة عربية سريعة وواضحة.
             </p>
-            <form
-              className="join-box"
-              id="join"
-              onSubmit={(event) => {
-                event.preventDefault();
-                setJoinNotice(
-                  code.trim()
-                    ? 'الانضمام المباشر قيد التجهيز. يمكنك الآن معاينة شاشة انتظار اللاعب.'
-                    : 'أدخل رمز الغرفة أولًا، أو افتح المعاينة التجريبية مباشرةً.',
-                );
-              }}
-            >
+            <form className="join-box" id="join" onSubmit={handleJoin}>
               <Input
                 label="رمز الغرفة"
                 className="join-field"
                 placeholder="مثال: 582 914"
                 value={code}
-                onChange={(event) => setCode(event.target.value)}
+                onChange={(event) => { setCode(event.target.value); setCodeError(''); }}
                 inputMode="numeric"
+                aria-describedby={codeError ? 'join-error' : undefined}
+                error={codeError || undefined}
               />
-              <Button size="lg" type="submit">
+              <Button size="lg" type="submit" loading={joining} disabled={joining}>
                 انضم الآن
                 <ArrowLeft />
               </Button>
             </form>
-            {joinNotice && (
-              <p className="join-notice" role="status">
-                {joinNotice} <Link href="/demo/waiting">فتح المعاينة</Link>
-              </p>
-            )}
             <div className="hero-actions">
               <ButtonLink href="/quizzes" variant="gold">
                 <Trophy />
@@ -154,7 +157,7 @@ export default function HomePage() {
                   title={item.title}
                   description={item.description}
                   icon={<GameIcon aria-hidden="true" />}
-                  meta="قريبًا"
+                  href={`/demo/question?mode=${item.mode}`}
                 />
               );
             })}
@@ -172,7 +175,12 @@ export default function HomePage() {
           </div>
           <div className="card-grid four">
             {categories.map((item) => (
-              <CategoryCard key={item.title} title={item.title} icon={item.icon} />
+              <CategoryCard
+                key={item.title}
+                title={item.title}
+                icon={item.icon}
+                href={`/questions?category=${encodeURIComponent(item.slug)}`}
+              />
             ))}
           </div>
         </Reveal>
