@@ -10,8 +10,6 @@ export type QuestionActionState = {
   message: string;
 };
 
-export const initialQuestionActionState: QuestionActionState = { status: 'idle', message: '' };
-
 const emptyToUndefined = (value: FormDataEntryValue | null) => {
   const text = typeof value === 'string' ? value.trim() : '';
   return text || undefined;
