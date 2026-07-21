@@ -24,3 +24,5 @@ Thumbs.db
 *.log
 pnpm-debug.log*
 npm-debug.log*
+# Added by code-review-graph
+.code-review-graph/

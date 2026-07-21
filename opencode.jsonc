@@ -1,0 +1,15 @@
+{
+  "mcp": {
+    "code-review-graph": {
+      "type": "local",
+      "command": [
+        "/usr/bin/python3",
+        "-m",
+        "code_review_graph",
+        "serve",
+        "--repo",
+        "/home/runner/work/tahaddi-platform/tahaddi-platform"
+      ]
+    }
+  }
+}
