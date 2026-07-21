@@ -11,7 +11,7 @@ import {
   Settings2,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, Input, NumberInput, Select, Textarea } from '@/components/ui';
 
 type DraftQuestion = {
@@ -47,12 +47,48 @@ const availableQuestions: DraftQuestion[] = [
   },
 ];
 
+const draftStorageKey = 'tahaddi-quiz-draft';
+
 export function QuizBuilder() {
   const [title, setTitle] = useState('مسابقة الثقافة العامة');
   const [description, setDescription] = useState('مسودة قصيرة لجولة تفاعلية من أسئلة متنوعة.');
   const [roundName, setRoundName] = useState('الجولة الأولى');
   const [questions, setQuestions] = useState<DraftQuestion[]>(availableQuestions.slice(0, 2));
   const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    const restoreTimer = window.setTimeout(() => {
+      try {
+        const saved = localStorage.getItem(draftStorageKey);
+        if (!saved) return;
+
+        const draft = JSON.parse(saved) as {
+          title?: unknown;
+          description?: unknown;
+          roundName?: unknown;
+          questions?: unknown;
+        };
+        if (
+          typeof draft.title !== 'string' ||
+          typeof draft.description !== 'string' ||
+          typeof draft.roundName !== 'string' ||
+          !Array.isArray(draft.questions)
+        ) {
+          return;
+        }
+
+        setTitle(draft.title);
+        setDescription(draft.description);
+        setRoundName(draft.roundName);
+        setQuestions(draft.questions as DraftQuestion[]);
+        setNotice('استُعيدت آخر مسودة محفوظة على هذا الجهاز.');
+      } catch {
+        localStorage.removeItem(draftStorageKey);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(restoreTimer);
+  }, []);
 
   const totalDuration = useMemo(
     () => questions.reduce((sum, question) => sum + question.duration, 0),
@@ -88,14 +124,22 @@ export function QuizBuilder() {
 
   const selected = new Set(questions.map((question) => question.id));
 
+  const saveDraft = () => {
+    try {
+      localStorage.setItem(
+        draftStorageKey,
+        JSON.stringify({ title, description, roundName, questions }),
+      );
+      setNotice('حُفظت المسودة على هذا الجهاز.');
+    } catch {
+      setNotice('تعذّر حفظ المسودة على هذا الجهاز.');
+    }
+  };
+
   return (
     <div className="quiz-builder" dir="rtl">
       <div className="dashboard-actions">
-        <Button
-          variant="outline"
-          type="button"
-          onClick={() => setNotice('هذه مسودة محلية فقط؛ لن تُحفظ في قاعدة البيانات بعد.')}
-        >
+        <Button variant="outline" type="button" onClick={saveDraft}>
           <Save />
           حفظ المسودة محليًا
         </Button>
@@ -168,7 +212,9 @@ export function QuizBuilder() {
           <p className="muted">
             {title || 'مسابقة بلا عنوان'} · {roundName || 'جولة بلا اسم'}
           </p>
-          <p className="muted">لا توجد مشاركة أو نشر أو حفظ دائم في هذه الشاشة حتى الآن.</p>
+          <p className="muted">
+            تُحفظ المسودة على هذا الجهاز فقط؛ لا توجد مشاركة أو نشر دائم حتى الآن.
+          </p>
         </Card>
       </div>
 

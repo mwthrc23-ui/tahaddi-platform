@@ -34,20 +34,25 @@ export function SignInForm({ googleEnabled = false }: { googleEnabled?: boolean 
     }
 
     setPending(true);
-    const result = await signIn('credentials', {
-      ...parsed.data,
-      redirect: false,
-      callbackUrl: next,
-    });
-    setPending(false);
+    try {
+      const result = await signIn('credentials', {
+        ...parsed.data,
+        redirect: false,
+        callbackUrl: next,
+      });
 
-    if (!result?.ok) {
+      if (!result?.ok) {
+        setError(genericMessage);
+        return;
+      }
+
+      router.push(result.url || next);
+      router.refresh();
+    } catch {
       setError(genericMessage);
-      return;
+    } finally {
+      setPending(false);
     }
-
-    router.push(result.url || next);
-    router.refresh();
   }
 
   return (
@@ -55,7 +60,13 @@ export function SignInForm({ googleEnabled = false }: { googleEnabled?: boolean 
       {error && <Alert variant="danger">{error}</Alert>}
       <Input label="البريد الإلكتروني" name="email" type="email" autoComplete="email" required />
       <PasswordInput label="كلمة المرور" name="password" autoComplete="current-password" required />
-      <Button type="submit" size="lg" className="button-full" disabled={pending} aria-busy={pending}>
+      <Button
+        type="submit"
+        size="lg"
+        className="button-full"
+        disabled={pending}
+        aria-busy={pending}
+      >
         {pending ? <Spinner label="جارٍ تسجيل الدخول" /> : <LogIn />}
         دخول
       </Button>
