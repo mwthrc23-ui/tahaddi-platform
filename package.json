@@ -21,6 +21,8 @@
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:status": "prisma migrate status",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down"
