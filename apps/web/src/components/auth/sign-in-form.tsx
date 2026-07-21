@@ -63,7 +63,7 @@ export function SignInForm({ googleEnabled = false }: { googleEnabled?: boolean 
       <Button
         type="submit"
         size="lg"
-        className="button-full"
+        fullWidth
         disabled={pending}
         aria-busy={pending}
       >
@@ -73,7 +73,7 @@ export function SignInForm({ googleEnabled = false }: { googleEnabled?: boolean 
       <Button
         type="button"
         variant="outline"
-        className="button-full"
+        fullWidth
         disabled={!googleEnabled || pending}
         onClick={() => signIn('google', { callbackUrl: next })}
       >
