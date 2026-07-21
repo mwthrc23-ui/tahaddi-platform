@@ -65,10 +65,7 @@ export function QuestionEditForm({ question }: { question: EditableQuestion }) {
               type="radio"
               name="correctOption"
               value={index}
-<<<<<<< HEAD
               required
-=======
->>>>>>> origin/main
               defaultChecked={
                 index === (type === 'TRUE_FALSE' ? Math.min(correctOption, 1) : correctOption)
               }

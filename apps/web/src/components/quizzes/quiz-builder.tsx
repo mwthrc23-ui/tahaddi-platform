@@ -11,11 +11,7 @@ import {
   Settings2,
   Trash2,
 } from 'lucide-react';
-<<<<<<< HEAD
-import { useMemo, useState } from 'react';
-=======
 import { useEffect, useMemo, useState } from 'react';
->>>>>>> origin/main
 import { Badge, Button, Card, Input, NumberInput, Select, Textarea } from '@/components/ui';
 
 type DraftQuestion = {
@@ -51,11 +47,8 @@ const availableQuestions: DraftQuestion[] = [
   },
 ];
 
-<<<<<<< HEAD
-=======
 const draftStorageKey = 'tahaddi-quiz-draft';
 
->>>>>>> origin/main
 export function QuizBuilder() {
   const [title, setTitle] = useState('مسابقة الثقافة العامة');
   const [description, setDescription] = useState('مسودة قصيرة لجولة تفاعلية من أسئلة متنوعة.');
@@ -63,8 +56,6 @@ export function QuizBuilder() {
   const [questions, setQuestions] = useState<DraftQuestion[]>(availableQuestions.slice(0, 2));
   const [notice, setNotice] = useState('');
 
-<<<<<<< HEAD
-=======
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => {
       try {
@@ -99,7 +90,6 @@ export function QuizBuilder() {
     return () => window.clearTimeout(restoreTimer);
   }, []);
 
->>>>>>> origin/main
   const totalDuration = useMemo(
     () => questions.reduce((sum, question) => sum + question.duration, 0),
     [questions],
@@ -109,23 +99,16 @@ export function QuizBuilder() {
     [questions],
   );
 
-<<<<<<< HEAD
-const addQuestion = (question: DraftQuestion) => {
-  setQuestions((current) => {
-    if (current.some((existing) => existing.id === question.id)) {
-      setNotice(`السؤال «${question.category}» موجود بالفعل في المسودة.`);
-      return current;
-    }
-    setNotice(`أُضيف سؤال «${question.category}» إلى المسودة محليًا.`);
-    return [...current, question];
-  });
-};
-=======
   const addQuestion = (question: DraftQuestion) => {
-    setQuestions((current) => [...current, question]);
-    setNotice(`أُضيف سؤال «${question.category}» إلى المسودة محليًا.`);
+    setQuestions((current) => {
+      if (current.some((existing) => existing.id === question.id)) {
+        setNotice(`السؤال «${question.category}» موجود بالفعل في المسودة.`);
+        return current;
+      }
+      setNotice(`أُضيف سؤال «${question.category}» إلى المسودة محليًا.`);
+      return [...current, question];
+    });
   };
->>>>>>> origin/main
   const removeQuestion = (id: string) => {
     setQuestions((current) => current.filter((question) => question.id !== id));
     setNotice('أُزيل السؤال من المسودة المحلية.');
@@ -147,16 +130,6 @@ const addQuestion = (question: DraftQuestion) => {
 
   const selected = new Set(questions.map((question) => question.id));
 
-<<<<<<< HEAD
-  return (
-    <div className="quiz-builder" dir="rtl">
-      <div className="dashboard-actions">
-        <Button
-          variant="outline"
-          type="button"
-          onClick={() => setNotice('هذه مسودة محلية فقط؛ لن تُحفظ في قاعدة البيانات بعد.')}
-        >
-=======
   const saveDraft = () => {
     try {
       localStorage.setItem(
@@ -173,7 +146,6 @@ const addQuestion = (question: DraftQuestion) => {
     <div className="quiz-builder" dir="rtl">
       <div className="dashboard-actions">
         <Button variant="outline" type="button" onClick={saveDraft}>
->>>>>>> origin/main
           <Save />
           حفظ المسودة محليًا
         </Button>
@@ -246,13 +218,9 @@ const addQuestion = (question: DraftQuestion) => {
           <p className="muted">
             {title || 'مسابقة بلا عنوان'} · {roundName || 'جولة بلا اسم'}
           </p>
-<<<<<<< HEAD
-          <p className="muted">لا توجد مشاركة أو نشر أو حفظ دائم في هذه الشاشة حتى الآن.</p>
-=======
           <p className="muted">
             تُحفظ المسودة على هذا الجهاز فقط؛ لا توجد مشاركة أو نشر دائم حتى الآن.
           </p>
->>>>>>> origin/main
         </Card>
       </div>
 
