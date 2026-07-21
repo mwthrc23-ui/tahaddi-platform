@@ -22,7 +22,14 @@ import { useState } from 'react';
 import { SiteLayout } from '@/components/layout';
 import { Reveal } from '@/components/motion/reveal';
 import { LeaderboardItem, LiveStatus, QuizTimer } from '@/components/quiz';
-import { Button, CategoryCard, CompetitionCard, GameCard, Input } from '@/components/ui';
+import {
+  Button,
+  ButtonLink,
+  CategoryCard,
+  CompetitionCard,
+  GameCard,
+  Input,
+} from '@/components/ui';
 import { categories, competitions, games, players } from '@/mocks';
 
 const gameIcons = [Timer, CheckCircle2, ListOrdered];
@@ -30,6 +37,7 @@ const categoryIcons = [Landmark, FlaskConical, Medal, Cpu];
 
 export default function HomePage() {
   const [code, setCode] = useState('');
+  const [joinNotice, setJoinNotice] = useState('');
 
   return (
     <SiteLayout>
@@ -49,7 +57,18 @@ export default function HomePage() {
             <p>
               انضم إلى جولات مباشرة، نافس أصدقاءك، واصنع لحظات لا تُنسى في تجربة عربية سريعة وواضحة.
             </p>
-            <form className="join-box" onSubmit={(event) => event.preventDefault()}>
+            <form
+              className="join-box"
+              id="join"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setJoinNotice(
+                  code.trim()
+                    ? 'الانضمام المباشر قيد التجهيز. يمكنك الآن معاينة شاشة انتظار اللاعب.'
+                    : 'أدخل رمز الغرفة أولًا، أو افتح المعاينة التجريبية مباشرةً.',
+                );
+              }}
+            >
               <Input
                 label="رمز الغرفة"
                 className="join-field"
@@ -58,16 +77,21 @@ export default function HomePage() {
                 onChange={(event) => setCode(event.target.value)}
                 inputMode="numeric"
               />
-              <Button size="lg">
+              <Button size="lg" type="submit">
                 انضم الآن
                 <ArrowLeft />
               </Button>
             </form>
+            {joinNotice && (
+              <p className="join-notice" role="status">
+                {joinNotice} <Link href="/demo/waiting">فتح المعاينة</Link>
+              </p>
+            )}
             <div className="hero-actions">
-              <Button variant="gold">
+              <ButtonLink href="/quizzes" variant="gold">
                 <Trophy />
                 أنشئ مسابقة
-              </Button>
+              </ButtonLink>
               <Link className="text-link" href="/demo/question">
                 <Zap />
                 جرّب سؤالًا سريعًا
@@ -110,10 +134,10 @@ export default function HomePage() {
               <span className="eyebrow">الآن على تحدّي</span>
               <h2>مسابقات مباشرة</h2>
             </div>
-            <Button variant="ghost">
-              عرض الكل
+            <ButtonLink href="/quizzes" variant="ghost">
+              افتح المنشئ
               <ArrowLeft />
-            </Button>
+            </ButtonLink>
           </div>
           <div className="card-grid three">
             {competitions.map((item) => (
@@ -200,10 +224,10 @@ export default function HomePage() {
             <span>مستعد لصناعة التحدّي؟</span>
             <h2>حوّل فكرتك إلى مسابقة يعيشها الجميع.</h2>
           </div>
-          <Button variant="gold" size="lg">
+          <ButtonLink href="/quizzes" variant="gold" size="lg">
             أنشئ مسابقتك
             <ArrowLeft />
-          </Button>
+          </ButtonLink>
         </Reveal>
       </section>
     </SiteLayout>

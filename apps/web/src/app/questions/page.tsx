@@ -1,7 +1,7 @@
 import { BookOpen, Clock3, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
-import { Badge, Button, Card, Input, Select } from '@/components/ui';
+import { Badge, Button, ButtonLink, Card, Input, Select } from '@/components/ui';
 import { ArchiveQuestionButton } from '@/components/questions/archive-question-button';
 import { QuestionEditor } from '@/components/questions/question-editor';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
@@ -54,10 +54,10 @@ export default async function QuestionsPage({
   return (
     <DashboardLayout title="بنك الأسئلة">
       <div className="dashboard-actions">
-        <Button>
+        <ButtonLink href="#question-editor">
           <Plus />
           سؤال جديد
-        </Button>
+        </ButtonLink>
       </div>
       <Card>
         <form className="form-grid" action="/questions">
@@ -85,7 +85,7 @@ export default async function QuestionsPage({
         </form>
       </Card>
       <div className="card-grid two">
-        <Card>
+        <Card id="question-editor">
           <h2>
             <BookOpen />
             إضافة سؤال
