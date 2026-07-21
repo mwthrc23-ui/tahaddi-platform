@@ -65,3 +65,15 @@ export async function createQuestion(
   revalidatePath('/questions');
   return { status: 'success', message: 'حُفظ السؤال كمسودة.' };
 }
+
+export async function archiveQuestion(formData: FormData) {
+  const user = await requireActiveUser('/questions');
+  const id = formData.get('id');
+  if (typeof id !== 'string' || !id) return;
+
+  await getPrismaClient().question.updateMany({
+    where: { id, ownerId: user.id, status: { not: 'ARCHIVED' } },
+    data: { status: 'ARCHIVED', archivedAt: new Date() },
+  });
+  revalidatePath('/questions');
+}

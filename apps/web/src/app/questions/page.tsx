@@ -1,17 +1,49 @@
 import { BookOpen, Clock3, Plus } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
-import { Badge, Button, Card } from '@/components/ui';
+import { Badge, Button, Card, Input, Select } from '@/components/ui';
+import { ArchiveQuestionButton } from '@/components/questions/archive-question-button';
 import { QuestionEditor } from '@/components/questions/question-editor';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
 
 const difficultyLabel = { EASY: 'سهل', MEDIUM: 'متوسط', HARD: 'صعب' } as const;
+const statuses = ['ALL', 'DRAFT', 'PUBLISHED', 'ARCHIVED'] as const;
+const types = ['ALL', 'MULTIPLE_CHOICE', 'TRUE_FALSE'] as const;
+const difficulties = ['ALL', 'EASY', 'MEDIUM', 'HARD'] as const;
 
-export default async function QuestionsPage() {
+export default async function QuestionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string; type?: string; difficulty?: string }>;
+}) {
   const user = await requireActiveUser('/questions');
+  const filters = await searchParams;
+  const q = filters.q?.trim() || '';
+  const status = statuses.includes(filters.status as (typeof statuses)[number])
+    ? (filters.status as Exclude<(typeof statuses)[number], 'ALL'> | 'ALL')
+    : 'ALL';
+  const type = types.includes(filters.type as (typeof types)[number])
+    ? (filters.type as Exclude<(typeof types)[number], 'ALL'> | 'ALL')
+    : 'ALL';
+  const difficulty = difficulties.includes(filters.difficulty as (typeof difficulties)[number])
+    ? (filters.difficulty as Exclude<(typeof difficulties)[number], 'ALL'> | 'ALL')
+    : 'ALL';
   const questions = hasDatabaseUrl()
     ? await getPrismaClient().question.findMany({
-        where: { ownerId: user.id, status: { not: 'ARCHIVED' } },
+        where: {
+          ownerId: user.id,
+          ...(status === 'ALL' ? { status: { not: 'ARCHIVED' } } : { status }),
+          ...(type === 'ALL' ? {} : { type }),
+          ...(difficulty === 'ALL' ? {} : { difficulty }),
+          ...(q
+            ? {
+                OR: [
+                  { prompt: { contains: q, mode: 'insensitive' } },
+                  { category: { contains: q, mode: 'insensitive' } },
+                ],
+              }
+            : {}),
+        },
         orderBy: { updatedAt: 'desc' },
         take: 20,
         include: { options: { orderBy: { position: 'asc' }, select: { id: true } } },
@@ -26,6 +58,31 @@ export default async function QuestionsPage() {
           سؤال جديد
         </Button>
       </div>
+      <Card>
+        <form className="form-grid" action="/questions">
+          <Input label="ابحث في السؤال أو الفئة" name="q" defaultValue={q} />
+          <Select label="الحالة" name="status" defaultValue={status}>
+            <option value="ALL">كل المسودات والمنشور</option>
+            <option value="DRAFT">مسودة</option>
+            <option value="PUBLISHED">منشور</option>
+            <option value="ARCHIVED">مؤرشف</option>
+          </Select>
+          <Select label="النوع" name="type" defaultValue={type}>
+            <option value="ALL">كل الأنواع</option>
+            <option value="MULTIPLE_CHOICE">اختيار متعدد</option>
+            <option value="TRUE_FALSE">صح أو خطأ</option>
+          </Select>
+          <Select label="الصعوبة" name="difficulty" defaultValue={difficulty}>
+            <option value="ALL">كل المستويات</option>
+            <option value="EASY">سهل</option>
+            <option value="MEDIUM">متوسط</option>
+            <option value="HARD">صعب</option>
+          </Select>
+          <Button type="submit" variant="outline">
+            تطبيق التصفية
+          </Button>
+        </form>
+      </Card>
       <div className="card-grid two">
         <Card>
           <h2>
@@ -37,10 +94,10 @@ export default async function QuestionsPage() {
         <Card>
           <h2>
             <Clock3 />
-            مسوداتك
+            أسئلتك
           </h2>
           {questions.length === 0 ? (
-            <p>لم تضف أسئلة بعد. احفظ أول مسودة من النموذج.</p>
+            <p>لا توجد أسئلة مطابقة. احفظ مسودة جديدة أو غيّر عوامل التصفية.</p>
           ) : (
             <div className="stack-list">
               {questions.map((question) => (
@@ -52,7 +109,12 @@ export default async function QuestionsPage() {
                       {question.timeLimit} ثانية
                     </p>
                   </div>
-                  <Badge>{difficultyLabel[question.difficulty]}</Badge>
+                  <div className="inline-between">
+                    <Badge>{difficultyLabel[question.difficulty]}</Badge>
+                    {question.status !== 'ARCHIVED' && (
+                      <ArchiveQuestionButton questionId={question.id} />
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
