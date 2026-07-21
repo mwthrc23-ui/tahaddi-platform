@@ -66,6 +66,7 @@ export function QuestionEditForm({ question }: { question: EditableQuestion }) {
               name="correctOption"
               value={index}
               required
+              defaultChecked={
                 index === (type === 'TRUE_FALSE' ? Math.min(correctOption, 1) : correctOption)
               }
               aria-label={`الإجابة الصحيحة للخيار ${labels[index]}`}
