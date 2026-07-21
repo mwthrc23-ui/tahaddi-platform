@@ -48,7 +48,9 @@ export async function updateQuestion(
   }
 
   const { options: inputOptions, correctOption, ...question } = parsed.data;
-  const updated = await getPrismaClient().$transaction(async (prisma) => {
+  const client = getPrismaClient();
+  type TxClient = Omit<typeof client, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
+  const updated = await client.$transaction(async (prisma: TxClient) => {
     const result = await prisma.question.updateMany({
       where: { id: questionId, ownerId: user.id, status: { not: 'ARCHIVED' } },
       data: question,

@@ -8,6 +8,7 @@ import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
 
 const difficultyLabel = { EASY: 'سهل', MEDIUM: 'متوسط', HARD: 'صعب' } as const;
+type DifficultyKey = keyof typeof difficultyLabel;
 const statuses = ['ALL', 'DRAFT', 'PUBLISHED', 'ARCHIVED'] as const;
 const types = ['ALL', 'MULTIPLE_CHOICE', 'TRUE_FALSE'] as const;
 const difficulties = ['ALL', 'EASY', 'MEDIUM', 'HARD'] as const;
@@ -101,7 +102,15 @@ export default async function QuestionsPage({
             <p>لا توجد أسئلة مطابقة. احفظ مسودة جديدة أو غيّر عوامل التصفية.</p>
           ) : (
             <div className="stack-list">
-              {questions.map((question) => (
+              {questions.map((question: {
+                id: string;
+                prompt: string;
+                category: string | null;
+                status: string;
+                difficulty: DifficultyKey;
+                timeLimit: number;
+                options: { id: string }[];
+              }) => (
                 <article key={question.id} className="list-item">
                   <div>
                     <strong>{question.prompt}</strong>

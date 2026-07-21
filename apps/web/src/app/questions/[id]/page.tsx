@@ -41,7 +41,7 @@ export default async function EditQuestionPage({ params }: { params: Promise<{ i
             source: question.source,
             timeLimit: question.timeLimit,
             basePoints: question.basePoints,
-            options: question.options.map((option) => ({
+            options: question.options.map((option: { text: string; isCorrect: boolean }) => ({
               text: option.text,
               isCorrect: option.isCorrect,
             })),

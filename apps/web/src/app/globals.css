@@ -139,14 +139,14 @@ summary:focus-visible {
     box-shadow 0.16s ease;
 }
 .button:hover:not(:disabled) {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
 }
 .button:active:not(:disabled) {
-  transform: translateY(1px) scale(0.99);
+  transform: translateY(1px) scale(0.98);
 }
 .button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 .button svg {
@@ -157,13 +157,25 @@ summary:focus-visible {
   background: var(--primary);
   color: var(--primary-foreground);
 }
+.button-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 88%, white);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--primary) 40%, transparent), var(--shadow-sm);
+}
 .button-secondary {
   background: var(--secondary);
   color: var(--secondary-foreground);
 }
+.button-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--secondary) 90%, var(--foreground));
+}
 .button-outline {
   background: transparent;
   border-color: var(--border);
+}
+.button-outline:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 .button-ghost {
   background: transparent;
@@ -176,13 +188,25 @@ summary:focus-visible {
   background: var(--danger);
   color: var(--danger-foreground);
 }
+.button-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 88%, white);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--danger) 35%, transparent), var(--shadow-sm);
+}
 .button-success {
   background: var(--success);
   color: var(--success-foreground);
 }
+.button-success:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--success) 88%, white);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--success) 35%, transparent), var(--shadow-sm);
+}
 .button-gold {
   background: var(--gold);
   color: var(--gold-foreground);
+}
+.button-gold:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--gold) 88%, white);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--gold) 45%, transparent), var(--shadow-sm);
 }
 .button-link {
   background: transparent;
@@ -598,6 +622,79 @@ summary:focus-visible {
 .quiz-builder-stats strong,
 .quiz-builder-stats span {
   display: block;
+}
+
+/* Question editor */
+.question-editor {
+  gap: 1.25rem;
+}
+.question-editor .quiz-builder-wide {
+  grid-column: 1 / -1;
+}
+.question-options {
+  grid-column: 1 / -1;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.question-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--input);
+  transition: border-color 0.15s;
+}
+.question-option:has(input[type='radio']:checked) {
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 8%, var(--input));
+}
+.question-option input[type='radio'] {
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  min-block-size: auto;
+  padding: 0;
+  border: 0;
+  accent-color: var(--success);
+  flex: none;
+}
+.question-option input[type='text'],
+.question-option input:not([type='radio']) {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  min-block-size: 2rem;
+  inline-size: 100%;
+  outline: 0;
+}
+
+/* Stack list (questions list) */
+.stack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.stack-list .list-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-block: var(--space-4);
+  border-block-end: 1px solid var(--border);
+}
+.stack-list .list-item:last-child {
+  border-block-end: 0;
+}
+.stack-list .list-item p {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  margin: 0.2rem 0 0;
 }
 
 /* Cards */
@@ -1047,8 +1144,8 @@ input[type='range'] {
   content: attr(data-tooltip);
   position: absolute;
   inset-block-end: calc(100% + 0.5rem);
-  inset-inline-start: 50%;
-  transform: translateX(50%);
+  left: 50%;
+  transform: translateX(-50%);
   padding: 0.3rem 0.55rem;
   background: var(--foreground);
   color: var(--background);
@@ -1139,8 +1236,8 @@ input[type='range'] {
   position: fixed;
   z-index: var(--z-toast);
   inset-block-end: 1rem;
-  inset-inline-start: 50%;
-  transform: translateX(50%);
+  left: 50%;
+  transform: translateX(-50%);
   padding: 0.65rem 1rem;
   border-radius: var(--radius-full);
   background: var(--danger);

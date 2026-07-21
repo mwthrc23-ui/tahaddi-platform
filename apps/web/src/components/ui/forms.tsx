@@ -220,7 +220,25 @@ export function OtpInput({ length = 6 }: { length?: number }) {
       <legend className="field-label">رمز التحقق</legend>
       <div className="otp" dir="ltr">
         {Array.from({ length }).map((_, index) => (
-          <input key={index} inputMode="numeric" maxLength={1} aria-label={`الرقم ${index + 1}`} />
+          <input
+            key={index}
+            inputMode="numeric"
+            maxLength={1}
+            aria-label={`الرقم ${index + 1}`}
+            onInput={(event) => {
+              const input = event.currentTarget;
+              if (input.value.length >= 1) {
+                const next = input.nextElementSibling as HTMLInputElement | null;
+                next?.focus();
+              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Backspace' && !event.currentTarget.value) {
+                const prev = event.currentTarget.previousElementSibling as HTMLInputElement | null;
+                prev?.focus();
+              }
+            }}
+          />
         ))}
       </div>
     </fieldset>
