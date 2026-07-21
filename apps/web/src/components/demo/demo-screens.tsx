@@ -50,7 +50,7 @@ export function WaitingScreen() {
               <h1>كأس المعرفة العربية</h1>
               <p>شارك الرمز مع اللاعبين، وستبدأ الجولة عندما يكون الجميع مستعدًا.</p>
             </div>
-            <Button variant="destructive"><LogOut />مغادرة</Button>
+            <Button variant="destructive" onClick={() => router.push('/')}><LogOut />مغادرة</Button>
           </div>
           <div className="waiting-grid">
             <RoomCode code="582914" />

@@ -1,20 +1,3 @@
-// ─── REST API response envelopes ────────────────────────────────────────────
-
-export type ApiSuccess<T> = {
-  ok: true;
-  data: T;
-  requestId: string;
-};
-
-export type ApiError = {
-  ok: false;
-  error: {
-    code: string;
-    message: string;
-    requestId: string;
-  };
-};
-
 // ─── Game session state machine ──────────────────────────────────────────────
 
 export type GamePhase =
@@ -46,7 +29,7 @@ export type QuestionPayload = {
   options: { id: string; text: string }[];
   timeLimit: number;
   basePoints: number;
-  startsAt: number; // Unix ms — authoritative server timestamp
+  startsAt: number;
 };
 
 export type RevealPayload = {
@@ -57,55 +40,78 @@ export type RevealPayload = {
 };
 
 // ─── Socket.IO event contracts ────────────────────────────────────────────────
-// Naming: <namespace>:<action>
-// Client → Server events (emitted by browser, handled by gateway)
 
 export type ClientToServerEvents = {
-  /** Join an existing game room using a 6-digit PIN */
   'room:join': (payload: { pin: string; playerName: string }) => void;
-  /** Host starts the game */
   'room:start': (payload: { pin: string }) => void;
-  /** Player submits an answer */
   'answer:submit': (payload: {
     pin: string;
     questionId: string;
     optionId: string;
-    /** Client timestamp in Unix ms — used for RTT diagnostics only, not for scoring */
     clientTs: number;
   }) => void;
-  /** Host advances to the next question */
   'question:next': (payload: { pin: string }) => void;
 };
 
-// Server → Client events (emitted by gateway, handled by browser)
-
 export type ServerToClientEvents = {
-  /** Acknowledged after room:join — carries initial room snapshot */
   'room:state': (payload: {
     pin: string;
     phase: GamePhase;
     players: PlayerInfo[];
     hostId: string;
   }) => void;
-  /** A new player joined the lobby */
   'room:player_joined': (payload: { player: PlayerInfo }) => void;
-  /** A player left or disconnected */
   'room:player_left': (payload: { playerId: string }) => void;
-  /** Countdown before first question */
   'room:starting': (payload: { countdownSeconds: number }) => void;
-  /** Question intro phase — show category/difficulty, no options yet */
-  'question:intro': (payload: Pick<QuestionPayload, 'index' | 'total' | 'category' | 'difficulty' | 'basePoints' | 'timeLimit'>) => void;
-  /** Question live — show full question + options + server timer reference */
+  'question:intro': (
+    payload: Pick<
+      QuestionPayload,
+      'index' | 'total' | 'category' | 'difficulty' | 'basePoints' | 'timeLimit'
+    >,
+  ) => void;
   'question:show': (payload: QuestionPayload) => void;
-  /** Answer acknowledged for the submitting player */
-  'answer:ack': (payload: { questionId: string; earned: number; correct: boolean; streak: number }) => void;
-  /** Reveal correct answer + leaderboard snapshot */
+  'answer:ack': (payload: {
+    questionId: string;
+    earned: number;
+    correct: boolean;
+    streak: number;
+  }) => void;
   'question:reveal': (payload: RevealPayload) => void;
-  /** Interim leaderboard between questions */
   'game:leaderboard': (payload: { leaderboard: PlayerInfo[] }) => void;
-  /** Game over — final results */
   'game:end': (payload: { leaderboard: PlayerInfo[]; gameId: string }) => void;
-  /** Generic error from server */
   'game:error': (payload: { code: string; message: string }) => void;
 };
 
+// ─── Internal game state types ────────────────────────────────────────────────
+
+export type GameQuestion = {
+  id: string;
+  prompt: string;
+  category: string;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
+  timeLimit: number;
+  basePoints: number;
+  explanation: string | null;
+  options: { id: string; text: string; isCorrect: boolean }[];
+};
+
+export type PlayerState = {
+  id: string;
+  name: string;
+  score: number;
+  streak: number;
+  rank: number;
+  answeredCurrentQuestion: boolean;
+};
+
+export type GameSession = {
+  pin: string;
+  hostId: string;
+  phase: GamePhase;
+  questionIds: string[];
+  currentIndex: number;
+  currentQuestionId: string | null;
+  questionStartedAt: number | null;
+  gameId: string;
+};

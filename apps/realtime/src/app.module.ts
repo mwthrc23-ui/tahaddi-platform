@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { validateEnvironment } from './config/environment';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { validateEnvironment } from './config/environment.js';
+import { GameModule } from './game/game.module.js';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { validateEnvironment } from './config/environment';
       isGlobal: true,
       validate: validateEnvironment,
     }),
+    GameModule,
   ],
   controllers: [AppController],
   providers: [AppService],
