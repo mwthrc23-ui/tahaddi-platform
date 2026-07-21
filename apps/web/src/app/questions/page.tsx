@@ -1,4 +1,5 @@
 import { BookOpen, Clock3, Plus } from 'lucide-react';
+import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
 import { Badge, Button, Card, Input, Select } from '@/components/ui';
 import { ArchiveQuestionButton } from '@/components/questions/archive-question-button';
@@ -112,7 +113,10 @@ export default async function QuestionsPage({
                   <div className="inline-between">
                     <Badge>{difficultyLabel[question.difficulty]}</Badge>
                     {question.status !== 'ARCHIVED' && (
-                      <ArchiveQuestionButton questionId={question.id} />
+                      <div className="inline-between">
+                        <Link href={`/questions/${question.id}`}>تعديل</Link>
+                        <ArchiveQuestionButton questionId={question.id} />
+                      </div>
                     )}
                   </div>
                 </article>
