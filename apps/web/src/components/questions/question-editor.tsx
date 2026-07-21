@@ -2,9 +2,10 @@
 
 import { useActionState, useState } from 'react';
 import { Button, Input, NumberInput, Select, Textarea } from '@/components/ui';
-import { createQuestion, initialQuestionActionState } from '@/app/questions/actions';
+import { createQuestion } from '@/app/questions/actions';
 
 const labels = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
+const initialQuestionActionState = { status: 'idle' as const, message: '' };
 
 export function QuestionEditor() {
   const [state, formAction, pending] = useActionState(createQuestion, initialQuestionActionState);
