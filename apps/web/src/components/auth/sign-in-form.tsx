@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Button, Alert, Input, PasswordInput, Spinner } from '@/components/ui';
+import { sanitizeCallbackPath } from '@/lib/auth/redirects';
 import { signInSchema } from '@/lib/auth/validation';
 
 const genericMessage = 'تعذّر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.';
@@ -12,7 +13,7 @@ const genericMessage = 'تعذّر تسجيل الدخول. تحقق من الب
 export function SignInForm({ googleEnabled = false }: { googleEnabled?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/dashboard';
+  const next = sanitizeCallbackPath(searchParams.get('next'));
   const accountError = searchParams.get('error') === 'account';
   const [error, setError] = useState(accountError ? 'الحساب غير متاح حاليًا.' : '');
   const [pending, setPending] = useState(false);
