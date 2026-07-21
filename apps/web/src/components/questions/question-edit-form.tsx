@@ -1,18 +1,43 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { updateQuestion } from '@/app/questions/[id]/actions';
 import { Button, Input, NumberInput, Select, Textarea } from '@/components/ui';
-import { createQuestion } from '@/app/questions/actions';
 
 const labels = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
-const initialQuestionActionState = { status: 'idle' as const, message: '' };
+const initialUpdateQuestionActionState = { status: 'idle' as const, message: '' };
+type QuestionType = 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
 
-export function QuestionEditor() {
-  const [state, formAction, pending] = useActionState(createQuestion, initialQuestionActionState);
-  const [type, setType] = useState<'MULTIPLE_CHOICE' | 'TRUE_FALSE'>('MULTIPLE_CHOICE');
-  const [optionCount, setOptionCount] = useState(4);
-  const options: string[] =
-    type === 'TRUE_FALSE' ? ['صح', 'خطأ'] : Array.from({ length: optionCount }, () => '');
+type EditableQuestion = {
+  id: string;
+  type: QuestionType;
+  prompt: string;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  category: string | null;
+  explanation: string | null;
+  source: string | null;
+  timeLimit: number;
+  basePoints: number;
+  options: Array<{ text: string; isCorrect: boolean }>;
+};
+
+export function QuestionEditForm({ question }: { question: EditableQuestion }) {
+  const [state, formAction, pending] = useActionState(
+    updateQuestion.bind(null, question.id),
+    initialUpdateQuestionActionState,
+  );
+  const [type, setType] = useState<QuestionType>(question.type);
+  const [optionCount, setOptionCount] = useState(
+    Math.min(6, Math.max(2, question.type === 'TRUE_FALSE' ? 2 : question.options.length)),
+  );
+  const options =
+    type === 'TRUE_FALSE'
+      ? ['صح', 'خطأ']
+      : Array.from({ length: optionCount }, (_, index) => question.options[index]?.text || '');
+  const correctOption = Math.max(
+    0,
+    question.options.findIndex((option) => option.isCorrect),
+  );
 
   return (
     <form action={formAction} className="form-grid question-editor">
@@ -20,7 +45,7 @@ export function QuestionEditor() {
         label="نوع السؤال"
         name="type"
         value={type}
-        onChange={(event) => setType(event.target.value as typeof type)}
+        onChange={(event) => setType(event.target.value as QuestionType)}
       >
         <option value="MULTIPLE_CHOICE">اختيار من متعدد</option>
         <option value="TRUE_FALSE">صح أو خطأ</option>
@@ -30,23 +55,25 @@ export function QuestionEditor() {
         name="prompt"
         required
         minLength={8}
-        placeholder="اكتب سؤالًا واضحًا ومباشرًا"
+        defaultValue={question.prompt}
       />
       <fieldset className="field question-options">
         <legend className="field-label">الخيارات والإجابة الصحيحة</legend>
         {options.map((value, index) => (
-          <label className="question-option" key={index}>
+          <label className="question-option" key={`${type}-${index}`}>
             <input
               type="radio"
               name="correctOption"
               value={index}
-              defaultChecked={index === 0}
+              defaultChecked={
+                index === (type === 'TRUE_FALSE' ? Math.min(correctOption, 1) : correctOption)
+              }
               aria-label={`الإجابة الصحيحة للخيار ${labels[index]}`}
             />
             <input
               name="options"
               required
-              defaultValue={type === 'TRUE_FALSE' ? value : ''}
+              defaultValue={value}
               readOnly={type === 'TRUE_FALSE'}
               placeholder={`الخيار ${labels[index]}`}
             />
@@ -78,16 +105,16 @@ export function QuestionEditor() {
           </div>
         )}
       </fieldset>
-      <Select label="الصعوبة" name="difficulty" defaultValue="MEDIUM">
+      <Select label="الصعوبة" name="difficulty" defaultValue={question.difficulty}>
         <option value="EASY">سهل</option>
         <option value="MEDIUM">متوسط</option>
         <option value="HARD">صعب</option>
       </Select>
-      <Input label="الفئة" name="category" placeholder="مثل: ثقافة عامة" />
+      <Input label="الفئة" name="category" defaultValue={question.category || ''} />
       <NumberInput
         label="الوقت بالثواني"
         name="timeLimit"
-        defaultValue="20"
+        defaultValue={question.timeLimit}
         min="5"
         max="300"
         required
@@ -95,7 +122,7 @@ export function QuestionEditor() {
       <NumberInput
         label="النقاط الأساسية"
         name="basePoints"
-        defaultValue="1000"
+        defaultValue={question.basePoints}
         min="100"
         max="10000"
         required
@@ -103,16 +130,16 @@ export function QuestionEditor() {
       <Textarea
         label="الشرح بعد الإجابة (اختياري)"
         name="explanation"
-        placeholder="يوضح سبب صحة الإجابة"
+        defaultValue={question.explanation || ''}
       />
-      <Input label="المصدر (اختياري)" name="source" placeholder="رابط أو مرجع موثوق" />
+      <Input label="المصدر (اختياري)" name="source" defaultValue={question.source || ''} />
       {state.status !== 'idle' && (
         <p className={state.status === 'success' ? 'text-success' : 'text-danger'} role="status">
           {state.message}
         </p>
       )}
       <Button type="submit" loading={pending}>
-        حفظ كمسودة
+        حفظ التعديلات
       </Button>
     </form>
   );

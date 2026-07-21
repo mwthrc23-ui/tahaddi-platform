@@ -5,7 +5,7 @@ import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
 import { questionSchema } from '@/lib/questions/validation';
 
-export type QuestionActionState = {
+export type UpdateQuestionActionState = {
   status: 'idle' | 'success' | 'error';
   message: string;
 };
@@ -15,11 +15,16 @@ const emptyToUndefined = (value: FormDataEntryValue | null) => {
   return text || undefined;
 };
 
-export async function createQuestion(
-  _previousState: QuestionActionState,
+export async function updateQuestion(
+  questionId: string,
+  _previousState: UpdateQuestionActionState,
   formData: FormData,
-): Promise<QuestionActionState> {
-  const user = await requireActiveUser('/questions');
+): Promise<UpdateQuestionActionState> {
+  const user = await requireActiveUser(`/questions/${questionId}`);
+  if (!hasDatabaseUrl()) {
+    return { status: 'error', message: 'قاعدة البيانات غير مهيأة بعد.' };
+  }
+
   const type = formData.get('type');
   const rawOptions = formData
     .getAll('options')
@@ -41,37 +46,35 @@ export async function createQuestion(
   if (!parsed.success) {
     return { status: 'error', message: parsed.error.issues[0]?.message || 'راجع بيانات السؤال.' };
   }
-  if (!hasDatabaseUrl()) {
-    return { status: 'error', message: 'قاعدة البيانات غير مهيأة بعد.' };
-  }
 
   const { options: inputOptions, correctOption, ...question } = parsed.data;
-  await getPrismaClient().question.create({
-    data: {
-      ...question,
-      ownerId: user.id,
-      options: {
-        create: inputOptions.map((text, position) => ({
-          text,
-          position,
-          isCorrect: position === correctOption,
-        })),
-      },
-    },
+  const updated = await getPrismaClient().$transaction(async (prisma) => {
+    const result = await prisma.question.updateMany({
+      where: { id: questionId, ownerId: user.id, status: { not: 'ARCHIVED' } },
+      data: question,
+    });
+    if (result.count === 0) return false;
+
+    await prisma.questionOption.deleteMany({ where: { questionId } });
+    await prisma.questionOption.createMany({
+      data: inputOptions.map((text, position) => ({
+        questionId,
+        text,
+        position,
+        isCorrect: position === correctOption,
+      })),
+    });
+    return true;
   });
 
-  revalidatePath('/questions');
-  return { status: 'success', message: 'حُفظ السؤال كمسودة.' };
-}
+  if (!updated) {
+    return {
+      status: 'error',
+      message: 'تعذّر تعديل السؤال. قد يكون مؤرشفًا أو لا تملك صلاحية الوصول إليه.',
+    };
+  }
 
-export async function archiveQuestion(formData: FormData) {
-  const user = await requireActiveUser('/questions');
-  const id = formData.get('id');
-  if (typeof id !== 'string' || !id) return;
-
-  await getPrismaClient().question.updateMany({
-    where: { id, ownerId: user.id, status: { not: 'ARCHIVED' } },
-    data: { status: 'ARCHIVED', archivedAt: new Date() },
-  });
   revalidatePath('/questions');
+  revalidatePath(`/questions/${questionId}`);
+  return { status: 'success', message: 'تم حفظ تعديلات السؤال.' };
 }
