@@ -22,34 +22,9 @@ type DraftQuestion = {
   points: number;
 };
 
-const availableQuestions: DraftQuestion[] = [
-  {
-    id: 'heritage',
-    prompt: 'ما اسم المنطقة التي اشتهرت بآثار مدائن صالح؟',
-    category: 'تراث سعودي',
-    duration: 20,
-    points: 1000,
-  },
-  {
-    id: 'science',
-    prompt: 'ما الكوكب الأقرب إلى الشمس؟',
-    category: 'علوم',
-    duration: 15,
-    points: 800,
-  },
-  { id: 'language', prompt: 'ما جمع كلمة كتاب؟', category: 'لغة عربية', duration: 15, points: 800 },
-  {
-    id: 'geography',
-    prompt: 'ما أكبر قارات العالم مساحةً؟',
-    category: 'جغرافيا',
-    duration: 20,
-    points: 1000,
-  },
-];
-
 const draftStorageKey = 'tahaddi-quiz-draft';
 
-export function QuizBuilder() {
+export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: DraftQuestion[] }) {
   const [title, setTitle] = useState('مسابقة الثقافة العامة');
   const [description, setDescription] = useState('مسودة قصيرة لجولة تفاعلية من أسئلة متنوعة.');
   const [roundName, setRoundName] = useState('الجولة الأولى');
@@ -303,10 +278,12 @@ export function QuizBuilder() {
 
         <Card>
           <h2>
-            <CheckCircle2 /> أسئلة متاحة للمعاينة
+            <CheckCircle2 /> أسئلة متاحة من بنك الأسئلة
           </h2>
-          <p className="muted">هذه أمثلة محلية للواجهة وليست قراءة من بنك الأسئلة بعد.</p>
-          <div className="quiz-builder-list">
+          {availableQuestions.length === 0 ? (
+            <p className="muted">لا توجد أسئلة منشورة أو مسودات في بنك الأسئلة بعد.</p>
+          ) : (
+            <div className="quiz-builder-list">
             {availableQuestions.map((question) => (
               <article key={question.id} className="list-item">
                 <div>
@@ -327,6 +304,7 @@ export function QuizBuilder() {
               </article>
             ))}
           </div>
+          )}
         </Card>
       </div>
     </div>

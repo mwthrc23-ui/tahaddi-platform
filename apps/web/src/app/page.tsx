@@ -21,19 +21,30 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { SiteLayout } from '@/components/layout';
 import { Reveal } from '@/components/motion/reveal';
-import { LeaderboardItem, LiveStatus, QuizTimer } from '@/components/quiz';
+import { QuizTimer } from '@/components/quiz';
 import {
   Button,
   ButtonLink,
   CategoryCard,
-  CompetitionCard,
+  EmptyState,
   GameCard,
   Input,
 } from '@/components/ui';
-import { categories, competitions, games, players } from '@/mocks';
+
+const games = [
+  { title: 'دقيقة ذكاء', description: 'عشرة أسئلة سريعة في ستين ثانية' },
+  { title: 'صح أم خطأ', description: 'اختبر حدسك ومعلوماتك في جولة خاطفة' },
+  { title: 'رتّبها', description: 'ضع الأحداث والعناصر في ترتيبها الصحيح' },
+];
+
+const categories = [
+  { title: 'تاريخ', icon: <Landmark aria-hidden="true" /> },
+  { title: 'علوم', icon: <FlaskConical aria-hidden="true" /> },
+  { title: 'رياضة', icon: <Medal aria-hidden="true" /> },
+  { title: 'تقنية', icon: <Cpu aria-hidden="true" /> },
+];
 
 const gameIcons = [Timer, CheckCircle2, ListOrdered];
-const categoryIcons = [Landmark, FlaskConical, Medal, Cpu];
 
 export default function HomePage() {
   const [code, setCode] = useState('');
@@ -42,7 +53,6 @@ export default function HomePage() {
   return (
     <SiteLayout>
       <section className="hero">
-        <div className="hero-glow" aria-hidden="true" />
         <Reveal className="container hero-grid" eager>
           <div className="hero-copy">
             <span className="eyebrow">
@@ -113,8 +123,8 @@ export default function HomePage() {
             </div>
             <div className="floating-score score-b">
               <Users />
-              <strong>٢٤٨</strong>
-              <small>يتنافسون الآن</small>
+              <strong>مباشر</strong>
+              <small>انضم الآن</small>
             </div>
             <div className="floating-score score-c">
               <Radio />
@@ -123,31 +133,6 @@ export default function HomePage() {
             <div className="hero-preview-timer">
               <QuizTimer total={20} remaining={12} size="sm" />
             </div>
-          </div>
-        </Reveal>
-      </section>
-
-      <section className="section" id="competitions">
-        <Reveal className="container">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">الآن على تحدّي</span>
-              <h2>مسابقات مباشرة</h2>
-            </div>
-            <ButtonLink href="/quizzes" variant="ghost">
-              افتح المنشئ
-              <ArrowLeft />
-            </ButtonLink>
-          </div>
-          <div className="card-grid three">
-            {competitions.map((item) => (
-              <CompetitionCard
-                key={item.id}
-                title={item.title}
-                description={`${item.category} · ${item.questions} سؤالًا`}
-                meta={`${item.players} لاعبًا`}
-              />
-            ))}
           </div>
         </Reveal>
       </section>
@@ -169,7 +154,7 @@ export default function HomePage() {
                   title={item.title}
                   description={item.description}
                   icon={<GameIcon aria-hidden="true" />}
-                  meta="العب الآن"
+                  meta="قريبًا"
                 />
               );
             })}
@@ -186,17 +171,9 @@ export default function HomePage() {
             </div>
           </div>
           <div className="card-grid four">
-            {categories.map((item, index) => {
-              const CategoryIcon = categoryIcons[index % categoryIcons.length] ?? Landmark;
-              return (
-                <CategoryCard
-                  key={item.title}
-                  title={item.title}
-                  description={`${item.count} سؤالًا`}
-                  icon={<CategoryIcon aria-hidden="true" />}
-                />
-              );
-            })}
+            {categories.map((item) => (
+              <CategoryCard key={item.title} title={item.title} icon={item.icon} />
+            ))}
           </div>
         </Reveal>
       </section>
@@ -207,13 +184,8 @@ export default function HomePage() {
             <span className="eyebrow">لوحة الشرف</span>
             <h2>نجوم هذا الأسبوع</h2>
             <p>السرعة والمعرفة وسلسلة الإجابات الصحيحة تصنع الفارق.</p>
-            <LiveStatus status="live" />
           </div>
-          <div className="leaderboard-list">
-            {players.slice(0, 5).map((player) => (
-              <LeaderboardItem key={player.id} {...player} />
-            ))}
-          </div>
+          <EmptyState title="لا توجد بيانات بعد" description="ستظهر أفضل اللاعبين هنا بعد انطلاق أولى المسابقات." />
         </Reveal>
       </section>
 
