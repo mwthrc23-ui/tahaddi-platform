@@ -63,10 +63,16 @@ export function QuizBuilder() {
     [questions],
   );
 
-  const addQuestion = (question: DraftQuestion) => {
-    setQuestions((current) => [...current, question]);
+const addQuestion = (question: DraftQuestion) => {
+  setQuestions((current) => {
+    if (current.some((existing) => existing.id === question.id)) {
+      setNotice(`السؤال «${question.category}» موجود بالفعل في المسودة.`);
+      return current;
+    }
     setNotice(`أُضيف سؤال «${question.category}» إلى المسودة محليًا.`);
-  };
+    return [...current, question];
+  });
+};
   const removeQuestion = (id: string) => {
     setQuestions((current) => current.filter((question) => question.id !== id));
     setNotice('أُزيل السؤال من المسودة المحلية.');
