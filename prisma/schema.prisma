@@ -20,6 +20,23 @@ enum UserStatus {
   DELETED
 }
 
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+}
+
+enum QuestionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum QuestionDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 model User {
   id            String      @id @default(cuid())
   name          String?     @db.VarChar(120)
@@ -37,10 +54,45 @@ model User {
   accounts      Account[]
   sessions      Session[]
   profile       Profile?
+  questions     Question[]
 
   @@index([role])
   @@index([status])
   @@index([createdAt])
+}
+
+model Question {
+  id          String             @id @default(cuid())
+  ownerId     String
+  type        QuestionType       @default(MULTIPLE_CHOICE)
+  status      QuestionStatus     @default(DRAFT)
+  difficulty  QuestionDifficulty @default(MEDIUM)
+  prompt      String             @db.VarChar(1000)
+  explanation String?            @db.VarChar(2000)
+  category    String?            @db.VarChar(120)
+  source      String?            @db.VarChar(500)
+  timeLimit   Int                @default(20)
+  basePoints  Int                @default(1000)
+  archivedAt  DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  owner       User               @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  options     QuestionOption[]
+
+  @@index([ownerId, status])
+  @@index([ownerId, updatedAt])
+  @@index([category, status])
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  position   Int
+  text       String   @db.VarChar(500)
+  isCorrect  Boolean  @default(false)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, position])
 }
 
 model Account {
