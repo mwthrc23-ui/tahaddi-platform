@@ -12,7 +12,15 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
+import { signOut } from 'next-auth/react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { demoNavigation, primaryNavigation } from '@/config/navigation';
 import { siteConfig } from '@/config/site';
 import { cn } from '@/lib/utils';
@@ -31,9 +39,48 @@ export function Logo() {
   );
 }
 
-export function Header() {
+export type HeaderUser = {
+  name?: string | null;
+};
+
+export function Header({ user = null }: { user?: HeaderUser | null }) {
   const [open, setOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
+  const userMenuId = useId();
+  const userMenuButtonId = useId();
+  const userDropdownRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuButtonRef = useRef<HTMLButtonElement>(null);
+
+  const closeUserMenu = useCallback(() => {
+    setUserOpen(false);
+    queueMicrotask(() => userMenuButtonRef.current?.focus());
+  }, []);
+
+  useEffect(() => {
+    if (!userOpen) return;
+
+    userMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeUserMenu();
+      }
+    };
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!userDropdownRef.current?.contains(event.target as Node)) {
+        closeUserMenu();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [closeUserMenu, userOpen]);
 
   return (
     <header className="site-header">
@@ -54,28 +101,61 @@ export function Header() {
             أنشئ مسابقة
           </ButtonLink>
           <ThemeToggle />
-          <div className="dropdown">
+          <div className="dropdown" ref={userDropdownRef}>
             <Button
+              ref={userMenuButtonRef}
+              id={userMenuButtonId}
               variant="ghost"
               size="icon"
-              aria-label="قائمة المستخدم"
+              aria-label={user ? `قائمة المستخدم: ${user.name || 'الحساب'}` : 'قائمة المستخدم'}
               aria-haspopup="menu"
               aria-expanded={userOpen}
-              onClick={() => setUserOpen(!userOpen)}
+              aria-controls={userOpen ? userMenuId : undefined}
+              onClick={() => {
+                setOpen(false);
+                setUserOpen((current) => !current);
+              }}
             >
               <UserCircle2 />
             </Button>
             {userOpen && (
-              <div className="floating-panel" role="menu">
-                <Link role="menuitem" href="/profile" onClick={() => setUserOpen(false)}>
-                  الملف الشخصي
-                </Link>
-                <Link role="menuitem" href="/dashboard" onClick={() => setUserOpen(false)}>
-                  لوحة التحكم
-                </Link>
-                <Link role="menuitem" href="/auth/sign-in" onClick={() => setUserOpen(false)}>
-                  تسجيل الدخول
-                </Link>
+              <div
+                className="floating-panel"
+                id={userMenuId}
+                ref={userMenuRef}
+                role="menu"
+                aria-labelledby={userMenuButtonId}
+              >
+                {user ? (
+                  <>
+                    {user.name && <span role="presentation">{user.name}</span>}
+                    <Link role="menuitem" href="/profile" onClick={closeUserMenu}>
+                      الملف الشخصي
+                    </Link>
+                    <Link role="menuitem" href="/dashboard" onClick={closeUserMenu}>
+                      لوحة التحكم
+                    </Link>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        closeUserMenu();
+                        void signOut({ callbackUrl: '/' });
+                      }}
+                    >
+                      تسجيل الخروج
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link role="menuitem" href="/auth/sign-in" onClick={closeUserMenu}>
+                      تسجيل الدخول
+                    </Link>
+                    <Link role="menuitem" href="/auth/sign-up" onClick={closeUserMenu}>
+                      إنشاء حساب
+                    </Link>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -85,7 +165,10 @@ export function Header() {
             size="icon"
             aria-label={open ? 'إغلاق القائمة' : 'فتح القائمة'}
             aria-expanded={open}
-            onClick={() => setOpen(!open)}
+            onClick={() => {
+              if (userOpen) closeUserMenu();
+              setOpen((current) => !current);
+            }}
           >
             {open ? <X /> : <Menu />}
           </Button>
@@ -140,10 +223,16 @@ export function Footer() {
     </footer>
   );
 }
-export function SiteLayout({ children }: { children: ReactNode }) {
+export function SiteLayout({
+  children,
+  user = null,
+}: {
+  children: ReactNode;
+  user?: HeaderUser | null;
+}) {
   return (
     <>
-      <Header />
+      <Header user={user} />
       <main id="main-content">{children}</main>
       <Footer />
     </>

@@ -12,6 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { createQuiz } from '@/app/quizzes/actions';
 import { Badge, Button, Card, Input, NumberInput, Select, Textarea } from '@/components/ui';
 
 type DraftQuestion = {
@@ -112,6 +113,8 @@ export function QuizBuilder({
   const [storageReady, setStorageReady] = useState(false);
   const [notice, setNotice] = useState('');
   const [saveFailed, setSaveFailed] = useState(false);
+  const [savingQuiz, setSavingQuiz] = useState(false);
+  const [savedRoomCode, setSavedRoomCode] = useState('');
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -190,6 +193,33 @@ export function QuizBuilder({
       setNotice('تعذّر حفظ المسودة محليًا. تحقق من مساحة التخزين في المتصفح.');
     }
   };
+  const saveQuiz = async () => {
+    if (savingQuiz) return;
+    setSavingQuiz(true);
+    setSavedRoomCode('');
+    try {
+      const result = await createQuiz({
+        title: draft.title,
+        description: draft.description,
+        questionIds: draft.questions.map((question) => question.id),
+      });
+      if (result.status === 'error') {
+        setSaveFailed(true);
+        setNotice(result.message);
+        return;
+      }
+
+      setSaveFailed(false);
+      setSavedRoomCode(result.roomCode);
+      setNotice(`حُفظت المسابقة في حسابك كمسودة. رمز الغرفة: ${result.roomCode}`);
+      localStorage.setItem(storageKey, JSON.stringify(draft));
+    } catch {
+      setSaveFailed(true);
+      setNotice('تعذّر حفظ المسابقة الآن. حاول مرة أخرى.');
+    } finally {
+      setSavingQuiz(false);
+    }
+  };
 
   const selected = new Set(draft.questions.map((question) => question.id));
 
@@ -200,6 +230,10 @@ export function QuizBuilder({
           <Save />
           حفظ المسودة محليًا
         </Button>
+        <Button type="button" onClick={saveQuiz} loading={savingQuiz} disabled={savingQuiz}>
+          <CheckCircle2 />
+          حفظ المسابقة في الحساب
+        </Button>
       </div>
       <Card className="quiz-builder-intro">
         <div className="inline-between">
@@ -209,7 +243,7 @@ export function QuizBuilder({
             </h2>
             <p className="muted">رتّب الأسئلة واضبط الجولة قبل ربطها بالحفظ والنشر الفعليين.</p>
           </div>
-          <Badge>مسودة محلية</Badge>
+          <Badge>{savedRoomCode ? `رمز ${savedRoomCode}` : 'مسودة محلية'}</Badge>
         </div>
         {notice && (
           <p className={saveFailed ? 'text-danger' : 'text-success'} role="status">
@@ -287,7 +321,7 @@ export function QuizBuilder({
             {draft.title || 'مسابقة بلا عنوان'} · {draft.roundName || 'جولة بلا اسم'}
           </p>
           <p className="muted">
-            تُحفظ المسودة على هذا الجهاز فقط؛ لا توجد مشاركة أو نشر دائم حتى الآن.
+            تبقى المسودة محفوظة على هذا الجهاز، ويمكن حفظ نسخة دائمة في حسابك عند اكتمالها.
           </p>
         </Card>
       </div>
@@ -377,26 +411,26 @@ export function QuizBuilder({
             <p className="muted">لا توجد أسئلة منشورة أو مسودات في بنك الأسئلة بعد.</p>
           ) : (
             <div className="quiz-builder-list">
-            {availableQuestions.map((question) => (
-              <article key={question.id} className="list-item">
-                <div>
-                  <strong>{question.prompt}</strong>
-                  <p>
-                    {question.category} · {question.duration} ثانية · {question.points} نقطة
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant={selected.has(question.id) ? 'outline' : 'secondary'}
-                  size="sm"
-                  disabled={selected.has(question.id)}
-                  onClick={() => addQuestion(question)}
-                >
-                  {selected.has(question.id) ? 'مضاف' : 'إضافة'}
-                </Button>
-              </article>
-            ))}
-          </div>
+              {availableQuestions.map((question) => (
+                <article key={question.id} className="list-item">
+                  <div>
+                    <strong>{question.prompt}</strong>
+                    <p>
+                      {question.category} · {question.duration} ثانية · {question.points} نقطة
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant={selected.has(question.id) ? 'outline' : 'secondary'}
+                    size="sm"
+                    disabled={selected.has(question.id)}
+                    onClick={() => addQuestion(question)}
+                  >
+                    {selected.has(question.id) ? 'مضاف' : 'إضافة'}
+                  </Button>
+                </article>
+              ))}
+            </div>
           )}
         </Card>
       </div>

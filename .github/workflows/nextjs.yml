@@ -21,7 +21,25 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tahaddi?schema=public
+      AUTH_SECRET: ci-only-playwright-secret
+      AUTH_URL: http://127.0.0.1:3000
+      NEXTAUTH_URL: http://127.0.0.1:3000
+      RUN_AUTH_E2E: 'true'
       TAHADDI_DEPLOY_TARGET: node
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tahaddi
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tahaddi"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -53,6 +71,19 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Apply migrations to the test database
+        run: pnpm db:migrate:deploy
+
+      - name: Seed Playwright test data
+        run: pnpm db:seed
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @tahaddi/web exec playwright install --with-deps chromium
+
+      - name: Playwright end-to-end tests
+        working-directory: apps/web
+        run: pnpm test:e2e
 
       - name: Build web app
         run: pnpm build

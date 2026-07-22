@@ -1,5 +1,3 @@
-'use client';
-
 import {
   ArrowLeft,
   CheckCircle2,
@@ -18,21 +16,14 @@ import {
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { Suspense } from 'react';
+import { getPublicQuizzes, type PublicQuiz, type PublicQuizzesResult } from '@/app/quizzes/actions';
+import { JoinQuizForm } from '@/components/home/join-quiz-form';
 import { SiteLayout } from '@/components/layout';
 import { Reveal } from '@/components/motion/reveal';
 import { QuizTimer } from '@/components/quiz';
-import {
-  Button,
-  ButtonLink,
-  CategoryCard,
-  EmptyState,
-  GameCard,
-  Input,
-} from '@/components/ui';
-
-const ROOM_CODE_RE = /^\d{6}$/;
+import { ButtonLink, CategoryCard, CompetitionCard, EmptyState, GameCard } from '@/components/ui';
+import { getCurrentSession } from '@/lib/auth/session';
 
 const games = [
   { title: 'دقيقة ذكاء', description: 'عشرة أسئلة سريعة في ستين ثانية', mode: 'speed' },
@@ -49,26 +40,38 @@ const categories = [
 
 const gameIcons = [Timer, CheckCircle2, ListOrdered];
 
-export default function HomePage() {
-  const router = useRouter();
-  const [code, setCode] = useState('');
-  const [codeError, setCodeError] = useState('');
-  const [joining, setJoining] = useState(false);
+const emptyPublicQuizzes: PublicQuizzesResult = { status: 'success', quizzes: [] };
 
-  function handleJoin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const clean = code.replace(/\s/g, '');
-    if (!ROOM_CODE_RE.test(clean)) {
-      setCodeError('الرمز يجب أن يتكوّن من ٦ أرقام بالضبط.');
-      return;
-    }
-    setCodeError('');
-    setJoining(true);
-    router.push(`/demo/waiting?code=${clean}`);
-  }
+export default function HomePage() {
+  return (
+    <Suspense fallback={<HomePageContent publicQuizResult={emptyPublicQuizzes} user={null} />}>
+      <HomePageData />
+    </Suspense>
+  );
+}
+
+async function HomePageData() {
+  const [publicQuizResult, session] = await Promise.all([getPublicQuizzes(6), getCurrentSession()]);
 
   return (
-    <SiteLayout>
+    <HomePageContent
+      publicQuizResult={publicQuizResult}
+      user={session?.user ? { name: session.user.name } : null}
+    />
+  );
+}
+
+function HomePageContent({
+  publicQuizResult,
+  user,
+}: {
+  publicQuizResult: PublicQuizzesResult;
+  user: { name?: string | null } | null;
+}) {
+  const publicQuizzes = publicQuizResult.quizzes;
+
+  return (
+    <SiteLayout user={user}>
       <section className="hero">
         <Reveal className="container hero-grid" eager>
           <div className="hero-copy">
@@ -84,28 +87,7 @@ export default function HomePage() {
             <p>
               انضم إلى جولات مباشرة، نافس أصدقاءك، واصنع لحظات لا تُنسى في تجربة عربية سريعة وواضحة.
             </p>
-            <form className="join-box" id="join" onSubmit={handleJoin} noValidate>
-              <Input
-                id="room-code"
-                label="رمز الغرفة"
-                className="join-field"
-                placeholder="مثال: 582 914"
-                value={code}
-                onChange={(event) => {
-                  setCode(event.target.value);
-                  if (codeError) setCodeError('');
-                }}
-                inputMode="numeric"
-                autoComplete="off"
-                maxLength={7}
-                aria-describedby={codeError ? 'join-error' : undefined}
-                error={codeError || undefined}
-              />
-              <Button size="lg" type="submit" loading={joining} disabled={joining}>
-                انضم الآن
-                <ArrowLeft />
-              </Button>
-            </form>
+            <JoinQuizForm />
             <div className="hero-actions">
               <ButtonLink href="/quizzes/new" variant="gold">
                 <Trophy />
@@ -193,6 +175,47 @@ export default function HomePage() {
         </Reveal>
       </section>
 
+      <section className="section tinted" id="public-quizzes">
+        <Reveal className="container">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">جولات متاحة الآن</span>
+              <h2>أحدث المسابقات العامة</h2>
+            </div>
+            <ButtonLink href="/quizzes" variant="outline">
+              عرض الكل
+              <ArrowLeft />
+            </ButtonLink>
+          </div>
+          {publicQuizzes.length > 0 ? (
+            <div className="card-grid three">
+              {publicQuizzes.map((quiz: PublicQuiz) => (
+                <CompetitionCard
+                  key={quiz.id}
+                  title={quiz.title}
+                  description={quiz.description || 'مسابقة عامة نشطة وجاهزة للانضمام.'}
+                  meta={`${quiz.questionCount.toLocaleString('ar-SA')} سؤال · ${quiz.ownerName || 'مضيف تحدّي'}`}
+                  href={`/demo/waiting?quizId=${encodeURIComponent(quiz.id)}&code=${encodeURIComponent(quiz.roomCode)}`}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title={
+                publicQuizResult.status === 'error'
+                  ? 'تعذّر تحميل المسابقات العامة'
+                  : 'لا توجد مسابقات عامة نشطة الآن'
+              }
+              description={
+                publicQuizResult.status === 'error'
+                  ? publicQuizResult.message
+                  : 'ستظهر هنا أحدث الجولات العامة فور تفعيلها.'
+              }
+            />
+          )}
+        </Reveal>
+      </section>
+
       <section className="section leaderboard-section">
         <Reveal className="container split-section">
           <div>
@@ -200,7 +223,10 @@ export default function HomePage() {
             <h2>نجوم هذا الأسبوع</h2>
             <p>السرعة والمعرفة وسلسلة الإجابات الصحيحة تصنع الفارق.</p>
           </div>
-          <EmptyState title="لا توجد بيانات بعد" description="ستظهر أفضل اللاعبين هنا بعد انطلاق أولى المسابقات." />
+          <EmptyState
+            title="لا توجد بيانات بعد"
+            description="ستظهر أفضل اللاعبين هنا بعد انطلاق أولى المسابقات."
+          />
         </Reveal>
       </section>
 
