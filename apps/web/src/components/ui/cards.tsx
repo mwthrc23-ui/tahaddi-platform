@@ -10,15 +10,24 @@ export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivEleme
 export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) { return <div className={cn('card-footer', className)} {...props} />; }
 
 type ShowcaseCardProps = { title: string; description?: string; meta?: string; icon?: ReactNode; className?: string; href?: string };
+
 export function GameCard({ title, description, meta, icon = <Gamepad2 />, href }: ShowcaseCardProps) {
-  const content = <><span className="card-icon">{icon}</span><h3>{title}</h3><p>{description}</p>{meta && <Badge>{meta}</Badge>}</>;
-  return href ? <Link className="card showcase-card" href={href}>{content}</Link> : <Card className="showcase-card">{content}</Card>;
+  const inner = <><span className="card-icon">{icon}</span><h3>{title}</h3><p>{description}</p>{meta && <Badge>{meta}</Badge>}</>;
+  if (href) return <Link href={href} className="card showcase-card">{inner}</Link>;
+  return <Card className="showcase-card">{inner}</Card>;
 }
+
 export function CompetitionCard({ title, description, meta, href }: ShowcaseCardProps) {
-  const content = <><span className="card-icon"><Trophy /></span><Badge className="badge-live">مباشر</Badge><h3>{title}</h3><p>{description}</p><span className="card-meta"><Users size={16} />{meta}</span></>;
-  return href ? <Link className="card showcase-card competition-card" href={href}>{content}</Link> : <Card className="showcase-card competition-card">{content}</Card>;
+  const inner = <><span className="card-icon"><Trophy /></span><Badge className="badge-live">مباشر</Badge><h3>{title}</h3><p>{description}</p><span className="card-meta"><Users size={16} />{meta}</span></>;
+  if (href) return <Link href={href} className="card showcase-card competition-card">{inner}</Link>;
+  return <Card className="showcase-card competition-card">{inner}</Card>;
 }
-export function CategoryCard({ title, description, icon }: ShowcaseCardProps) { return <Card className="category-card"><span className="category-emoji">{icon}</span><div><h3>{title}</h3><p>{description}</p></div></Card>; }
+
+export function CategoryCard({ title, description, icon, href }: ShowcaseCardProps) {
+  const inner = <><span className="category-emoji">{icon}</span><div><h3>{title}</h3><p>{description}</p></div></>;
+  if (href) return <Link href={href} className="card category-card">{inner}</Link>;
+  return <Card className="category-card">{inner}</Card>;
+}
 export function PlayerCard({ title, description, meta }: ShowcaseCardProps) { return <Card className="showcase-card"><span className="card-icon"><Medal /></span><h3>{title}</h3><p>{description}</p><strong>{meta}</strong></Card>; }
 export function AchievementCard({ title, description }: ShowcaseCardProps) { return <Card className="showcase-card"><span className="card-icon gold"><Award /></span><h3>{title}</h3><p>{description}</p></Card>; }
 export function RewardCard({ title, description }: ShowcaseCardProps) { return <Card className="showcase-card"><span className="card-icon violet"><Gift /></span><h3>{title}</h3><p>{description}</p></Card>; }

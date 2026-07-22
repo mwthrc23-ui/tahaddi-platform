@@ -28,7 +28,7 @@ export function RecoverForm() {
         required
         error={state.errors?.email}
       />
-      <Button type="submit" size="lg" className="button-full" disabled={pending} aria-busy={pending}>
+      <Button type="submit" size="lg" fullWidth disabled={pending} aria-busy={pending}>
         <MailCheck />
         إرسال تعليمات الاستعادة
       </Button>

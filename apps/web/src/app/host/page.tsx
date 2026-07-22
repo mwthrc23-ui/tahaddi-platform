@@ -1,6 +1,17 @@
-import { Maximize2, Users } from 'lucide-react';
 import { HostLayout } from '@/components/layout';
-import { HostControls, PlayerJoinCard, QuestionCard, QuizTimer } from '@/components/quiz';
-import { Button, Card } from '@/components/ui';
-import { players, question } from '@/mocks';
-export default function Page() { return <HostLayout players={players.length}><div className="host-stage"><section><div className="inline-between"><QuizTimer total={20} remaining={12} mode="horizontal" /><Button variant="ghost" size="icon" aria-label="ملء الشاشة"><Maximize2 /></Button></div><QuestionCard {...question} /><HostControls /></section><aside><Card><h2><Users />اللاعبون</h2>{players.map((p) => <PlayerJoinCard key={p.id} {...p} hostTools />)}</Card></aside></div></HostLayout>; }
+import { EmptyState } from '@/components/ui';
+
+export default function Page() {
+  return (
+    <HostLayout>
+      <div className="host-stage">
+        <section>
+          <EmptyState
+            title="لا توجد جلسة نشطة"
+            description="أنشئ مسابقة وابدأ الجلسة لعرض واجهة المضيف."
+          />
+        </section>
+      </div>
+    </HostLayout>
+  );
+}

@@ -1,6 +1,5 @@
 import { SiteLayout } from '@/components/layout';
-import { CompetitionCard } from '@/components/ui';
-import { competitions } from '@/mocks';
+import { ButtonLink, EmptyState } from '@/components/ui';
 
 export default function QuizzesPage() {
   return (
@@ -14,16 +13,12 @@ export default function QuizzesPage() {
               <p>تابع المسابقات المتاحة واختر الجولة التي تناسبك.</p>
             </div>
           </div>
-          <div className="card-grid three">
-            {competitions.map((competition) => (
-              <CompetitionCard
-                key={competition.id}
-                title={competition.title}
-                description={`${competition.category} · ${competition.questions} سؤالًا`}
-                meta={`${competition.players} لاعبًا`}
-                href={`/demo/waiting?quiz=${competition.id}`}
-              />
-            ))}
+          <EmptyState
+            title="لا توجد مسابقات عامة بعد"
+            description="ستظهر المسابقات المنشورة هنا عند إطلاق أول جولة عامة."
+          />
+          <div className="dashboard-actions">
+            <ButtonLink href="/quizzes/new">أنشئ مسابقة</ButtonLink>
           </div>
         </div>
       </section>

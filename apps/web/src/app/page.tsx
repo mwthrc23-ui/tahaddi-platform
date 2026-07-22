@@ -22,41 +22,54 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { SiteLayout } from '@/components/layout';
 import { Reveal } from '@/components/motion/reveal';
-import { LeaderboardItem, LiveStatus, QuizTimer } from '@/components/quiz';
+import { QuizTimer } from '@/components/quiz';
 import {
   Button,
   ButtonLink,
   CategoryCard,
-  CompetitionCard,
+  EmptyState,
   GameCard,
   Input,
 } from '@/components/ui';
-import { categories, competitions, games, players } from '@/mocks';
+
+const ROOM_CODE_RE = /^\d{6}$/;
+
+const games = [
+  { title: 'دقيقة ذكاء', description: 'عشرة أسئلة سريعة في ستين ثانية', mode: 'speed' },
+  { title: 'صح أم خطأ', description: 'اختبر حدسك ومعلوماتك في جولة خاطفة', mode: 'truefalse' },
+  { title: 'رتّبها', description: 'ضع الأحداث والعناصر في ترتيبها الصحيح', mode: 'order' },
+];
+
+const categories = [
+  { title: 'تاريخ', icon: <Landmark aria-hidden="true" />, slug: 'تاريخ' },
+  { title: 'علوم', icon: <FlaskConical aria-hidden="true" />, slug: 'علوم' },
+  { title: 'رياضة', icon: <Medal aria-hidden="true" />, slug: 'رياضة' },
+  { title: 'تقنية', icon: <Cpu aria-hidden="true" />, slug: 'تقنية' },
+];
 
 const gameIcons = [Timer, CheckCircle2, ListOrdered];
-const categoryIcons = [Landmark, FlaskConical, Medal, Cpu];
 
 export default function HomePage() {
   const router = useRouter();
   const [code, setCode] = useState('');
-  const [joinError, setJoinError] = useState('');
+  const [codeError, setCodeError] = useState('');
+  const [joining, setJoining] = useState(false);
 
-  const joinRoom = (event: FormEvent<HTMLFormElement>) => {
+  function handleJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const normalizedCode = code.replace(/\D/g, '');
-    if (normalizedCode.length !== 6) {
-      setJoinError('أدخل رمز غرفة صحيحًا من 6 أرقام.');
+    const clean = code.replace(/\s/g, '');
+    if (!ROOM_CODE_RE.test(clean)) {
+      setCodeError('الرمز يجب أن يتكوّن من ٦ أرقام بالضبط.');
       return;
     }
-
-    setJoinError('');
-    router.push(`/demo/waiting?room=${normalizedCode}`);
-  };
+    setCodeError('');
+    setJoining(true);
+    router.push(`/demo/waiting?code=${clean}`);
+  }
 
   return (
     <SiteLayout>
       <section className="hero">
-        <div className="hero-glow" aria-hidden="true" />
         <Reveal className="container hero-grid" eager>
           <div className="hero-copy">
             <span className="eyebrow">
@@ -71,7 +84,7 @@ export default function HomePage() {
             <p>
               انضم إلى جولات مباشرة، نافس أصدقاءك، واصنع لحظات لا تُنسى في تجربة عربية سريعة وواضحة.
             </p>
-            <form className="join-box" id="join" onSubmit={joinRoom} noValidate>
+            <form className="join-box" id="join" onSubmit={handleJoin} noValidate>
               <Input
                 id="room-code"
                 label="رمز الغرفة"
@@ -80,14 +93,15 @@ export default function HomePage() {
                 value={code}
                 onChange={(event) => {
                   setCode(event.target.value);
-                  if (joinError) setJoinError('');
+                  if (codeError) setCodeError('');
                 }}
                 inputMode="numeric"
                 autoComplete="off"
                 maxLength={7}
-                error={joinError || undefined}
+                aria-describedby={codeError ? 'join-error' : undefined}
+                error={codeError || undefined}
               />
-              <Button size="lg" type="submit">
+              <Button size="lg" type="submit" loading={joining} disabled={joining}>
                 انضم الآن
                 <ArrowLeft />
               </Button>
@@ -118,8 +132,8 @@ export default function HomePage() {
             </div>
             <div className="floating-score score-b">
               <Users />
-              <strong>٢٤٨</strong>
-              <small>يتنافسون الآن</small>
+              <strong>مباشر</strong>
+              <small>انضم الآن</small>
             </div>
             <div className="floating-score score-c">
               <Radio />
@@ -128,32 +142,6 @@ export default function HomePage() {
             <div className="hero-preview-timer">
               <QuizTimer total={20} remaining={12} size="sm" />
             </div>
-          </div>
-        </Reveal>
-      </section>
-
-      <section className="section" id="competitions">
-        <Reveal className="container">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">الآن على تحدّي</span>
-              <h2>مسابقات مباشرة</h2>
-            </div>
-              <ButtonLink href="/quizzes" variant="ghost">
-                عرض الكل
-                <ArrowLeft />
-              </ButtonLink>
-          </div>
-          <div className="card-grid three">
-            {competitions.map((item) => (
-              <CompetitionCard
-                key={item.id}
-                title={item.title}
-                description={`${item.category} · ${item.questions} سؤالًا`}
-                meta={`${item.players} لاعبًا`}
-                href={`/demo/waiting?quiz=${item.id}`}
-              />
-            ))}
           </div>
         </Reveal>
       </section>
@@ -176,7 +164,7 @@ export default function HomePage() {
                   description={item.description}
                   icon={<GameIcon aria-hidden="true" />}
                   meta="العب الآن"
-                  href={`/demo/question?game=${index + 1}`}
+                  href={`/demo/question?mode=${item.mode}`}
                 />
               );
             })}
@@ -193,17 +181,14 @@ export default function HomePage() {
             </div>
           </div>
           <div className="card-grid four">
-            {categories.map((item, index) => {
-              const CategoryIcon = categoryIcons[index % categoryIcons.length] ?? Landmark;
-              return (
-                <CategoryCard
-                  key={item.title}
-                  title={item.title}
-                  description={`${item.count} سؤالًا`}
-                  icon={<CategoryIcon aria-hidden="true" />}
-                />
-              );
-            })}
+            {categories.map((item) => (
+              <CategoryCard
+                key={item.title}
+                title={item.title}
+                icon={item.icon}
+                href={`/questions?category=${encodeURIComponent(item.slug)}`}
+              />
+            ))}
           </div>
         </Reveal>
       </section>
@@ -214,13 +199,8 @@ export default function HomePage() {
             <span className="eyebrow">لوحة الشرف</span>
             <h2>نجوم هذا الأسبوع</h2>
             <p>السرعة والمعرفة وسلسلة الإجابات الصحيحة تصنع الفارق.</p>
-            <LiveStatus status="live" />
           </div>
-          <div className="leaderboard-list">
-            {players.slice(0, 5).map((player) => (
-              <LeaderboardItem key={player.id} {...player} />
-            ))}
-          </div>
+          <EmptyState title="لا توجد بيانات بعد" description="ستظهر أفضل اللاعبين هنا بعد انطلاق أولى المسابقات." />
         </Reveal>
       </section>
 

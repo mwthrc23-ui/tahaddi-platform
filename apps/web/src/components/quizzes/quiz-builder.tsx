@@ -33,7 +33,7 @@ type QuizDraft = {
 };
 
 const storageKey = 'tahaddi:quiz-builder:draft:v1';
-const availableQuestions: DraftQuestion[] = [
+const fallbackQuestions: DraftQuestion[] = [
   {
     id: 'heritage',
     prompt: 'ما اسم المنطقة التي اشتهرت بآثار مدائن صالح؟',
@@ -57,15 +57,18 @@ const availableQuestions: DraftQuestion[] = [
     points: 1000,
   },
 ];
-const initialDraft: QuizDraft = {
-  version: 1,
-  title: 'مسابقة الثقافة العامة',
-  description: 'مسودة قصيرة لجولة تفاعلية من أسئلة متنوعة.',
-  roundName: 'الجولة الأولى',
-  presentationMode: 'SEQUENTIAL',
-  playerLimit: 50,
-  questions: availableQuestions.slice(0, 2),
-};
+
+function createInitialDraft(availableQuestions: DraftQuestion[]): QuizDraft {
+  return {
+    version: 1,
+    title: 'مسابقة الثقافة العامة',
+    description: 'مسودة قصيرة لجولة تفاعلية من أسئلة متنوعة.',
+    roundName: 'الجولة الأولى',
+    presentationMode: 'SEQUENTIAL',
+    playerLimit: 50,
+    questions: availableQuestions.slice(0, 2),
+  };
+}
 
 function isDraftQuestion(value: unknown): value is DraftQuestion {
   if (!value || typeof value !== 'object') return false;
@@ -100,8 +103,12 @@ export function parseQuizDraft(value: string): QuizDraft | null {
   }
 }
 
-export function QuizBuilder() {
-  const [draft, setDraft] = useState<QuizDraft>(initialDraft);
+export function QuizBuilder({
+  availableQuestions = fallbackQuestions,
+}: {
+  availableQuestions?: DraftQuestion[];
+}) {
+  const [draft, setDraft] = useState<QuizDraft>(() => createInitialDraft(availableQuestions));
   const [storageReady, setStorageReady] = useState(false);
   const [notice, setNotice] = useState('');
   const [saveFailed, setSaveFailed] = useState(false);
@@ -364,10 +371,12 @@ export function QuizBuilder() {
 
         <Card>
           <h2>
-            <CheckCircle2 /> أسئلة متاحة للمعاينة
+            <CheckCircle2 /> أسئلة متاحة من بنك الأسئلة
           </h2>
-          <p className="muted">هذه أمثلة محلية للواجهة وليست قراءة من بنك الأسئلة بعد.</p>
-          <div className="quiz-builder-list">
+          {availableQuestions.length === 0 ? (
+            <p className="muted">لا توجد أسئلة منشورة أو مسودات في بنك الأسئلة بعد.</p>
+          ) : (
+            <div className="quiz-builder-list">
             {availableQuestions.map((question) => (
               <article key={question.id} className="list-item">
                 <div>
@@ -388,6 +397,7 @@ export function QuizBuilder() {
               </article>
             ))}
           </div>
+          )}
         </Card>
       </div>
     </div>

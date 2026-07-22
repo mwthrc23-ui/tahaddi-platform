@@ -30,12 +30,12 @@ describe('HomePage actions', () => {
 
     fireEvent.change(roomCode, { target: { value: '12' } });
     await userEvent.click(screen.getByRole('button', { name: 'انضم الآن' }));
-    expect(screen.getByText('أدخل رمز غرفة صحيحًا من 6 أرقام.')).toBeInTheDocument();
+    expect(screen.getByText('الرمز يجب أن يتكوّن من ٦ أرقام بالضبط.')).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
 
     fireEvent.change(roomCode, { target: { value: '582 914' } });
     await userEvent.click(screen.getByRole('button', { name: 'انضم الآن' }));
-    expect(push).toHaveBeenCalledWith('/demo/waiting?room=582914');
+    expect(push).toHaveBeenCalledWith('/demo/waiting?code=582914');
   });
 
   it('exposes working destinations for creation, listing, cards, and the user menu', async () => {
@@ -45,14 +45,9 @@ describe('HomePage actions', () => {
       expect(link).toHaveAttribute('href', '/quizzes/new');
     }
     expect(screen.getByRole('link', { name: 'أنشئ مسابقتك' })).toHaveAttribute('href', '/quizzes/new');
-    expect(screen.getByRole('link', { name: 'عرض الكل' })).toHaveAttribute('href', '/quizzes');
-    expect(screen.getByRole('link', { name: /كأس المعرفة العربية/ })).toHaveAttribute(
-      'href',
-      '/demo/waiting?quiz=arab-cup',
-    );
     expect(screen.getByRole('link', { name: /دقيقة ذكاء/ })).toHaveAttribute(
       'href',
-      '/demo/question?game=1',
+      '/demo/question?mode=speed',
     );
 
     await userEvent.click(screen.getByRole('button', { name: 'قائمة المستخدم' }));

@@ -43,7 +43,7 @@ export function SignUpForm() {
         description="10 أحرف على الأقل، وتتضمن حرفًا ورقمًا."
         error={state.errors?.password}
       />
-      <Button type="submit" size="lg" className="button-full" disabled={pending} aria-busy={pending}>
+      <Button type="submit" size="lg" fullWidth disabled={pending} aria-busy={pending}>
         <UserPlus />
         إنشاء حساب
       </Button>
