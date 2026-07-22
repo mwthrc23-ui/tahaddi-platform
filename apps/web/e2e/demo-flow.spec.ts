@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('يفتح الصفحة الرئيسية ويعرض الانضمام', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /كل سؤال/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /ادخل الغرفة/ })).toBeVisible();
   await expect(page.getByLabel('رمز الغرفة')).toBeVisible();
 });
 test('يتحقق من رمز الغرفة ويُظهر خطأً للرمز غير الصالح', async ({ page }) => {
