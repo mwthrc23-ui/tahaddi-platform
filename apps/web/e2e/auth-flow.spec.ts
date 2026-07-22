@@ -16,7 +16,7 @@ test('renders auth entry points', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'إنشاء حساب' })).toBeVisible();
 
   await page.goto('/auth/sign-in/');
-  await expect(page.getByRole('heading', { name: 'تسجيل الدخول' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'دخول المضيفين' })).toBeVisible();
 
   await page.goto('/auth/recover/');
   await expect(page.getByRole('heading', { name: 'استعادة الحساب' })).toBeVisible();
@@ -27,9 +27,7 @@ test('renders auth entry points', async ({ page }) => {
 
 test('keeps the public quizzes list available without a session', async ({ page }) => {
   await page.goto('/quizzes/');
-  await expect(
-    page.getByRole('heading', { name: 'المسابقات العامة', exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'المسابقات العامة', exact: true })).toBeVisible();
 });
 
 test.describe('database-backed auth flow', () => {
@@ -54,14 +52,12 @@ test.describe('database-backed auth flow', () => {
     await page.goto('/auth/sign-in/');
     await page.getByLabel('البريد الإلكتروني').fill(email);
     await page.locator('input[name="password"]').fill(password);
-    await page.getByRole('button', { name: 'دخول', exact: true }).click();
+    await page.getByRole('button', { name: 'دخول بالبريد' }).click();
     await expect(page).toHaveURL(/\/dashboard/);
 
     await page.setViewportSize({ width: 1200, height: 800 });
     await page.goto('/quizzes/new/');
-    await expect(
-      page.getByRole('heading', { name: 'منشئ المسابقة', level: 1 }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'منشئ المسابقة', level: 1 })).toBeVisible();
     await expect(page.locator('.quiz-builder-grid').first()).toHaveCSS(
       'grid-template-columns',
       /\d+(?:\.\d+)?px \d+(?:\.\d+)?px/,

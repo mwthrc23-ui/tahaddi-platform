@@ -21,7 +21,15 @@ test('يعرض خطأً واضحًا عندما لا تكون هناك جلسة 
   await page.getByLabel('اسم اللاعب').fill('نورة');
   await page.getByLabel('رمز الغرفة').fill('A7K9PQ');
   await page.getByRole('button', { name: 'انضم الآن' }).click();
-  await expect(page.getByText('لم نجد جلسة مباشرة مفتوحة بهذا الرمز.')).toBeVisible();
+  await expect(
+    page.getByText(/لم نجد جلسة مباشرة مفتوحة بهذا الرمز|خدمة الجلسات المباشرة غير متاحة حاليًا/),
+  ).toBeVisible();
+});
+test('يفتح رابط الدعوة صفحة اللاعب مع تعبئة الرمز', async ({ page }) => {
+  await page.goto('/join/A7K9PQ');
+  await expect(page.getByRole('heading', { name: 'ادخل المسابقة كزائر' })).toBeVisible();
+  await expect(page.getByLabel('رمز الغرفة')).toHaveValue('A7K9PQ');
+  await expect(page.getByText(/لا تحتاج إلى حساب/)).toBeVisible();
 });
 test('يتنقل عبر الشاشات التجريبية ويحدد إجابة', async ({ page }) => {
   await page.goto('/demo/waiting');

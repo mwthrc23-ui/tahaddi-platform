@@ -88,7 +88,7 @@ export default async function Page({
             </Card>
           </section>
           <aside>
-            <RoomCode code={session.roomCode} url="tahaddi.app/#join" />
+            <RoomCode code={session.roomCode} url={`/join/${session.roomCode}`} />
             <Card>
               <h2>الترتيب</h2>
               {session.participants.length > 0 ? (

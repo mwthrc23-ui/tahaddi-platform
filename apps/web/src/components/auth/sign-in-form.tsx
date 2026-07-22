@@ -58,18 +58,6 @@ export function SignInForm({ googleEnabled = false }: { googleEnabled?: boolean 
   return (
     <form className="auth-form" onSubmit={onSubmit}>
       {error && <Alert variant="danger">{error}</Alert>}
-      <Input label="البريد الإلكتروني" name="email" type="email" autoComplete="email" required />
-      <PasswordInput label="كلمة المرور" name="password" autoComplete="current-password" required />
-      <Button
-        type="submit"
-        size="lg"
-        fullWidth
-        disabled={pending}
-        aria-busy={pending}
-      >
-        {pending ? <Spinner label="جارٍ تسجيل الدخول" /> : <LogIn />}
-        دخول
-      </Button>
       <Button
         type="button"
         variant="outline"
@@ -78,7 +66,18 @@ export function SignInForm({ googleEnabled = false }: { googleEnabled?: boolean 
         onClick={() => signIn('google', { callbackUrl: next })}
       >
         <KeyRound />
-        الدخول عبر Google
+        دخول المضيف عبر Google
+      </Button>
+      {!googleEnabled && (
+        <p className="field-message">
+          لم يتم إعداد Google OAuth بعد. يمكن للمضيف استخدام البريد وكلمة المرور مؤقتًا.
+        </p>
+      )}
+      <Input label="البريد الإلكتروني" name="email" type="email" autoComplete="email" required />
+      <PasswordInput label="كلمة المرور" name="password" autoComplete="current-password" required />
+      <Button type="submit" size="lg" fullWidth disabled={pending} aria-busy={pending}>
+        {pending ? <Spinner label="جارٍ تسجيل الدخول" /> : <LogIn />}
+        دخول بالبريد
       </Button>
     </form>
   );

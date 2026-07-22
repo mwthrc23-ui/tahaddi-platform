@@ -93,9 +93,15 @@ describe('LeaderboardItem', () => {
 describe('RoomCode', () => {
   it('ينسخ رمز الغرفة ويؤكد العملية', async () => {
     render(<RoomCode code="582914" />);
-    await userEvent.click(screen.getByRole('button', { name: /نسخ/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'نسخ الرمز' }));
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('582914');
     expect(await screen.findByText('تم النسخ')).toBeInTheDocument();
+  });
+  it('ينسخ رابط الدعوة الكامل', async () => {
+    render(<RoomCode code="582914" url="/join/582914" />);
+    await userEvent.click(screen.getByRole('button', { name: 'نسخ الدعوة' }));
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('http://localhost:3000/join/582914');
+    expect(await screen.findByText('نُسخ الرابط')).toBeInTheDocument();
   });
 });
 describe('ThemeToggle', () => {

@@ -13,14 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { demoNavigation, primaryNavigation } from '@/config/navigation';
 import { siteConfig } from '@/config/site';
 import { cn } from '@/lib/utils';
@@ -94,7 +87,7 @@ export function Header({ user = null }: { user?: HeaderUser | null }) {
           ))}
         </nav>
         <div className="header-actions">
-          <ButtonLink href="/#join" variant="outline" className="hide-mobile">
+          <ButtonLink href="/join" variant="outline" className="hide-mobile">
             انضم إلى مسابقة
           </ButtonLink>
           <ButtonLink href="/quizzes/new" className="hide-tablet">

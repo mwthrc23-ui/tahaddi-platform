@@ -12,9 +12,15 @@ function normalizeRoomCode(value: string) {
   return value.trim().replace(/\s+/g, '').toUpperCase();
 }
 
-export function JoinQuizForm() {
+export function JoinQuizForm({
+  initialCode = '',
+  inviteMode = false,
+}: {
+  initialCode?: string;
+  inviteMode?: boolean;
+}) {
   const router = useRouter();
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(() => normalizeRoomCode(initialCode));
   const [playerName, setPlayerName] = useState('');
   const [error, setError] = useState('');
   const [joining, startJoining] = useTransition();
@@ -45,6 +51,11 @@ export function JoinQuizForm() {
 
   return (
     <form className="join-box" id="join" onSubmit={handleSubmit} noValidate>
+      {inviteMode && (
+        <p className="join-notice" role="note">
+          دخول لاعب زائر. لا تحتاج إلى حساب؛ اكتب اسمك فقط ثم ادخل الغرفة.
+        </p>
+      )}
       <Input
         id="player-name"
         label="اسم اللاعب"

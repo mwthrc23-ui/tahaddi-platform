@@ -8,8 +8,8 @@ export default function SignInPage() {
 
   return (
     <AuthShell
-      title="تسجيل الدخول"
-      description="ادخل إلى لوحة تحدّي لإدارة مسابقاتك وحسابك."
+      title="دخول المضيفين"
+      description="سجّل دخولك كمضيف لإنشاء المسابقات وتشغيل الغرف. اللاعبون ينضمون كزوار عبر الرمز أو رابط الدعوة."
       footer={
         <>
           <Link href="/auth/recover">نسيت كلمة المرور؟</Link>
