@@ -29,7 +29,7 @@ const providers: NextAuthOptions['providers'] = [
       }
 
       const rateKey = `signin:${getClientIp(req)}:${parsed.data.email}`;
-      if (!checkRateLimit(rateKey)) {
+      if (!(await checkRateLimit(rateKey))) {
         return null;
       }
 
@@ -44,6 +44,7 @@ const providers: NextAuthOptions['providers'] = [
           passwordHash: true,
           role: true,
           status: true,
+          tokenVersion: true,
         },
       });
 
@@ -64,6 +65,7 @@ const providers: NextAuthOptions['providers'] = [
         image: user.image,
         role: user.role,
         status: user.status,
+        tokenVersion: user.tokenVersion,
       };
     },
   }),
@@ -104,6 +106,17 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = (user as { role?: string }).role ?? 'USER';
         token.status = (user as { status?: string }).status ?? 'ACTIVE';
+        const issuedTokenVersion = (user as { tokenVersion?: number }).tokenVersion;
+        token.tokenVersion =
+          issuedTokenVersion ??
+          (hasDatabaseUrl()
+            ? (
+                await getPrismaClient().user.findUnique({
+                  where: { id: user.id },
+                  select: { tokenVersion: true },
+                })
+              )?.tokenVersion
+            : undefined);
       }
       return token;
     },
@@ -112,6 +125,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = String(token.id ?? '');
         session.user.role = String(token.role ?? 'USER');
         session.user.status = String(token.status ?? 'ACTIVE');
+        session.user.tokenVersion =
+          typeof token.tokenVersion === 'number' ? token.tokenVersion : -1;
       }
       return session;
     },

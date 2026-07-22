@@ -22,6 +22,17 @@ type DraftQuestion = {
   points: number;
 };
 
+type QuizDraft = {
+  version: 1;
+  title: string;
+  description: string;
+  roundName: string;
+  presentationMode: 'SEQUENTIAL' | 'RANDOM';
+  playerLimit: number;
+  questions: DraftQuestion[];
+};
+
+const storageKey = 'tahaddi:quiz-builder:draft:v1';
 const availableQuestions: DraftQuestion[] = [
   {
     id: 'heritage',
@@ -46,101 +57,134 @@ const availableQuestions: DraftQuestion[] = [
     points: 1000,
   },
 ];
+const initialDraft: QuizDraft = {
+  version: 1,
+  title: 'مسابقة الثقافة العامة',
+  description: 'مسودة قصيرة لجولة تفاعلية من أسئلة متنوعة.',
+  roundName: 'الجولة الأولى',
+  presentationMode: 'SEQUENTIAL',
+  playerLimit: 50,
+  questions: availableQuestions.slice(0, 2),
+};
 
-const draftStorageKey = 'tahaddi-quiz-draft';
+function isDraftQuestion(value: unknown): value is DraftQuestion {
+  if (!value || typeof value !== 'object') return false;
+  const question = value as Partial<DraftQuestion>;
+  return (
+    typeof question.id === 'string' &&
+    typeof question.prompt === 'string' &&
+    typeof question.category === 'string' &&
+    typeof question.duration === 'number' &&
+    typeof question.points === 'number'
+  );
+}
+
+export function parseQuizDraft(value: string): QuizDraft | null {
+  try {
+    const draft = JSON.parse(value) as Partial<QuizDraft>;
+    if (
+      draft.version !== 1 ||
+      typeof draft.title !== 'string' ||
+      typeof draft.description !== 'string' ||
+      typeof draft.roundName !== 'string' ||
+      !['SEQUENTIAL', 'RANDOM'].includes(draft.presentationMode || '') ||
+      typeof draft.playerLimit !== 'number' ||
+      !Array.isArray(draft.questions) ||
+      !draft.questions.every(isDraftQuestion)
+    ) {
+      return null;
+    }
+    return draft as QuizDraft;
+  } catch {
+    return null;
+  }
+}
 
 export function QuizBuilder() {
-  const [title, setTitle] = useState('مسابقة الثقافة العامة');
-  const [description, setDescription] = useState('مسودة قصيرة لجولة تفاعلية من أسئلة متنوعة.');
-  const [roundName, setRoundName] = useState('الجولة الأولى');
-  const [questions, setQuestions] = useState<DraftQuestion[]>(availableQuestions.slice(0, 2));
+  const [draft, setDraft] = useState<QuizDraft>(initialDraft);
+  const [storageReady, setStorageReady] = useState(false);
   const [notice, setNotice] = useState('');
+  const [saveFailed, setSaveFailed] = useState(false);
 
   useEffect(() => {
-    const restoreTimer = window.setTimeout(() => {
-      try {
-        const saved = localStorage.getItem(draftStorageKey);
-        if (!saved) return;
-
-        const draft = JSON.parse(saved) as {
-          title?: unknown;
-          description?: unknown;
-          roundName?: unknown;
-          questions?: unknown;
-        };
-        if (
-          typeof draft.title !== 'string' ||
-          typeof draft.description !== 'string' ||
-          typeof draft.roundName !== 'string' ||
-          !Array.isArray(draft.questions)
-        ) {
-          return;
-        }
-
-        setTitle(draft.title);
-        setDescription(draft.description);
-        setRoundName(draft.roundName);
-        setQuestions(draft.questions as DraftQuestion[]);
-        setNotice('استُعيدت آخر مسودة محفوظة على هذا الجهاز.');
-      } catch {
-        localStorage.removeItem(draftStorageKey);
+    const timeout = window.setTimeout(() => {
+      const storedDraft = parseQuizDraft(localStorage.getItem(storageKey) || '');
+      if (storedDraft) {
+        setDraft(storedDraft);
+        setNotice('استُعيدت المسودة المحلية المحفوظة.');
       }
+      setStorageReady(true);
     }, 0);
-
-    return () => window.clearTimeout(restoreTimer);
+    return () => window.clearTimeout(timeout);
   }, []);
 
+  useEffect(() => {
+    if (!storageReady) return;
+    const timeout = window.setTimeout(() => {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(draft));
+        setSaveFailed(false);
+      } catch {
+        setSaveFailed(true);
+      }
+    }, 500);
+    return () => window.clearTimeout(timeout);
+  }, [draft, storageReady]);
+
   const totalDuration = useMemo(
-    () => questions.reduce((sum, question) => sum + question.duration, 0),
-    [questions],
+    () => draft.questions.reduce((sum, question) => sum + question.duration, 0),
+    [draft.questions],
   );
   const totalPoints = useMemo(
-    () => questions.reduce((sum, question) => sum + question.points, 0),
-    [questions],
+    () => draft.questions.reduce((sum, question) => sum + question.points, 0),
+    [draft.questions],
   );
 
+  const updateDraft = <Key extends keyof QuizDraft>(key: Key, value: QuizDraft[Key]) => {
+    setDraft((current) => ({ ...current, [key]: value }));
+  };
   const addQuestion = (question: DraftQuestion) => {
-    setQuestions((current) => {
-      if (current.some((existing) => existing.id === question.id)) {
-        setNotice(`السؤال «${question.category}» موجود بالفعل في المسودة.`);
-        return current;
-      }
-      setNotice(`أُضيف سؤال «${question.category}» إلى المسودة محليًا.`);
-      return [...current, question];
-    });
+    if (draft.questions.some((existing) => existing.id === question.id)) {
+      setNotice(`السؤال «${question.category}» موجود بالفعل في المسودة.`);
+      return;
+    }
+    updateDraft('questions', [...draft.questions, question]);
+    setNotice(`أُضيف سؤال «${question.category}» إلى المسودة محليًا.`);
   };
   const removeQuestion = (id: string) => {
-    setQuestions((current) => current.filter((question) => question.id !== id));
+    updateDraft(
+      'questions',
+      draft.questions.filter((question) => question.id !== id),
+    );
     setNotice('أُزيل السؤال من المسودة المحلية.');
   };
   const moveQuestion = (index: number, direction: -1 | 1) => {
     const nextIndex = index + direction;
-    if (nextIndex < 0 || nextIndex >= questions.length) return;
-    setQuestions((current) => {
-      const next = [...current];
-      [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
-      return next;
-    });
+    if (nextIndex < 0 || nextIndex >= draft.questions.length) return;
+    const questions = [...draft.questions];
+    [questions[index], questions[nextIndex]] = [questions[nextIndex], questions[index]];
+    updateDraft('questions', questions);
   };
   const updateQuestion = (id: string, field: 'duration' | 'points', value: number) => {
-    setQuestions((current) =>
-      current.map((question) => (question.id === id ? { ...question, [field]: value } : question)),
+    updateDraft(
+      'questions',
+      draft.questions.map((question) =>
+        question.id === id ? { ...question, [field]: value } : question,
+      ),
     );
   };
-
-  const selected = new Set(questions.map((question) => question.id));
-
   const saveDraft = () => {
     try {
-      localStorage.setItem(
-        draftStorageKey,
-        JSON.stringify({ title, description, roundName, questions }),
-      );
-      setNotice('حُفظت المسودة على هذا الجهاز.');
+      localStorage.setItem(storageKey, JSON.stringify(draft));
+      setSaveFailed(false);
+      setNotice('حُفظت المسودة محليًا على هذا الجهاز.');
     } catch {
-      setNotice('تعذّر حفظ المسودة على هذا الجهاز.');
+      setSaveFailed(true);
+      setNotice('تعذّر حفظ المسودة محليًا. تحقق من مساحة التخزين في المتصفح.');
     }
   };
+
+  const selected = new Set(draft.questions.map((question) => question.id));
 
   return (
     <div className="quiz-builder" dir="rtl">
@@ -161,7 +205,7 @@ export function QuizBuilder() {
           <Badge>مسودة محلية</Badge>
         </div>
         {notice && (
-          <p className="text-success" role="status">
+          <p className={saveFailed ? 'text-danger' : 'text-success'} role="status">
             {notice}
           </p>
         )}
@@ -175,25 +219,42 @@ export function QuizBuilder() {
           <div className="form-grid">
             <Input
               label="عنوان المسابقة"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
+              value={draft.title}
+              onChange={(event) => updateDraft('title', event.target.value)}
             />
             <Input
               label="اسم الجولة"
-              value={roundName}
-              onChange={(event) => setRoundName(event.target.value)}
+              value={draft.roundName}
+              onChange={(event) => updateDraft('roundName', event.target.value)}
             />
             <Textarea
               className="quiz-builder-wide"
               label="وصف مختصر"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
+              value={draft.description}
+              onChange={(event) => updateDraft('description', event.target.value)}
             />
-            <Select label="طريقة عرض الأسئلة" defaultValue="SEQUENTIAL">
+            <Select
+              label="طريقة عرض الأسئلة"
+              value={draft.presentationMode}
+              onChange={(event) =>
+                updateDraft('presentationMode', event.target.value as QuizDraft['presentationMode'])
+              }
+            >
               <option value="SEQUENTIAL">بالترتيب</option>
               <option value="RANDOM">ترتيب عشوائي</option>
             </Select>
-            <NumberInput label="حد اللاعبين" defaultValue="50" min="2" max="500" />
+            <NumberInput
+              label="حد اللاعبين"
+              value={draft.playerLimit}
+              min="2"
+              max="500"
+              onChange={(event) =>
+                updateDraft(
+                  'playerLimit',
+                  Math.min(500, Math.max(2, Number(event.target.value) || 2)),
+                )
+              }
+            />
           </div>
         </Card>
 
@@ -203,7 +264,7 @@ export function QuizBuilder() {
           </h2>
           <div className="card-grid three quiz-builder-stats">
             <div>
-              <strong>{questions.length}</strong>
+              <strong>{draft.questions.length}</strong>
               <span>أسئلة</span>
             </div>
             <div>
@@ -216,7 +277,7 @@ export function QuizBuilder() {
             </div>
           </div>
           <p className="muted">
-            {title || 'مسابقة بلا عنوان'} · {roundName || 'جولة بلا اسم'}
+            {draft.title || 'مسابقة بلا عنوان'} · {draft.roundName || 'جولة بلا اسم'}
           </p>
           <p className="muted">
             تُحفظ المسودة على هذا الجهاز فقط؛ لا توجد مشاركة أو نشر دائم حتى الآن.
@@ -228,15 +289,15 @@ export function QuizBuilder() {
         <Card>
           <div className="inline-between">
             <h2>
-              <GripVertical /> أسئلة {roundName || 'الجولة'}
+              <GripVertical /> أسئلة {draft.roundName || 'الجولة'}
             </h2>
-            <Badge>{questions.length} مختارة</Badge>
+            <Badge>{draft.questions.length} مختارة</Badge>
           </div>
-          {questions.length === 0 ? (
+          {draft.questions.length === 0 ? (
             <p className="muted">أضف سؤالًا من القائمة المجاورة لتكوين المسودة.</p>
           ) : (
             <ol className="quiz-builder-list">
-              {questions.map((question, index) => (
+              {draft.questions.map((question, index) => (
                 <li key={question.id} className="list-item">
                   <div>
                     <strong>
@@ -280,7 +341,7 @@ export function QuizBuilder() {
                       variant="ghost"
                       size="icon"
                       aria-label="نقل السؤال لأسفل"
-                      disabled={index === questions.length - 1}
+                      disabled={index === draft.questions.length - 1}
                       onClick={() => moveQuestion(index, 1)}
                     >
                       <ArrowDown />

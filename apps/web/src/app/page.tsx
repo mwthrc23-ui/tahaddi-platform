@@ -18,7 +18,8 @@ import {
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, type FormEvent } from 'react';
 import { SiteLayout } from '@/components/layout';
 import { Reveal } from '@/components/motion/reveal';
 import { LeaderboardItem, LiveStatus, QuizTimer } from '@/components/quiz';
@@ -36,8 +37,21 @@ const gameIcons = [Timer, CheckCircle2, ListOrdered];
 const categoryIcons = [Landmark, FlaskConical, Medal, Cpu];
 
 export default function HomePage() {
+  const router = useRouter();
   const [code, setCode] = useState('');
-  const [joinNotice, setJoinNotice] = useState('');
+  const [joinError, setJoinError] = useState('');
+
+  const joinRoom = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalizedCode = code.replace(/\D/g, '');
+    if (normalizedCode.length !== 6) {
+      setJoinError('أدخل رمز غرفة صحيحًا من 6 أرقام.');
+      return;
+    }
+
+    setJoinError('');
+    router.push(`/demo/waiting?room=${normalizedCode}`);
+  };
 
   return (
     <SiteLayout>
@@ -57,38 +71,29 @@ export default function HomePage() {
             <p>
               انضم إلى جولات مباشرة، نافس أصدقاءك، واصنع لحظات لا تُنسى في تجربة عربية سريعة وواضحة.
             </p>
-            <form
-              className="join-box"
-              id="join"
-              onSubmit={(event) => {
-                event.preventDefault();
-                setJoinNotice(
-                  code.trim()
-                    ? 'الانضمام المباشر قيد التجهيز. يمكنك الآن معاينة شاشة انتظار اللاعب.'
-                    : 'أدخل رمز الغرفة أولًا، أو افتح المعاينة التجريبية مباشرةً.',
-                );
-              }}
-            >
+            <form className="join-box" id="join" onSubmit={joinRoom} noValidate>
               <Input
+                id="room-code"
                 label="رمز الغرفة"
                 className="join-field"
                 placeholder="مثال: 582 914"
                 value={code}
-                onChange={(event) => setCode(event.target.value)}
+                onChange={(event) => {
+                  setCode(event.target.value);
+                  if (joinError) setJoinError('');
+                }}
                 inputMode="numeric"
+                autoComplete="off"
+                maxLength={7}
+                error={joinError || undefined}
               />
               <Button size="lg" type="submit">
                 انضم الآن
                 <ArrowLeft />
               </Button>
             </form>
-            {joinNotice && (
-              <p className="join-notice" role="status">
-                {joinNotice} <Link href="/demo/waiting">فتح المعاينة</Link>
-              </p>
-            )}
             <div className="hero-actions">
-              <ButtonLink href="/quizzes" variant="gold">
+              <ButtonLink href="/quizzes/new" variant="gold">
                 <Trophy />
                 أنشئ مسابقة
               </ButtonLink>
@@ -134,10 +139,10 @@ export default function HomePage() {
               <span className="eyebrow">الآن على تحدّي</span>
               <h2>مسابقات مباشرة</h2>
             </div>
-            <ButtonLink href="/quizzes" variant="ghost">
-              افتح المنشئ
-              <ArrowLeft />
-            </ButtonLink>
+              <ButtonLink href="/quizzes" variant="ghost">
+                عرض الكل
+                <ArrowLeft />
+              </ButtonLink>
           </div>
           <div className="card-grid three">
             {competitions.map((item) => (
@@ -146,6 +151,7 @@ export default function HomePage() {
                 title={item.title}
                 description={`${item.category} · ${item.questions} سؤالًا`}
                 meta={`${item.players} لاعبًا`}
+                href={`/demo/waiting?quiz=${item.id}`}
               />
             ))}
           </div>
@@ -170,6 +176,7 @@ export default function HomePage() {
                   description={item.description}
                   icon={<GameIcon aria-hidden="true" />}
                   meta="العب الآن"
+                  href={`/demo/question?game=${index + 1}`}
                 />
               );
             })}
@@ -224,7 +231,7 @@ export default function HomePage() {
             <span>مستعد لصناعة التحدّي؟</span>
             <h2>حوّل فكرتك إلى مسابقة يعيشها الجميع.</h2>
           </div>
-          <ButtonLink href="/quizzes" variant="gold" size="lg">
+          <ButtonLink href="/quizzes/new" variant="gold" size="lg">
             أنشئ مسابقتك
             <ArrowLeft />
           </ButtonLink>

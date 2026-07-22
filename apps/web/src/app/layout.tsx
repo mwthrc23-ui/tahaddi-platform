@@ -1,6 +1,7 @@
 import { APP_CONFIG } from '@tahaddi/config';
 import type { Metadata } from 'next';
 import { Tajawal } from 'next/font/google';
+import Script from 'next/script';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
@@ -56,11 +57,9 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('tahaddi-theme')||'dark';var d=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=d;document.documentElement.style.colorScheme=d}catch(e){}})()`,
-          }}
-        />
+        <Script id="theme-bootstrap" strategy="beforeInteractive">
+          {`(function(){try{var t=localStorage.getItem('tahaddi-theme')||'dark';var d=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.dataset.theme=d;document.documentElement.style.colorScheme=d}catch(e){}})()`}
+        </Script>
       </head>
       <body className={arabicFont.variable}>
         <ThemeProvider>{children}</ThemeProvider>

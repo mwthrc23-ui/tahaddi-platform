@@ -1027,16 +1027,19 @@ input[type='range'] {
   flex-direction: column;
   min-inline-size: 9rem;
 }
-.dropdown .floating-panel button {
+.dropdown .floating-panel button,
+.dropdown .floating-panel a {
   border: 0;
   background: transparent;
   padding: 0.6rem 0.8rem;
   display: flex;
+  align-items: center;
   gap: 0.5rem;
   cursor: pointer;
   border-radius: 0.5rem;
 }
-.dropdown .floating-panel button:hover {
+.dropdown .floating-panel button:hover,
+.dropdown .floating-panel a:hover {
   background: var(--muted);
 }
 .tooltip {

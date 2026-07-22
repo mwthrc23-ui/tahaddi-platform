@@ -1,10 +1,11 @@
 'use server';
 
-import { randomBytes, createHash } from 'node:crypto';
 import { headers } from 'next/headers';
+import { canDeliverPasswordReset, sendPasswordResetEmail } from '@/lib/auth/email';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { checkRateLimit } from '@/lib/auth/rate-limit';
 import { hashPassword } from '@/lib/auth/password';
+import { createRecoveryToken, hashRecoveryToken } from '@/lib/auth/recovery-token';
 import { recoverySchema, signUpSchema } from '@/lib/auth/validation';
 
 export type AuthActionState = {
@@ -23,7 +24,9 @@ async function getRequestKey(scope: string, email: string) {
   return `${scope}:${forwardedFor}:${email}`;
 }
 
-function fieldErrors(error: ReturnType<typeof signUpSchema.safeParse> | ReturnType<typeof recoverySchema.safeParse>) {
+function fieldErrors(
+  error: ReturnType<typeof signUpSchema.safeParse> | ReturnType<typeof recoverySchema.safeParse>,
+) {
   if (error.success) {
     return undefined;
   }
@@ -34,7 +37,10 @@ function fieldErrors(error: ReturnType<typeof signUpSchema.safeParse> | ReturnTy
   );
 }
 
-export async function registerWithPassword(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+export async function registerWithPassword(
+  _previousState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
   const parsed = signUpSchema.safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
@@ -49,7 +55,10 @@ export async function registerWithPassword(_previousState: AuthActionState, form
     };
   }
 
-  if (!hasDatabaseUrl() || !checkRateLimit(await getRequestKey('signup', parsed.data.email), 5)) {
+  if (
+    !hasDatabaseUrl() ||
+    !(await checkRateLimit(await getRequestKey('signup', parsed.data.email), 5))
+  ) {
     return { status: 'success', message: genericRegistrationMessage };
   }
 
@@ -96,7 +105,11 @@ export async function requestPasswordRecovery(
     };
   }
 
-  if (!hasDatabaseUrl() || !checkRateLimit(await getRequestKey('recover', parsed.data.email), 4)) {
+  if (!hasDatabaseUrl() || !canDeliverPasswordReset()) {
+    return { status: 'error', message: 'خدمة استعادة الحساب غير متاحة حاليًا. حاول لاحقًا.' };
+  }
+
+  if (!(await checkRateLimit(await getRequestKey('recover', parsed.data.email), 4))) {
     return { status: 'success', message: genericRecoveryMessage };
   }
 
@@ -107,8 +120,9 @@ export async function requestPasswordRecovery(
   });
 
   if (user) {
-    const rawToken = randomBytes(32).toString('base64url');
-    const token = createHash('sha256').update(rawToken).digest('hex');
+    const rawToken = createRecoveryToken();
+    const token = hashRecoveryToken(rawToken);
+    await prisma.verificationToken.deleteMany({ where: { identifier: parsed.data.email } });
     await prisma.verificationToken.create({
       data: {
         identifier: parsed.data.email,
@@ -116,6 +130,13 @@ export async function requestPasswordRecovery(
         expires: new Date(Date.now() + 30 * 60 * 1000),
       },
     });
+
+    try {
+      await sendPasswordResetEmail(parsed.data.email, rawToken);
+    } catch (error) {
+      await prisma.verificationToken.deleteMany({ where: { token } });
+      console.error('[auth:password-reset] Delivery failed.', error);
+    }
   }
 
   return { status: 'success', message: genericRecoveryMessage };
