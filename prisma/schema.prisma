@@ -37,25 +37,32 @@ enum QuestionDifficulty {
   HARD
 }
 
+enum QuizStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
 model User {
-  id            String      @id @default(cuid())
-  name          String?     @db.VarChar(120)
-  email         String?     @unique @db.VarChar(320)
+  id            String     @id @default(cuid())
+  name          String?    @db.VarChar(120)
+  email         String?    @unique @db.VarChar(320)
   emailVerified DateTime?
   image         String?
   passwordHash  String?
-  role          UserRole    @default(USER)
-  status        UserStatus  @default(ACTIVE)
-  tokenVersion  Int         @default(0)
+  role          UserRole   @default(USER)
+  status        UserStatus @default(ACTIVE)
+  tokenVersion  Int        @default(0)
   lastLoginAt   DateTime?
   suspendedAt   DateTime?
   deletedAt     DateTime?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
   accounts      Account[]
   sessions      Session[]
   profile       Profile?
   questions     Question[]
+  quizzes       Quiz[]
 
   @@index([role])
   @@index([status])
@@ -79,10 +86,41 @@ model Question {
   updatedAt   DateTime           @updatedAt
   owner       User               @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   options     QuestionOption[]
+  quizzes     QuizQuestion[]
 
   @@index([ownerId, status])
   @@index([ownerId, updatedAt])
   @@index([category, status])
+}
+
+model Quiz {
+  id          String         @id @default(cuid())
+  title       String         @db.VarChar(160)
+  description String?        @db.VarChar(1000)
+  ownerId     String
+  roomCode    String         @unique @db.VarChar(8)
+  isPublic    Boolean        @default(false)
+  status      QuizStatus     @default(DRAFT)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  owner       User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  questions   QuizQuestion[]
+
+  @@index([ownerId, status])
+  @@index([isPublic, status])
+  @@index([createdAt])
+}
+
+model QuizQuestion {
+  quizId     String
+  questionId String
+  position   Int
+  quiz       Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@id([quizId, questionId])
+  @@unique([quizId, position])
+  @@index([questionId])
 }
 
 model QuestionOption {

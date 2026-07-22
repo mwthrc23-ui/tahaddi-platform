@@ -4,7 +4,7 @@ import { createPrismaClient } from '@tahaddi/database';
 config({ path: '.env', quiet: true });
 config({ path: '.env.local', override: true, quiet: true });
 
-const db = createPrismaClient(process.env.DATABASE_URL ?? '');
+const db = createPrismaClient(process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? '');
 
 type SeedQuestion = {
   prompt: string;
@@ -356,8 +356,9 @@ async function main() {
     },
   });
 
+  const seededQuestionIds: string[] = [];
   for (const q of questions) {
-    await db.question.create({
+    const question = await db.question.create({
       data: {
         ownerId: owner.id,
         type: q.type,
@@ -378,9 +379,40 @@ async function main() {
         },
       },
     });
+    seededQuestionIds.push(question.id);
   }
 
+  const playwrightRoomCode = 'A7K9PQ';
+  const quizQuestions = seededQuestionIds.slice(0, 3).map((questionId, position) => ({
+    questionId,
+    position,
+  }));
+  await db.quiz.upsert({
+    where: { roomCode: playwrightRoomCode },
+    update: {
+      title: 'مسابقة Playwright العامة',
+      description: 'بيانات ثابتة لاختبار الانضمام الحقيقي برمز الغرفة.',
+      ownerId: owner.id,
+      isPublic: true,
+      status: 'ACTIVE',
+      questions: {
+        deleteMany: {},
+        create: quizQuestions,
+      },
+    },
+    create: {
+      title: 'مسابقة Playwright العامة',
+      description: 'بيانات ثابتة لاختبار الانضمام الحقيقي برمز الغرفة.',
+      ownerId: owner.id,
+      roomCode: playwrightRoomCode,
+      isPublic: true,
+      status: 'ACTIVE',
+      questions: { create: quizQuestions },
+    },
+  });
+
   console.info(`✓ تمت إضافة ${questions.length} سؤالًا إلى بنك الأسئلة.`);
+  console.info(`✓ تمت إضافة مسابقة اختبار نشطة بالرمز ${playwrightRoomCode}.`);
 }
 
 main()
