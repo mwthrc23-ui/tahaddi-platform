@@ -5,7 +5,10 @@
   "main": "dist/client.js",
   "types": "dist/client.d.ts",
   "scripts": {
+    "generate": "prisma generate --config ../../prisma.config.ts",
+    "prebuild": "pnpm run generate",
     "build": "tsc -p tsconfig.json",
+    "pretypecheck": "pnpm run generate",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
