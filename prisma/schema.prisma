@@ -43,26 +43,38 @@ enum QuizStatus {
   ARCHIVED
 }
 
+enum LiveSessionStatus {
+  WAITING
+  ACTIVE
+  FINISHED
+}
+
+enum LiveParticipantStatus {
+  CONNECTED
+  DISCONNECTED
+}
+
 model User {
-  id            String     @id @default(cuid())
-  name          String?    @db.VarChar(120)
-  email         String?    @unique @db.VarChar(320)
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  role          UserRole   @default(USER)
-  status        UserStatus @default(ACTIVE)
-  tokenVersion  Int        @default(0)
-  lastLoginAt   DateTime?
-  suspendedAt   DateTime?
-  deletedAt     DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  profile       Profile?
-  questions     Question[]
-  quizzes       Quiz[]
+  id                 String        @id @default(cuid())
+  name               String?       @db.VarChar(120)
+  email              String?       @unique @db.VarChar(320)
+  emailVerified      DateTime?
+  image              String?
+  passwordHash       String?
+  role               UserRole      @default(USER)
+  status             UserStatus    @default(ACTIVE)
+  tokenVersion       Int           @default(0)
+  lastLoginAt        DateTime?
+  suspendedAt        DateTime?
+  deletedAt          DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  accounts           Account[]
+  sessions           Session[]
+  profile            Profile?
+  questions          Question[]
+  quizzes            Quiz[]
+  hostedLiveSessions LiveSession[] @relation("LiveSessionHost")
 
   @@index([role])
   @@index([status])
@@ -87,6 +99,7 @@ model Question {
   owner       User               @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   options     QuestionOption[]
   quizzes     QuizQuestion[]
+  liveAnswers LiveAnswer[]
 
   @@index([ownerId, status])
   @@index([ownerId, updatedAt])
@@ -94,17 +107,18 @@ model Question {
 }
 
 model Quiz {
-  id          String         @id @default(cuid())
-  title       String         @db.VarChar(160)
-  description String?        @db.VarChar(1000)
-  ownerId     String
-  roomCode    String         @unique @db.VarChar(8)
-  isPublic    Boolean        @default(false)
-  status      QuizStatus     @default(DRAFT)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  owner       User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  questions   QuizQuestion[]
+  id           String         @id @default(cuid())
+  title        String         @db.VarChar(160)
+  description  String?        @db.VarChar(1000)
+  ownerId      String
+  roomCode     String         @unique @db.VarChar(8)
+  isPublic     Boolean        @default(false)
+  status       QuizStatus     @default(DRAFT)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  owner        User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  questions    QuizQuestion[]
+  liveSessions LiveSession[]
 
   @@index([ownerId, status])
   @@index([isPublic, status])
@@ -124,14 +138,71 @@ model QuizQuestion {
 }
 
 model QuestionOption {
-  id         String   @id @default(cuid())
-  questionId String
-  position   Int
-  text       String   @db.VarChar(500)
-  isCorrect  Boolean  @default(false)
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id          String       @id @default(cuid())
+  questionId  String
+  position    Int
+  text        String       @db.VarChar(500)
+  isCorrect   Boolean      @default(false)
+  question    Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  liveAnswers LiveAnswer[]
 
   @@unique([questionId, position])
+}
+
+model LiveSession {
+  id                      String            @id @default(cuid())
+  quizId                  String
+  hostId                  String
+  roomCode                String            @db.VarChar(8)
+  status                  LiveSessionStatus @default(WAITING)
+  currentQuestionPosition Int               @default(0)
+  startedAt               DateTime?
+  endedAt                 DateTime?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  quiz                    Quiz              @relation(fields: [quizId], references: [id], onDelete: Restrict)
+  host                    User              @relation("LiveSessionHost", fields: [hostId], references: [id], onDelete: Restrict)
+  participants            LiveParticipant[]
+  answers                 LiveAnswer[]
+
+  @@index([quizId, status])
+  @@index([hostId, createdAt])
+  @@index([roomCode, status])
+}
+
+model LiveParticipant {
+  id           String                @id @default(cuid())
+  sessionId    String
+  displayName  String                @db.VarChar(80)
+  score        Int                   @default(0)
+  correctCount Int                   @default(0)
+  status       LiveParticipantStatus @default(CONNECTED)
+  joinedAt     DateTime              @default(now())
+  session      LiveSession           @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  answers      LiveAnswer[]
+
+  @@unique([sessionId, displayName])
+  @@index([sessionId, score])
+}
+
+model LiveAnswer {
+  id            String          @id @default(cuid())
+  sessionId     String
+  participantId String
+  questionId    String
+  optionId      String
+  isCorrect     Boolean
+  earnedPoints  Int             @default(0)
+  receivedAt    DateTime        @default(now())
+  session       LiveSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  participant   LiveParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  question      Question        @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  option        QuestionOption  @relation(fields: [optionId], references: [id], onDelete: Restrict)
+
+  @@unique([participantId, questionId])
+  @@index([sessionId, receivedAt])
+  @@index([questionId])
+  @@index([optionId])
 }
 
 model Account {

@@ -195,7 +195,7 @@ function HomePageContent({
                   title={quiz.title}
                   description={quiz.description || 'مسابقة عامة نشطة وجاهزة للانضمام.'}
                   meta={`${quiz.questionCount.toLocaleString('ar-SA')} سؤال · ${quiz.ownerName || 'مضيف تحدّي'}`}
-                  href={`/demo/waiting?quizId=${encodeURIComponent(quiz.id)}&code=${encodeURIComponent(quiz.roomCode)}`}
+                  href="/#join"
                 />
               ))}
             </div>

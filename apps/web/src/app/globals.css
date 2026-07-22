@@ -159,7 +159,9 @@ summary:focus-visible {
 }
 .button-primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--primary) 88%, white);
-  box-shadow: 0 0 24px color-mix(in srgb, var(--primary) 40%, transparent), var(--shadow-sm);
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--primary) 40%, transparent),
+    var(--shadow-sm);
 }
 .button-secondary {
   background: var(--secondary);
@@ -190,7 +192,9 @@ summary:focus-visible {
 }
 .button-danger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--danger) 88%, white);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--danger) 35%, transparent), var(--shadow-sm);
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--danger) 35%, transparent),
+    var(--shadow-sm);
 }
 .button-success {
   background: var(--success);
@@ -198,7 +202,9 @@ summary:focus-visible {
 }
 .button-success:hover:not(:disabled) {
   background: color-mix(in srgb, var(--success) 88%, white);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--success) 35%, transparent), var(--shadow-sm);
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--success) 35%, transparent),
+    var(--shadow-sm);
 }
 .button-gold {
   background: var(--gold);
@@ -206,7 +212,9 @@ summary:focus-visible {
 }
 .button-gold:hover:not(:disabled) {
   background: color-mix(in srgb, var(--gold) 88%, white);
-  box-shadow: 0 0 24px color-mix(in srgb, var(--gold) 45%, transparent), var(--shadow-sm);
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--gold) 45%, transparent),
+    var(--shadow-sm);
 }
 .button-link {
   background: transparent;
@@ -2133,6 +2141,9 @@ tr:last-child td {
   gap: 1rem;
   padding: 1rem;
 }
+.host-stage > section {
+  grid-column: 1 / -1;
+}
 .host-stage aside .player-join {
   box-shadow: none;
 }
@@ -2164,6 +2175,28 @@ tr:last-child td {
 .broadcast-layout .answer-option {
   min-block-size: clamp(5rem, 9vh, 8rem);
   font-size: clamp(1.2rem, 2vw, 2.2rem);
+}
+.broadcast-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 28rem);
+  gap: clamp(1rem, 3vw, 2.5rem);
+  align-items: start;
+}
+.broadcast-stage aside {
+  display: grid;
+  gap: 1rem;
+}
+.broadcast-stage .question-card h2,
+.live-play .question-card h2 {
+  font-size: clamp(1.75rem, 4vw, 3.5rem);
+  line-height: 1.35;
+}
+.live-play {
+  display: grid;
+  gap: 1.5rem;
+}
+.live-play .answers-list form {
+  display: contents;
 }
 
 @media (max-width: 1024px) {
@@ -2218,6 +2251,9 @@ tr:last-child td {
     grid-template-columns: repeat(4, 1fr);
   }
   .host-stage {
+    grid-template-columns: 1fr;
+  }
+  .broadcast-stage {
     grid-template-columns: 1fr;
   }
   .host-stage aside {
