@@ -48,6 +48,12 @@ const arenaFlow = [
   { label: 'السؤال يظهر للجميع', value: 'ترتيب فوري' },
 ];
 
+const identitySignals = [
+  { label: 'SYSTEM', value: 'Quantum UI', icon: <Sparkles aria-hidden="true" /> },
+  { label: 'API', value: 'رمز حي', icon: <Zap aria-hidden="true" /> },
+  { label: 'LIVE', value: 'لوحة مباشرة', icon: <Radio aria-hidden="true" /> },
+];
+
 const hostSignals = [
   { label: 'بنك أسئلة', value: 'جاهز' },
   { label: 'دعوة', value: 'رابط واحد' },
@@ -91,11 +97,20 @@ function HomePageContent({
               <Sparkles />
               منصة تحدّي المباشرة
             </span>
-            <h1>ادخل الغرفة. ارفع النبض.</h1>
+            <h1>لوحة تحدّي بنمط نظام تشغيل كمومي.</h1>
             <p>
-              تحدّي يحوّل المسابقة إلى بث حي: المضيف يملك الشاشة، واللاعبون يدخلون كزوار
-              عبر دعوة واحدة، والنتيجة تتحرك مع كل إجابة.
+              واجهة Cyber داكنة بخطوط قطرية، زجاج أسود، مؤشرات LIVE/API، وأزرار ذهبية
+              واضحة تجعل إدارة المسابقة تبدو مثل مختبر تفاعلي مباشر.
             </p>
+            <div className="identity-signals" aria-label="ملامح الهوية البصرية">
+              {identitySignals.map((item) => (
+                <div key={item.label}>
+                  <span aria-hidden="true">{item.icon}</span>
+                  <strong>{item.value}</strong>
+                  <small>{item.label}</small>
+                </div>
+              ))}
+            </div>
             <div className="hero-command" aria-label="دخول سريع إلى غرفة تحدّي">
               <div className="hero-command-header">
                 <span>دخول الزائر</span>
@@ -270,10 +285,26 @@ function HomePageContent({
             <h2>الصدارة تصبح مشهدًا</h2>
             <p>كل إجابة صحيحة تتحول إلى حركة واضحة أمام اللاعبين والمضيف.</p>
           </div>
-          <EmptyState
-            title="لا توجد بيانات بعد"
-            description="ستظهر أفضل اللاعبين هنا بعد انطلاق أولى المسابقات."
-          />
+          <div className="leaderboard-preview" aria-label="معاينة لوحة الشرف قبل بدء الجولة">
+            <div className="leaderboard-preview-top">
+              <span>جاهزة للبث</span>
+              <strong>لوحة الشرف</strong>
+            </div>
+            <ol>
+              <li>
+                <span>المركز الأول</span>
+                <strong>ينتظر أول إجابة</strong>
+              </li>
+              <li>
+                <span>المركز الثاني</span>
+                <strong>يتحرك مع الجولة</strong>
+              </li>
+              <li>
+                <span>المركز الثالث</span>
+                <strong>يظهر على الشاشة</strong>
+              </li>
+            </ol>
+          </div>
         </Reveal>
       </section>
 

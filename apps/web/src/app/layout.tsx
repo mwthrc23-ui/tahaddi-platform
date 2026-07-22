@@ -1,13 +1,13 @@
 import { APP_CONFIG } from '@tahaddi/config';
 import type { Metadata } from 'next';
-import { Tajawal } from 'next/font/google';
+import { Readex_Pro } from 'next/font/google';
 import Script from 'next/script';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
-const arabicFont = Tajawal({
+const arabicFont = Readex_Pro({
   subsets: ['arabic', 'latin'],
-  weight: ['400', '700', '800'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
   variable: '--font-arabic',
 });

@@ -123,7 +123,7 @@ summary:focus-visible {
 .button {
   min-block-size: 2.75rem;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-radius: 0.95rem;
   padding-inline: 1.15rem;
   display: inline-flex;
   align-items: center;
@@ -154,8 +154,9 @@ summary:focus-visible {
   block-size: 1.1em;
 }
 .button-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--info));
   color: var(--primary-foreground);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--primary) 28%, transparent);
 }
 .button-primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--primary) 88%, white);
@@ -171,8 +172,8 @@ summary:focus-visible {
   background: color-mix(in srgb, var(--secondary) 90%, var(--foreground));
 }
 .button-outline {
-  background: transparent;
-  border-color: var(--border);
+  background: rgb(0 0 0 / 0.36);
+  border-color: color-mix(in srgb, var(--foreground) 24%, transparent);
 }
 .button-outline:hover:not(:disabled) {
   border-color: var(--primary);
@@ -184,7 +185,7 @@ summary:focus-visible {
   color: var(--foreground);
 }
 .button-ghost:hover {
-  background: var(--muted);
+  background: rgb(255 255 255 / 0.08);
 }
 .button-danger {
   background: var(--danger);
@@ -207,8 +208,11 @@ summary:focus-visible {
     var(--shadow-sm);
 }
 .button-gold {
-  background: var(--gold);
+  background: linear-gradient(135deg, #ffb000, #ffb40c);
   color: var(--gold-foreground);
+  box-shadow:
+    0 10px 0 rgb(0 0 0 / 0.42),
+    0 0 34px color-mix(in srgb, var(--gold) 34%, transparent);
 }
 .button-gold:hover:not(:disabled) {
   background: color-mix(in srgb, var(--gold) 88%, white);
@@ -248,9 +252,12 @@ summary:focus-visible {
   position: sticky;
   inset-block-start: 0;
   z-index: var(--z-header);
-  backdrop-filter: blur(22px) saturate(130%);
-  background: color-mix(in srgb, var(--background) 76%, transparent);
-  border-block-end: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  backdrop-filter: blur(22px) saturate(145%);
+  background:
+    linear-gradient(90deg, rgb(0 212 255 / 0.08), transparent 44%, rgb(255 176 0 / 0.06)),
+    rgb(0 0 0 / 0.68);
+  border-block-end: 1px solid color-mix(in srgb, var(--primary) 34%, var(--border));
+  box-shadow: 0 14px 36px rgb(0 0 0 / 0.42);
 }
 .header-inner {
   min-block-size: 4.5rem;
@@ -345,20 +352,22 @@ summary:focus-visible {
   overflow: hidden;
   padding-block: clamp(2.5rem, 7vw, 5rem) clamp(4rem, 9vw, 7rem);
   background:
-    radial-gradient(circle at 8% 12%, var(--hero-warm-glow), transparent 28%),
-    radial-gradient(circle at 82% 16%, var(--hero-violet-glow), transparent 38%),
-    linear-gradient(160deg, var(--background) 0%, var(--hero-deep) 54%, var(--background) 100%);
+    radial-gradient(circle at 10% 14%, var(--hero-warm-glow), transparent 28%),
+    radial-gradient(circle at 82% 12%, var(--hero-violet-glow), transparent 34%),
+    repeating-linear-gradient(135deg, transparent 0 14px, var(--quantum-line) 14px 15px),
+    repeating-linear-gradient(90deg, transparent 0 34px, var(--quantum-line-strong) 34px 35px),
+    linear-gradient(150deg, var(--background) 0%, var(--hero-deep) 58%, var(--background) 100%);
 }
 .hero::after {
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.1;
+  opacity: 0.72;
   pointer-events: none;
   background-image:
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: 72px 72px;
+    linear-gradient(135deg, transparent 0 46%, rgb(0 212 255 / 0.14) 46% 47%, transparent 47% 100%),
+    linear-gradient(45deg, transparent 0 47%, rgb(200 255 54 / 0.08) 47% 48%, transparent 48% 100%);
+  background-size: 28px 28px;
   mask-image: linear-gradient(to bottom, var(--mask-ink), transparent);
 }
 .hero-arena {
@@ -401,6 +410,43 @@ summary:focus-visible {
   color: var(--muted-foreground);
   font-size: clamp(1rem, 2vw, 1.2rem);
 }
+.identity-signals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  max-inline-size: 39rem;
+  margin-block-start: var(--space-5);
+}
+.identity-signals > div {
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.25rem;
+  padding: var(--space-3);
+  border: 1px solid var(--surface-stage-line);
+  border-radius: var(--radius-lg);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 12px, var(--quantum-line) 12px 13px),
+    linear-gradient(145deg, color-mix(in srgb, var(--primary) 14%, transparent), transparent 64%),
+    var(--surface-glass);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.04);
+}
+.identity-signals svg {
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  color: var(--gold);
+}
+.identity-signals strong,
+.identity-signals small {
+  display: block;
+  min-inline-size: 0;
+}
+.identity-signals strong {
+  color: var(--foreground);
+  font-size: 0.92rem;
+}
+.identity-signals small {
+  color: var(--muted-foreground);
+}
 .hero-command {
   position: relative;
   max-inline-size: 39rem;
@@ -409,10 +455,11 @@ summary:focus-visible {
   border: 1px solid var(--border-glass);
   border-radius: calc(var(--radius-xl) + 0.3rem);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--primary) 13%, transparent), transparent),
+    repeating-linear-gradient(135deg, transparent 0 13px, var(--quantum-line) 13px 14px),
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 14%, transparent), transparent),
     var(--surface-glass-strong);
   box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(22px) saturate(145%);
+  backdrop-filter: blur(10px) saturate(112%);
 }
 .hero-command::before {
   content: '';
@@ -446,8 +493,10 @@ summary:focus-visible {
   max-inline-size: 100%;
   padding: 0.7rem;
   border: 1px solid color-mix(in srgb, var(--border-glass) 72%, transparent);
-  background: color-mix(in srgb, var(--input) 58%, transparent);
-  backdrop-filter: blur(20px) saturate(130%);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 12px, var(--quantum-line) 12px 13px),
+    color-mix(in srgb, var(--input) 92%, transparent);
+  backdrop-filter: blur(8px) saturate(108%);
   border-radius: var(--radius-lg);
   box-shadow: none;
 }
@@ -497,11 +546,24 @@ summary:focus-visible {
   margin-block-start: var(--space-6);
 }
 .hero-flow > div {
+  position: relative;
+  overflow: hidden;
   min-inline-size: 0;
   padding: var(--space-4);
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border: 1px solid var(--surface-stage-line);
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--card) 58%, transparent);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 12px, var(--quantum-line) 12px 13px),
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 14%, transparent), transparent),
+    color-mix(in srgb, var(--card) 64%, transparent);
+}
+.hero-flow > div::after {
+  content: '';
+  position: absolute;
+  inset-inline: var(--space-4);
+  inset-block-end: 0;
+  block-size: 2px;
+  background: linear-gradient(90deg, transparent, var(--surface-stage-hotline), transparent);
 }
 .hero-flow strong,
 .hero-flow span {
@@ -560,12 +622,14 @@ summary:focus-visible {
   border: 1px solid color-mix(in srgb, var(--primary) 48%, var(--border));
   border-radius: calc(var(--radius-xl) + 0.8rem);
   background:
+    repeating-linear-gradient(135deg, transparent 0 14px, var(--quantum-line) 14px 15px),
+    linear-gradient(90deg, transparent 0 12%, var(--surface-stage-line) 12% 13%, transparent 13% 100%),
     linear-gradient(180deg, color-mix(in srgb, var(--primary) 18%, transparent), transparent 42%),
-    color-mix(in srgb, var(--card) 82%, transparent);
-  backdrop-filter: blur(28px) saturate(155%);
+    var(--surface-stage);
+  backdrop-filter: blur(10px) saturate(112%);
   box-shadow:
     var(--shadow-lg),
-    0 0 90px color-mix(in srgb, var(--primary) 26%, transparent);
+    inset 0 0 0 1px rgb(255 255 255 / 0.34);
 }
 .scoreboard-topline,
 .scoreboard-footer {
@@ -630,14 +694,17 @@ summary:focus-visible {
   z-index: 3;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-glass);
-  background: var(--surface-glass);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 12px, var(--quantum-line) 12px 13px),
+    var(--surface-glass);
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(20px) saturate(145%);
+  backdrop-filter: blur(8px) saturate(110%);
 }
 .host-console {
   inset-block-start: 4%;
-  inset-inline-start: 0;
-  inline-size: min(16rem, 42%);
+  inset-inline-start: auto;
+  inset-inline-end: -0.75rem;
+  inline-size: min(14rem, 36%);
   padding: var(--space-4);
   display: grid;
   gap: var(--space-3);
@@ -870,8 +937,13 @@ summary:focus-visible {
 
 /* Cards */
 .card {
+  position: relative;
+  overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
-  background: linear-gradient(145deg, color-mix(in srgb, var(--card) 96%, white), var(--card));
+  background:
+    repeating-linear-gradient(135deg, transparent 0 14px, var(--quantum-line) 14px 15px),
+    linear-gradient(150deg, color-mix(in srgb, var(--primary) 10%, transparent), transparent 52%),
+    var(--card);
   color: var(--card-foreground);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
@@ -897,20 +969,34 @@ summary:focus-visible {
   padding-block: 1rem;
 }
 .showcase-card {
-  position: relative;
   min-block-size: 12rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 0.85rem;
+}
+.card-signal {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: var(--space-6);
+  block-size: 4px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--primary), var(--quantum-lime), var(--surface-stage-hotline));
+  opacity: 0.86;
 }
 .showcase-card:hover {
   transform: translateY(-7px);
   border-color: color-mix(in srgb, var(--primary) 65%, var(--border));
   box-shadow: var(--shadow-hover);
 }
+.showcase-card h3,
+.category-card h3 {
+  margin-block: 0;
+}
 .showcase-card p,
 .category-card p {
   color: var(--muted-foreground);
+  margin-block: 0;
 }
 .card-icon {
   inline-size: 3rem;
@@ -921,6 +1007,7 @@ summary:focus-visible {
   background: color-mix(in srgb, var(--primary) 18%, transparent);
   color: var(--primary);
   font-size: 1.35rem;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 24%, transparent);
 }
 .card-icon.gold {
   color: var(--gold);
@@ -942,17 +1029,24 @@ summary:focus-visible {
   color: var(--muted-foreground);
 }
 .category-card {
+  min-block-size: 8.25rem;
   display: flex;
   align-items: center;
   gap: 1rem;
+  border-color: var(--surface-stage-line);
 }
 .category-emoji {
-  font-size: 2rem;
+  flex: none;
+  font-size: 1.35rem;
   inline-size: 3.5rem;
   block-size: 3.5rem;
   display: grid;
   place-items: center;
-  background: var(--muted);
+  color: var(--gold);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 8px, var(--quantum-line) 8px 9px),
+    radial-gradient(circle at 30% 24%, color-mix(in srgb, var(--gold) 20%, transparent), transparent 58%),
+    color-mix(in srgb, var(--primary) 14%, var(--muted));
   border-radius: var(--radius-md);
 }
 .stat-card {
@@ -1006,30 +1100,91 @@ summary:focus-visible {
   align-items: center;
 }
 .leaderboard-section {
-  background: linear-gradient(
-    115deg,
-    color-mix(in srgb, var(--primary) 9%, var(--background)),
-    var(--background)
-  );
+  background:
+    repeating-linear-gradient(135deg, transparent 0 18px, var(--quantum-line) 18px 19px),
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 8%, transparent), transparent),
+    linear-gradient(115deg, color-mix(in srgb, var(--primary) 9%, var(--background)), var(--background));
 }
 .leaderboard-list {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
 }
+.leaderboard-preview {
+  display: grid;
+  gap: var(--space-4);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--surface-stage-line);
+  border-radius: var(--radius-xl);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 12px, var(--quantum-line) 12px 13px),
+    linear-gradient(145deg, color-mix(in srgb, var(--accent) 13%, transparent), transparent 52%),
+    var(--surface-glass-strong);
+  box-shadow: var(--shadow-lg);
+}
+.leaderboard-preview-top,
+.leaderboard-preview li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.leaderboard-preview-top {
+  padding-block-end: var(--space-3);
+  border-block-end: 1px solid var(--surface-stage-line);
+}
+.leaderboard-preview-top span,
+.leaderboard-preview li span {
+  color: var(--muted-foreground);
+}
+.leaderboard-preview-top strong {
+  color: var(--gold);
+}
+.leaderboard-preview ol {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.leaderboard-preview li {
+  min-inline-size: 0;
+  padding: var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: var(--radius-lg);
+  background:
+    repeating-linear-gradient(135deg, transparent 0 10px, var(--quantum-line) 10px 11px),
+    color-mix(in srgb, var(--card) 76%, transparent);
+}
+.leaderboard-preview li strong {
+  min-inline-size: 0;
+  color: var(--foreground);
+  text-align: end;
+}
 .cta {
+  position: relative;
+  overflow: hidden;
   padding: clamp(2rem, 6vw, 4rem);
   border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--border));
   border-radius: var(--radius-xl);
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--gold) 13%, var(--card)),
+    color-mix(in srgb, var(--gold) 10%, var(--card)),
     var(--card)
   );
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 2rem;
+}
+.cta::before {
+  content: '';
+  position: absolute;
+  inset-inline: clamp(1rem, 6vw, 4rem);
+  inset-block-start: 0;
+  block-size: 3px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, transparent, var(--surface-stage-hotline), var(--primary), transparent);
 }
 .cta > div > svg {
   color: var(--gold);
@@ -2383,6 +2538,7 @@ tr:last-child td {
     text-align: center;
   }
   .hero-copy > p,
+  .identity-signals,
   .hero-command,
   .join-box,
   .hero-flow {
@@ -2460,6 +2616,18 @@ tr:last-child td {
   }
   .hero-copy > p {
     font-size: 1rem;
+  }
+  .identity-signals {
+    grid-template-columns: 1fr;
+    max-inline-size: 28rem;
+  }
+  .identity-signals > div {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    text-align: start;
+  }
+  .identity-signals small {
+    grid-column: 2;
   }
   .card-grid.three,
   .card-grid.four,
