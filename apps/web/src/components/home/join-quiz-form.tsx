@@ -3,7 +3,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition, type FormEvent } from 'react';
-import { joinQuizByCode } from '@/app/quizzes/actions';
+import { joinLiveSessionByCode } from '@/app/live/actions';
 import { Button, Input } from '@/components/ui';
 
 const ROOM_CODE_RE = /^[34679ACDEFGHJKMNPQRTUVWXY]{6,8}$/;
@@ -15,6 +15,7 @@ function normalizeRoomCode(value: string) {
 export function JoinQuizForm() {
   const router = useRouter();
   const [code, setCode] = useState('');
+  const [playerName, setPlayerName] = useState('');
   const [error, setError] = useState('');
   const [joining, startJoining] = useTransition();
 
@@ -28,19 +29,35 @@ export function JoinQuizForm() {
 
     setError('');
     startJoining(async () => {
-      const result = await joinQuizByCode(roomCode);
+      const result = await joinLiveSessionByCode(roomCode, playerName);
       if (result.status === 'error') {
         setError(result.message);
         return;
       }
 
-      const query = new URLSearchParams({ quizId: result.quizId, code: result.roomCode });
-      router.push(`/demo/waiting?${query.toString()}`);
+      const query = new URLSearchParams({
+        participantId: result.participantId,
+        code: result.roomCode,
+      });
+      router.push(`/live/${result.sessionId}/play?${query.toString()}`);
     });
   }
 
   return (
     <form className="join-box" id="join" onSubmit={handleSubmit} noValidate>
+      <Input
+        id="player-name"
+        label="اسم اللاعب"
+        className="join-field"
+        placeholder="مثال: ناصر"
+        value={playerName}
+        onChange={(event) => {
+          setPlayerName(event.target.value);
+          if (error) setError('');
+        }}
+        autoComplete="nickname"
+        maxLength={40}
+      />
       <Input
         id="room-code"
         label="رمز الغرفة"

@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["prisma/schema.prisma", "prisma/migrations/**"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
