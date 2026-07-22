@@ -6,6 +6,9 @@ test('redirects anonymous users from protected pages', async ({ page }) => {
 
   await page.goto('/profile/');
   await expect(page).toHaveURL(/\/auth\/sign-in\/\?next=%2Fprofile/);
+
+  await page.goto('/quizzes/new/');
+  await expect(page).toHaveURL(/\/auth\/sign-in\/\?next=%2Fquizzes%2Fnew/);
 });
 
 test('renders auth entry points', async ({ page }) => {
@@ -17,10 +20,21 @@ test('renders auth entry points', async ({ page }) => {
 
   await page.goto('/auth/recover/');
   await expect(page.getByRole('heading', { name: 'استعادة الحساب' })).toBeVisible();
+
+  await page.goto('/auth/reset-password/example-token/');
+  await expect(page.getByRole('heading', { name: 'إعادة تعيين كلمة المرور' })).toBeVisible();
+});
+
+test('keeps the public quizzes list available without a session', async ({ page }) => {
+  await page.goto('/quizzes/');
+  await expect(page.getByRole('heading', { name: 'المسابقات العامة' })).toBeVisible();
 });
 
 test.describe('database-backed auth flow', () => {
-  test.skip(process.env.RUN_AUTH_E2E !== 'true', 'Requires disposable database credentials and RUN_AUTH_E2E=true.');
+  test.skip(
+    process.env.RUN_AUTH_E2E !== 'true',
+    'Requires disposable database credentials and RUN_AUTH_E2E=true.',
+  );
 
   test('registers, signs in, signs out, and protects dashboard/profile', async ({ page }) => {
     const email = `e2e-${Date.now()}@example.test`;

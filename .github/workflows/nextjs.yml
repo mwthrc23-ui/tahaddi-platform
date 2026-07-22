@@ -1,4 +1,6 @@
-name: CI and deploy Pages
+# The web app uses NextAuth, API routes, and Server Actions, so it requires a Node runtime.
+# GitHub Pages static export is intentionally not part of this workflow.
+name: CI
 
 on:
   push:
@@ -9,11 +11,9 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -56,25 +56,3 @@ jobs:
 
       - name: Build web app
         run: pnpm build
-
-      - name: Configure Pages
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.TAHADDI_DEPLOY_TARGET == 'static'
-        uses: actions/configure-pages@v6
-
-      - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.TAHADDI_DEPLOY_TARGET == 'static'
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: apps/web/out
-
-  deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.TAHADDI_DEPLOY_TARGET == 'static'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: validate
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5

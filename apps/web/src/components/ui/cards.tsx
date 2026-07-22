@@ -28,7 +28,6 @@ export function CategoryCard({ title, description, icon, href }: ShowcaseCardPro
   if (href) return <Link href={href} className="card category-card">{inner}</Link>;
   return <Card className="category-card">{inner}</Card>;
 }
-
 export function PlayerCard({ title, description, meta }: ShowcaseCardProps) { return <Card className="showcase-card"><span className="card-icon"><Medal /></span><h3>{title}</h3><p>{description}</p><strong>{meta}</strong></Card>; }
 export function AchievementCard({ title, description }: ShowcaseCardProps) { return <Card className="showcase-card"><span className="card-icon gold"><Award /></span><h3>{title}</h3><p>{description}</p></Card>; }
 export function RewardCard({ title, description }: ShowcaseCardProps) { return <Card className="showcase-card"><span className="card-icon violet"><Gift /></span><h3>{title}</h3><p>{description}</p></Card>; }

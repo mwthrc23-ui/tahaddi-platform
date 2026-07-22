@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { SiteLayout } from '@/components/layout';
 import { Reveal } from '@/components/motion/reveal';
 import { QuizTimer } from '@/components/quiz';
@@ -55,7 +55,7 @@ export default function HomePage() {
   const [codeError, setCodeError] = useState('');
   const [joining, setJoining] = useState(false);
 
-  function handleJoin(event: React.FormEvent) {
+  function handleJoin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const clean = code.replace(/\s/g, '');
     if (!ROOM_CODE_RE.test(clean)) {
@@ -84,14 +84,20 @@ export default function HomePage() {
             <p>
               انضم إلى جولات مباشرة، نافس أصدقاءك، واصنع لحظات لا تُنسى في تجربة عربية سريعة وواضحة.
             </p>
-            <form className="join-box" id="join" onSubmit={handleJoin}>
+            <form className="join-box" id="join" onSubmit={handleJoin} noValidate>
               <Input
+                id="room-code"
                 label="رمز الغرفة"
                 className="join-field"
                 placeholder="مثال: 582 914"
                 value={code}
-                onChange={(event) => { setCode(event.target.value); setCodeError(''); }}
+                onChange={(event) => {
+                  setCode(event.target.value);
+                  if (codeError) setCodeError('');
+                }}
                 inputMode="numeric"
+                autoComplete="off"
+                maxLength={7}
                 aria-describedby={codeError ? 'join-error' : undefined}
                 error={codeError || undefined}
               />
@@ -101,7 +107,7 @@ export default function HomePage() {
               </Button>
             </form>
             <div className="hero-actions">
-              <ButtonLink href="/quizzes" variant="gold">
+              <ButtonLink href="/quizzes/new" variant="gold">
                 <Trophy />
                 أنشئ مسابقة
               </ButtonLink>
@@ -157,6 +163,7 @@ export default function HomePage() {
                   title={item.title}
                   description={item.description}
                   icon={<GameIcon aria-hidden="true" />}
+                  meta="العب الآن"
                   href={`/demo/question?mode=${item.mode}`}
                 />
               );
@@ -204,7 +211,7 @@ export default function HomePage() {
             <span>مستعد لصناعة التحدّي؟</span>
             <h2>حوّل فكرتك إلى مسابقة يعيشها الجميع.</h2>
           </div>
-          <ButtonLink href="/quizzes" variant="gold" size="lg">
+          <ButtonLink href="/quizzes/new" variant="gold" size="lg">
             أنشئ مسابقتك
             <ArrowLeft />
           </ButtonLink>

@@ -108,4 +108,3 @@ export type ServerToClientEvents = {
   /** Generic error from server */
   'game:error': (payload: { code: string; message: string }) => void;
 };
-

@@ -1,45 +1,27 @@
-import { DashboardLayout } from '@/components/layout';
-import { QuizBuilder } from '@/components/quizzes/quiz-builder';
-import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
-import { requireActiveUser } from '@/lib/auth/session';
+import { SiteLayout } from '@/components/layout';
+import { ButtonLink, EmptyState } from '@/components/ui';
 
-export default async function QuizzesPage() {
-  const user = await requireActiveUser('/quizzes');
-  const questions = hasDatabaseUrl()
-    ? await getPrismaClient().question.findMany({
-        where: {
-          ownerId: user.id,
-          status: { in: ['PUBLISHED', 'DRAFT'] },
-        },
-        orderBy: { updatedAt: 'desc' },
-        take: 100,
-        select: {
-          id: true,
-          prompt: true,
-          category: true,
-          timeLimit: true,
-          basePoints: true,
-        },
-      })
-    : [];
-
-  const availableQuestions = questions.map((question: {
-    id: string;
-    prompt: string;
-    category: string | null;
-    timeLimit: number;
-    basePoints: number;
-  }) => ({
-    id: question.id,
-    prompt: question.prompt,
-    category: question.category ?? '',
-    duration: question.timeLimit,
-    points: question.basePoints,
-  }));
-
+export default function QuizzesPage() {
   return (
-    <DashboardLayout title="منشئ المسابقة">
-      <QuizBuilder availableQuestions={availableQuestions} />
-    </DashboardLayout>
+    <SiteLayout>
+      <section className="section">
+        <div className="container">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">استكشف وشارك</span>
+              <h1>المسابقات العامة</h1>
+              <p>تابع المسابقات المتاحة واختر الجولة التي تناسبك.</p>
+            </div>
+          </div>
+          <EmptyState
+            title="لا توجد مسابقات عامة بعد"
+            description="ستظهر المسابقات المنشورة هنا عند إطلاق أول جولة عامة."
+          />
+          <div className="dashboard-actions">
+            <ButtonLink href="/quizzes/new">أنشئ مسابقة</ButtonLink>
+          </div>
+        </div>
+      </section>
+    </SiteLayout>
   );
 }

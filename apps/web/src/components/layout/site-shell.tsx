@@ -33,6 +33,8 @@ export function Logo() {
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const [userOpen, setUserOpen] = useState(false);
+
   return (
     <header className="site-header">
       <div className="container header-inner">
@@ -48,13 +50,35 @@ export function Header() {
           <ButtonLink href="/#join" variant="outline" className="hide-mobile">
             انضم إلى مسابقة
           </ButtonLink>
-          <ButtonLink href="/quizzes" className="hide-tablet">
+          <ButtonLink href="/quizzes/new" className="hide-tablet">
             أنشئ مسابقة
           </ButtonLink>
           <ThemeToggle />
-          <ButtonLink href="/auth/sign-in" variant="ghost" size="icon" aria-label="تسجيل الدخول">
-            <UserCircle2 />
-          </ButtonLink>
+          <div className="dropdown">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="قائمة المستخدم"
+              aria-haspopup="menu"
+              aria-expanded={userOpen}
+              onClick={() => setUserOpen(!userOpen)}
+            >
+              <UserCircle2 />
+            </Button>
+            {userOpen && (
+              <div className="floating-panel" role="menu">
+                <Link role="menuitem" href="/profile" onClick={() => setUserOpen(false)}>
+                  الملف الشخصي
+                </Link>
+                <Link role="menuitem" href="/dashboard" onClick={() => setUserOpen(false)}>
+                  لوحة التحكم
+                </Link>
+                <Link role="menuitem" href="/auth/sign-in" onClick={() => setUserOpen(false)}>
+                  تسجيل الدخول
+                </Link>
+              </div>
+            )}
+          </div>
           <Button
             className="mobile-menu-button"
             variant="ghost"

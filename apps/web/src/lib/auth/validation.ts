@@ -29,6 +29,17 @@ export const recoverySchema = z.object({
   email: normalizedEmail,
 });
 
+export const resetPasswordSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((value) => value.password === value.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'كلمتا المرور غير متطابقتين',
+  });
+
 export type SignInInput = z.infer<typeof signInSchema>;
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type RecoveryInput = z.infer<typeof recoverySchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
