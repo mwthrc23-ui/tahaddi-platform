@@ -18,7 +18,7 @@
 
 الواجهة تعمل افتراضيًا على `http://localhost:3000`، وفحص خدمة الزمن الحقيقي على `http://localhost:3001/health`.
 
-صفحة مرجع الواجهة متاحة في `/design-system`، والشاشات التجريبية في `/demo/waiting` و`/demo/question` و`/demo/results` و`/demo/winners`. يبدأ مسار الجلسة المباشرة من `/host` بعد تسجيل الدخول، وينضم اللاعب من نموذج الرمز في الصفحة الرئيسية إلى `/live/[sessionId]/play`.
+صفحة مرجع الواجهة متاحة في `/design-system`، والشاشات التجريبية في `/demo/waiting` و`/demo/question` و`/demo/results` و`/demo/winners`. يبدأ مسار الجلسة المباشرة من `/host` بعد تسجيل دخول المضيف، ويفضّل Google OAuth عند توفره. ينضم اللاعب كزائر دون حساب من `/join` أو رابط دعوة مثل `/join/[code]`، ثم ينتقل إلى `/live/[sessionId]/play`.
 
 ## الأوامر
 

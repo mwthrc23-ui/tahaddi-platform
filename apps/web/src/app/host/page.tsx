@@ -93,7 +93,10 @@ export default async function Page({
           {selectedSession ? (
             <div className="card-grid two">
               <div>
-                <RoomCode code={selectedSession.roomCode} url="tahaddi.app/#join" />
+                <RoomCode
+                  code={selectedSession.roomCode}
+                  url={`/join/${selectedSession.roomCode}`}
+                />
                 <Card>
                   <div className="inline-between">
                     <div>

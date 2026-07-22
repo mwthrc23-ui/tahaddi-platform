@@ -398,6 +398,7 @@ summary:focus-visible {
 .join-box {
   margin-block: 2rem 1rem;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.75rem;
   max-inline-size: 36rem;
@@ -418,8 +419,9 @@ summary:focus-visible {
   min-block-size: 3.35rem;
 }
 .join-notice {
+  flex-basis: 100%;
   max-inline-size: 36rem;
-  margin-block: -0.25rem 1rem;
+  margin-block: 0;
   color: var(--muted-foreground);
 }
 .join-notice a {
@@ -427,6 +429,17 @@ summary:focus-visible {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 0.2rem;
+}
+.join-page {
+  max-inline-size: 46rem;
+}
+.join-page .card {
+  display: grid;
+  gap: 1rem;
+}
+.join-page .join-box {
+  margin-block: 0;
+  max-inline-size: none;
 }
 .hero-actions {
   display: flex;

@@ -1,6 +1,6 @@
 import { Plus, Trophy } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
-import { Button, Card, EmptyState, StatisticCard } from '@/components/ui';
+import { ButtonLink, Card, EmptyState, StatisticCard } from '@/components/ui';
 import { requireActiveUser } from '@/lib/auth/session';
 
 export default async function Page() {
@@ -8,10 +8,10 @@ export default async function Page() {
   return (
     <DashboardLayout>
       <div className="dashboard-actions">
-        <Button>
+        <ButtonLink href="/quizzes/new">
           <Plus />
           مسابقة جديدة
-        </Button>
+        </ButtonLink>
       </div>
       <div className="card-grid four">
         <StatisticCard title="المسابقات" meta="٠" description="لا توجد بعد" />

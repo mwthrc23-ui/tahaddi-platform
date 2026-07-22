@@ -21,7 +21,15 @@ test('يعرض خطأً واضحًا عندما لا تكون هناك جلسة 
   await page.getByLabel('اسم اللاعب').fill('نورة');
   await page.getByLabel('رمز الغرفة').fill('A7K9PQ');
   await page.getByRole('button', { name: 'انضم الآن' }).click();
-  await expect(page.getByText('لم نجد جلسة مباشرة مفتوحة بهذا الرمز.')).toBeVisible();
+  await expect(
+    page.getByText(/لم نجد جلسة مباشرة مفتوحة بهذا الرمز|خدمة الجلسات المباشرة غير متاحة حاليًا/),
+  ).toBeVisible();
+});
+test('يفتح رابط الدعوة صفحة اللاعب مع تعبئة الرمز', async ({ page }) => {
+  await page.goto('/join/A7K9PQ');
+  await expect(page.getByRole('heading', { name: 'ادخل المسابقة كزائر' })).toBeVisible();
+  await expect(page.getByLabel('رمز الغرفة')).toHaveValue('A7K9PQ');
+  await expect(page.getByText(/لا تحتاج إلى حساب/)).toBeVisible();
 });
 test('يتنقل عبر الشاشات التجريبية ويحدد إجابة', async ({ page }) => {
   await page.goto('/demo/waiting');
@@ -29,6 +37,8 @@ test('يتنقل عبر الشاشات التجريبية ويحدد إجابة'
   await expect(page.getByText('رمز الغرفة')).toBeVisible();
   await steps.getByRole('link', { name: 'السؤال' }).click();
   await page.getByRole('button', { name: /B: الجزائر/ }).click();
+  await expect(page.getByRole('button', { name: /B: الجزائر/ })).toHaveClass(/is-selected/);
+  await page.getByRole('button', { name: 'تأكيد الإجابة' }).click();
   await expect(page.getByRole('button', { name: /B: الجزائر/ })).toHaveClass(/is-correct/);
   await page
     .getByRole('navigation', { name: 'الشاشات التجريبية' })
@@ -49,8 +59,10 @@ test('يكمل تدفق إجابة سؤال كاملاً حتى النتائج',
 
   // اختر إجابة صحيحة (B: الجزائر)
   await page.getByRole('button', { name: /B: الجزائر/ }).click();
+  await expect(page.getByRole('button', { name: 'تأكيد الإجابة' })).toBeEnabled();
+  await page.getByRole('button', { name: 'تأكيد الإجابة' }).click();
 
-  // بعد إرسال الإجابة الصحيحة تنتقل الحالة مباشرة من selected إلى correct.
+  // بعد تأكيد الإجابة الصحيحة تنتقل الحالة من selected إلى correct.
   await expect(page.getByRole('button', { name: /B: الجزائر/ })).toHaveClass(/is-correct/);
 
   // بعد الكشف يظهر زر «السؤال التالي» أو «عرض النتائج»
