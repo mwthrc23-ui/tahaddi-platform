@@ -42,6 +42,18 @@ const gameIcons = [Timer, CheckCircle2, ListOrdered];
 
 const emptyPublicQuizzes: PublicQuizzesResult = { status: 'success', quizzes: [] };
 
+const arenaFlow = [
+  { label: 'المضيف يطلق الغرفة', value: 'رمز مباشر' },
+  { label: 'الزوار يدخلون بالاسم', value: 'بدون حساب' },
+  { label: 'السؤال يظهر للجميع', value: 'ترتيب فوري' },
+];
+
+const hostSignals = [
+  { label: 'بنك أسئلة', value: 'جاهز' },
+  { label: 'دعوة', value: 'رابط واحد' },
+  { label: 'نتيجة', value: 'على الشاشة' },
+];
+
 export default function HomePage() {
   return (
     <Suspense fallback={<HomePageContent publicQuizResult={emptyPublicQuizzes} user={null} />}>
@@ -73,21 +85,24 @@ function HomePageContent({
   return (
     <SiteLayout user={user}>
       <section className="hero">
-        <Reveal className="container hero-grid" eager>
+        <Reveal className="container hero-arena" eager>
           <div className="hero-copy">
-            <span className="eyebrow">
+            <span className="eyebrow hero-kicker">
               <Sparkles />
-              منصة المسابقات العربية
+              منصة تحدّي المباشرة
             </span>
-            <h1>
-              كل سؤال <span className="hero-accent">يشعل الحماس.</span>
-              <br />
-              وكل إجابة تقرّبك من القمة.
-            </h1>
+            <h1>ادخل الغرفة. ارفع النبض.</h1>
             <p>
-              انضم إلى جولات مباشرة، نافس أصدقاءك، واصنع لحظات لا تُنسى في تجربة عربية سريعة وواضحة.
+              تحدّي يحوّل المسابقة إلى بث حي: المضيف يملك الشاشة، واللاعبون يدخلون كزوار
+              عبر دعوة واحدة، والنتيجة تتحرك مع كل إجابة.
             </p>
-            <JoinQuizForm />
+            <div className="hero-command" aria-label="دخول سريع إلى غرفة تحدّي">
+              <div className="hero-command-header">
+                <span>دخول الزائر</span>
+                <strong>A7K9PQ</strong>
+              </div>
+              <JoinQuizForm />
+            </div>
             <div className="hero-actions">
               <ButtonLink href="/quizzes/new" variant="gold">
                 <Trophy />
@@ -98,31 +113,63 @@ function HomePageContent({
                 جرّب سؤالًا سريعًا
               </Link>
             </div>
+            <div className="hero-flow" aria-label="كيف تعمل التجربة">
+              {arenaFlow.map((item) => (
+                <div key={item.label}>
+                  <strong>{item.value}</strong>
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="hero-stage" aria-label="معاينة مسابقة مباشرة">
-            <div className="stage-ring ring-one" aria-hidden="true" />
-            <div className="stage-ring ring-two" aria-hidden="true" />
-            <div className="hero-trophy">
-              <Crown />
-              <strong>تحدّي</strong>
-              <span>نافس · أجب · تصدّر</span>
+          <div className="hero-stage arena-stage" aria-label="لوحة مسابقة مباشرة">
+            <div className="arena-glow glow-one" aria-hidden="true" />
+            <div className="arena-glow glow-two" aria-hidden="true" />
+            <div className="arena-scoreboard">
+              <div className="scoreboard-topline">
+                <span>غرفة مباشرة</span>
+                <strong dir="ltr">A7K9PQ</strong>
+              </div>
+              <div className="scoreboard-question">
+                <span>السؤال الآن</span>
+                <h2>ما عاصمة المملكة العربية السعودية؟</h2>
+              </div>
+              <div className="scoreboard-options" aria-label="اختيارات السؤال">
+                <span className="is-correct">الرياض</span>
+                <span>جدة</span>
+                <span>الدمام</span>
+                <span>مكة</span>
+              </div>
+              <div className="scoreboard-footer">
+                <div>
+                  <Users aria-hidden="true" />
+                  <span>لاعبون زوار</span>
+                </div>
+                <QuizTimer total={20} remaining={12} size="sm" />
+              </div>
             </div>
-            <div className="floating-score score-a">
-              <span>+١٠٠٠</span>
-              <small>إجابة صحيحة</small>
+            <div className="host-console">
+              <div className="host-console-title">
+                <Crown aria-hidden="true" />
+                <strong>لوحة المضيف</strong>
+              </div>
+              {hostSignals.map((item) => (
+                <div key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
             </div>
-            <div className="floating-score score-b">
-              <Users />
-              <strong>مباشر</strong>
-              <small>انضم الآن</small>
+            <div className="live-pulse-card">
+              <Radio aria-hidden="true" />
+              <span>بث حي</span>
+              <strong>السؤال على الشاشة</strong>
             </div>
-            <div className="floating-score score-c">
-              <Radio />
-              <strong>مباشر</strong>
-            </div>
-            <div className="hero-preview-timer">
-              <QuizTimer total={20} remaining={12} size="sm" />
+            <div className="answer-burst" aria-hidden="true">
+              <span />
+              <span />
+              <span />
             </div>
           </div>
         </Reveal>
@@ -132,8 +179,8 @@ function HomePageContent({
         <Reveal className="container">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">اختر وابدأ فورًا</span>
-              <h2>ألعاب سريعة</h2>
+              <span className="eyebrow">أوضاع لعب جاهزة</span>
+              <h2>المسابقة لا تبدأ من صفحة فارغة</h2>
             </div>
           </div>
           <div className="card-grid three">
@@ -158,8 +205,8 @@ function HomePageContent({
         <Reveal className="container">
           <div className="section-heading">
             <div>
-              <span className="eyebrow">مئات الأسئلة</span>
-              <h2>استكشف الفئات</h2>
+              <span className="eyebrow">بنك الأسئلة</span>
+              <h2>اختر الفئة التي تشعل الجولة</h2>
             </div>
           </div>
           <div className="card-grid four">
@@ -180,7 +227,7 @@ function HomePageContent({
           <div className="section-heading">
             <div>
               <span className="eyebrow">جولات متاحة الآن</span>
-              <h2>أحدث المسابقات العامة</h2>
+              <h2>ادخل من الدعوة إلى اللعب مباشرة</h2>
             </div>
             <ButtonLink href="/quizzes" variant="outline">
               عرض الكل
@@ -220,8 +267,8 @@ function HomePageContent({
         <Reveal className="container split-section">
           <div>
             <span className="eyebrow">لوحة الشرف</span>
-            <h2>نجوم هذا الأسبوع</h2>
-            <p>السرعة والمعرفة وسلسلة الإجابات الصحيحة تصنع الفارق.</p>
+            <h2>الصدارة تصبح مشهدًا</h2>
+            <p>كل إجابة صحيحة تتحول إلى حركة واضحة أمام اللاعبين والمضيف.</p>
           </div>
           <EmptyState
             title="لا توجد بيانات بعد"
@@ -235,7 +282,7 @@ function HomePageContent({
           <div>
             <Gamepad2 />
             <span>مستعد لصناعة التحدّي؟</span>
-            <h2>حوّل فكرتك إلى مسابقة يعيشها الجميع.</h2>
+            <h2>افتح الغرفة، أرسل الدعوة، واترك الحماس يعمل.</h2>
           </div>
           <ButtonLink href="/quizzes/new" variant="gold" size="lg">
             أنشئ مسابقتك
