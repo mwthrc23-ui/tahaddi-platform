@@ -5,20 +5,93 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { demoQuestions, OPTION_LABELS } from '@/data/demo-questions';
-import { calcEarned, clearSession, initSession, loadSession, saveSession, streakMultiplier, type DemoSession } from '@/lib/session-store';
+import {
+  calcEarned,
+  clearSession,
+  initSession,
+  loadSession,
+  saveSession,
+  streakMultiplier,
+  type DemoSession,
+} from '@/lib/session-store';
 import { SiteLayout } from '@/components/layout';
-import { AnswerOption, LeaderboardItem, PlayerJoinCard, QuestionCard, QuestionProgress, QuizTimer, RoomCode, ScoreDisplay, WinnerPodium } from '@/components/quiz';
+import {
+  AnswerOption,
+  LeaderboardItem,
+  PlayerJoinCard,
+  QuestionCard,
+  QuestionProgress,
+  QuizTimer,
+  RoomCode,
+  ScoreDisplay,
+  WinnerPodium,
+} from '@/components/quiz';
 import { Alert, Badge, Button, Card, Progress } from '@/components/ui';
 
 // ---------------------------------------------------------------------------
 // Demo fallback players used when no real session data exists
 // ---------------------------------------------------------------------------
 const demoPlayers = [
-  { id: '1', name: 'سارة العتيبي', initials: 'س ع', score: 9840, rank: 1, change: 2, streak: 8, online: true, ready: true, joinedAt: 'منذ دقيقة' },
-  { id: '2', name: 'محمد القحطاني', initials: 'م ق', score: 9320, rank: 2, change: -1, streak: 6, online: true, ready: true, joinedAt: 'منذ دقيقتين' },
-  { id: '3', name: 'نورة الحربي', initials: 'ن ح', score: 8970, rank: 3, change: 1, streak: 5, online: true, ready: false, joinedAt: 'الآن' },
-  { id: '4', name: 'خالد الدوسري', initials: 'خ د', score: 8210, rank: 4, change: 0, streak: 4, online: false, ready: true, joinedAt: 'منذ ٣ دقائق' },
-  { id: '5', name: 'ريم المطيري', initials: 'ر م', score: 7880, rank: 5, change: 3, streak: 3, online: true, ready: true, joinedAt: 'منذ ٤ دقائق' },
+  {
+    id: '1',
+    name: 'سارة العتيبي',
+    initials: 'س ع',
+    score: 9840,
+    rank: 1,
+    change: 2,
+    streak: 8,
+    online: true,
+    ready: true,
+    joinedAt: 'منذ دقيقة',
+  },
+  {
+    id: '2',
+    name: 'محمد القحطاني',
+    initials: 'م ق',
+    score: 9320,
+    rank: 2,
+    change: -1,
+    streak: 6,
+    online: true,
+    ready: true,
+    joinedAt: 'منذ دقيقتين',
+  },
+  {
+    id: '3',
+    name: 'نورة الحربي',
+    initials: 'ن ح',
+    score: 8970,
+    rank: 3,
+    change: 1,
+    streak: 5,
+    online: true,
+    ready: false,
+    joinedAt: 'الآن',
+  },
+  {
+    id: '4',
+    name: 'خالد الدوسري',
+    initials: 'خ د',
+    score: 8210,
+    rank: 4,
+    change: 0,
+    streak: 4,
+    online: false,
+    ready: true,
+    joinedAt: 'منذ ٣ دقائق',
+  },
+  {
+    id: '5',
+    name: 'ريم المطيري',
+    initials: 'ر م',
+    score: 7880,
+    rank: 5,
+    change: 3,
+    streak: 3,
+    online: true,
+    ready: true,
+    joinedAt: 'منذ ٤ دقائق',
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -50,24 +123,33 @@ export function WaitingScreen() {
               <h1>كأس المعرفة العربية</h1>
               <p>شارك الرمز مع اللاعبين، وستبدأ الجولة عندما يكون الجميع مستعدًا.</p>
             </div>
-            <Button variant="destructive" onClick={() => router.push('/')}><LogOut />مغادرة</Button>
+            <Button variant="destructive" onClick={() => router.push('/')}>
+              <LogOut />
+              مغادرة
+            </Button>
           </div>
           <div className="waiting-grid">
             <RoomCode code="582914" />
             <Card className="players-panel">
               <div className="inline-between">
-                <h2><Users />اللاعبون</h2>
+                <h2>
+                  <Users />
+                  اللاعبون
+                </h2>
                 <Badge aria-live="polite">{playerCount} / 50</Badge>
               </div>
               <div className="players-grid">
-                {demoPlayers.map((player) => <PlayerJoinCard key={player.id} {...player} />)}
+                {demoPlayers.map((player) => (
+                  <PlayerJoinCard key={player.id} {...player} />
+                ))}
               </div>
             </Card>
           </div>
           <Alert variant="info">ننتظر المضيف لبدء المسابقة… أبقِ هذه الصفحة مفتوحة.</Alert>
           <div className="center-actions" style={{ marginTop: '1.5rem' }}>
             <Button size="lg" variant="gold" onClick={startQuiz}>
-              <Play />ابدأ التحدّي
+              <Play />
+              ابدأ التحدّي
             </Button>
           </div>
           <DemoSteps current="waiting" />
@@ -138,7 +220,9 @@ export function QuestionScreen() {
   function revealAnswer(optionIndex: number | undefined) {
     if (timerRef.current) window.clearTimeout(timerRef.current);
     const correct = optionIndex === correctIndex;
-    const pts = correct ? calcEarned(question.basePoints, question.timeLimit, remaining, session.currentStreak) : 0;
+    const pts = correct
+      ? calcEarned(question.basePoints, question.timeLimit, remaining, session.currentStreak)
+      : 0;
     const newStreak = correct ? session.currentStreak + 1 : 0;
     const newLongest = Math.max(session.longestStreak, newStreak);
     const updatedSession: DemoSession = {
@@ -148,7 +232,12 @@ export function QuestionScreen() {
       longestStreak: newLongest,
       answers: [
         ...session.answers,
-        { questionIndex: session.currentIndex, optionIndex: optionIndex ?? -1, correct, earned: pts },
+        {
+          questionIndex: session.currentIndex,
+          optionIndex: optionIndex ?? -1,
+          correct,
+          earned: pts,
+        },
       ],
     };
     setEarned(pts);
@@ -160,7 +249,11 @@ export function QuestionScreen() {
   function handleSelect(index: number) {
     if (phase !== 'live') return;
     setSelectedIndex(index);
-    revealAnswer(index);
+  }
+
+  function confirmAnswer() {
+    if (phase !== 'live' || selectedIndex === undefined) return;
+    revealAnswer(selectedIndex);
   }
 
   function goNext() {
@@ -189,10 +282,22 @@ export function QuestionScreen() {
   if (phase === 'intro') {
     return (
       <SiteLayout>
-        <div className="demo-page question-screen" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div
+          className="demo-page question-screen"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '60vh',
+          }}
+        >
           <div style={{ textAlign: 'center' }}>
             <p style={{ opacity: 0.7, marginBottom: '0.5rem' }}>تبدأ المسابقة خلال</p>
-            <div role="timer" aria-live="assertive" style={{ fontSize: '6rem', fontWeight: 800, lineHeight: 1 }}>
+            <div
+              role="timer"
+              aria-live="assertive"
+              style={{ fontSize: '6rem', fontWeight: 800, lineHeight: 1 }}
+            >
               {countdown > 0 ? countdown : 'ابدأ!'}
             </div>
           </div>
@@ -218,7 +323,13 @@ export function QuestionScreen() {
             number={session.currentIndex + 1}
             text={question.prompt}
             type={question.type === 'TRUE_FALSE' ? 'صح أم خطأ' : 'اختيار من متعدد'}
-            difficulty={question.difficulty === 'EASY' ? 'سهل' : question.difficulty === 'MEDIUM' ? 'متوسط' : 'صعب'}
+            difficulty={
+              question.difficulty === 'EASY'
+                ? 'سهل'
+                : question.difficulty === 'MEDIUM'
+                  ? 'متوسط'
+                  : 'صعب'
+            }
             points={question.basePoints}
             time={question.timeLimit}
             category={question.category}
@@ -236,20 +347,31 @@ export function QuestionScreen() {
               ))}
             </div>
             {phase === 'revealed' && question.explanation && (
-              <p className="question-explanation" aria-live="polite" style={{ marginTop: '1rem', opacity: 0.85 }}>
+              <p
+                className="question-explanation"
+                aria-live="polite"
+                style={{ marginTop: '1rem', opacity: 0.85 }}
+              >
                 💡 {question.explanation}
               </p>
             )}
           </QuestionCard>
           <div className="inline-between">
-            <ScoreDisplay score={session.score} earned={earned} streak={session.currentStreak} multiplier={multiplier} />
+            <ScoreDisplay
+              score={session.score}
+              earned={earned}
+              streak={session.currentStreak}
+              multiplier={multiplier}
+            />
             {phase === 'live' ? (
-              <Button size="lg" disabled>
-                تأكيد الإجابة<ArrowLeft />
+              <Button size="lg" onClick={confirmAnswer} disabled={selectedIndex === undefined}>
+                تأكيد الإجابة
+                <ArrowLeft />
               </Button>
             ) : (
               <Button size="lg" onClick={goNext}>
-                {isLastQuestion ? 'عرض النتائج' : 'السؤال التالي'}<ArrowLeft />
+                {isLastQuestion ? 'عرض النتائج' : 'السؤال التالي'}
+                <ArrowLeft />
               </Button>
             )}
           </div>
@@ -308,12 +430,17 @@ export function ResultsScreen() {
             </div>
           )}
           <Card>
-            <h2><BarChart3 />توزيع الإجابات</h2>
+            <h2>
+              <BarChart3 />
+              توزيع الإجابات
+            </h2>
             <div className="result-bars">
               {FALLBACK_RESULT.distribution.map((answer) => (
                 <div key={answer.id}>
                   <div className="inline-between">
-                    <span>{answer.label} · {answer.text}</span>
+                    <span>
+                      {answer.label} · {answer.text}
+                    </span>
                     <strong dir="ltr">{answer.percentage}%</strong>
                   </div>
                   <Progress value={answer.percentage} />
@@ -340,12 +467,20 @@ export function ResultsScreen() {
               <h2>أفضل خمسة لاعبين</h2>
               <Trophy />
             </div>
-            {demoPlayers.map((player) => <LeaderboardItem key={player.id} {...player} />)}
+            {demoPlayers.map((player) => (
+              <LeaderboardItem key={player.id} {...player} />
+            ))}
           </Card>
-          <div className="center-actions" style={{ marginTop: '1.5rem', gap: '0.75rem', display: 'flex', flexWrap: 'wrap' }}>
-            <Button variant="outline" onClick={replayQuiz}>أعد اللعب</Button>
+          <div
+            className="center-actions"
+            style={{ marginTop: '1.5rem', gap: '0.75rem', display: 'flex', flexWrap: 'wrap' }}
+          >
+            <Button variant="outline" onClick={replayQuiz}>
+              أعد اللعب
+            </Button>
             <Link className="button button-primary button-lg" href="/demo/winners">
-              متابعة إلى الفائزين<ArrowLeft />
+              متابعة إلى الفائزين
+              <ArrowLeft />
             </Link>
           </div>
           <DemoSteps current="results" />
@@ -369,7 +504,12 @@ export function WinnersScreen() {
   async function shareResult() {
     const text = `حققت ${(session?.score ?? 0).toLocaleString('ar-SA')} نقطة في تحدّي! جرّب أنت: ${window.location.origin}`;
     if (navigator.share) {
-      try { await navigator.share({ title: 'تحدّي — نتيجتي', text }); return; } catch { /* fallback */ }
+      try {
+        await navigator.share({ title: 'تحدّي — نتيجتي', text });
+        return;
+      } catch {
+        /* fallback */
+      }
     }
     await navigator.clipboard?.writeText(text);
     setShared(true);
@@ -399,14 +539,21 @@ export function WinnersScreen() {
           <WinnerPodium winners={demoPlayers.slice(0, 3)} />
           <Card className="full-ranking">
             <h2>الترتيب الكامل</h2>
-            {demoPlayers.map((player) => <LeaderboardItem key={player.id} {...player} />)}
+            {demoPlayers.map((player) => (
+              <LeaderboardItem key={player.id} {...player} />
+            ))}
           </Card>
           <div className="center-actions">
             <Button variant="gold" onClick={shareResult} aria-live="polite">
-              <Share2 />{shared ? 'تم النسخ!' : 'مشاركة النتيجة'}
+              <Share2 />
+              {shared ? 'تم النسخ!' : 'مشاركة النتيجة'}
             </Button>
-            <Button variant="outline" onClick={newChallenge}>تحدٍّ جديد</Button>
-            <Link className="button button-outline button-md" href="/">العودة للرئيسية</Link>
+            <Button variant="outline" onClick={newChallenge}>
+              تحدٍّ جديد
+            </Button>
+            <Link className="button button-outline button-md" href="/">
+              العودة للرئيسية
+            </Link>
           </div>
           <DemoSteps current="winners" />
         </div>
@@ -428,7 +575,11 @@ function DemoSteps({ current }: { current: 'waiting' | 'question' | 'results' | 
   return (
     <nav className="demo-steps" aria-label="الشاشات التجريبية">
       {pages.map((page) => (
-        <Link key={page.id} className={page.id === current ? 'active' : ''} href={`/demo/${page.id}`}>
+        <Link
+          key={page.id}
+          className={page.id === current ? 'active' : ''}
+          href={`/demo/${page.id}`}
+        >
           {page.label}
         </Link>
       ))}

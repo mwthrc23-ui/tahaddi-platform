@@ -37,6 +37,8 @@ test('يتنقل عبر الشاشات التجريبية ويحدد إجابة'
   await expect(page.getByText('رمز الغرفة')).toBeVisible();
   await steps.getByRole('link', { name: 'السؤال' }).click();
   await page.getByRole('button', { name: /B: الجزائر/ }).click();
+  await expect(page.getByRole('button', { name: /B: الجزائر/ })).toHaveClass(/is-selected/);
+  await page.getByRole('button', { name: 'تأكيد الإجابة' }).click();
   await expect(page.getByRole('button', { name: /B: الجزائر/ })).toHaveClass(/is-correct/);
   await page
     .getByRole('navigation', { name: 'الشاشات التجريبية' })
@@ -57,8 +59,10 @@ test('يكمل تدفق إجابة سؤال كاملاً حتى النتائج',
 
   // اختر إجابة صحيحة (B: الجزائر)
   await page.getByRole('button', { name: /B: الجزائر/ }).click();
+  await expect(page.getByRole('button', { name: 'تأكيد الإجابة' })).toBeEnabled();
+  await page.getByRole('button', { name: 'تأكيد الإجابة' }).click();
 
-  // بعد إرسال الإجابة الصحيحة تنتقل الحالة مباشرة من selected إلى correct.
+  // بعد تأكيد الإجابة الصحيحة تنتقل الحالة من selected إلى correct.
   await expect(page.getByRole('button', { name: /B: الجزائر/ })).toHaveClass(/is-correct/);
 
   // بعد الكشف يظهر زر «السؤال التالي» أو «عرض النتائج»
