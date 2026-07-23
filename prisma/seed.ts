@@ -356,9 +356,8 @@ async function main() {
     },
   });
 
-  const seededQuestionIds: string[] = [];
   for (const q of questions) {
-    const question = await db.question.create({
+    await db.question.create({
       data: {
         ownerId: owner.id,
         type: q.type,
@@ -379,40 +378,9 @@ async function main() {
         },
       },
     });
-    seededQuestionIds.push(question.id);
   }
 
-  const playwrightRoomCode = 'A7K9PQ';
-  const quizQuestions = seededQuestionIds.slice(0, 3).map((questionId, position) => ({
-    questionId,
-    position,
-  }));
-  await db.quiz.upsert({
-    where: { roomCode: playwrightRoomCode },
-    update: {
-      title: 'مسابقة Playwright العامة',
-      description: 'بيانات ثابتة لاختبار الانضمام الحقيقي برمز الغرفة.',
-      ownerId: owner.id,
-      isPublic: true,
-      status: 'ACTIVE',
-      questions: {
-        deleteMany: {},
-        create: quizQuestions,
-      },
-    },
-    create: {
-      title: 'مسابقة Playwright العامة',
-      description: 'بيانات ثابتة لاختبار الانضمام الحقيقي برمز الغرفة.',
-      ownerId: owner.id,
-      roomCode: playwrightRoomCode,
-      isPublic: true,
-      status: 'ACTIVE',
-      questions: { create: quizQuestions },
-    },
-  });
-
   console.info(`✓ تمت إضافة ${questions.length} سؤالًا إلى بنك الأسئلة.`);
-  console.info(`✓ تمت إضافة مسابقة اختبار نشطة بالرمز ${playwrightRoomCode}.`);
 }
 
 main()
