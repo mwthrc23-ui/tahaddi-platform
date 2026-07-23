@@ -89,8 +89,10 @@ describe('HomePage actions', () => {
     );
     expect(screen.getByRole('link', { name: /دقيقة ذكاء/ })).toHaveAttribute(
       'href',
-      '/demo/question?mode=speed',
+      '/quizzes/new',
     );
+    expect(document.querySelector('a[href^="/demo/"]')).not.toBeInTheDocument();
+    expect(screen.queryByText('A7K9PQ')).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'قائمة المستخدم' }));
     expect(screen.getByRole('menu')).toBeInTheDocument();

@@ -60,7 +60,7 @@ export function JoinQuizForm({
         id="player-name"
         label="اسم اللاعب"
         className="join-field"
-        placeholder="مثال: ناصر"
+        placeholder="الاسم الذي سيظهر في الغرفة"
         value={playerName}
         onChange={(event) => {
           setPlayerName(event.target.value);
@@ -73,7 +73,7 @@ export function JoinQuizForm({
         id="room-code"
         label="رمز الغرفة"
         className="join-field"
-        placeholder="مثال: A7K9PQ"
+        placeholder="الرمز المرسل من المضيف"
         value={code}
         onChange={(event) => {
           setCode(event.target.value.toUpperCase());

@@ -21,14 +21,13 @@ import { getPublicQuizzes, type PublicQuiz, type PublicQuizzesResult } from '@/a
 import { JoinQuizForm } from '@/components/home/join-quiz-form';
 import { SiteLayout } from '@/components/layout';
 import { Reveal } from '@/components/motion/reveal';
-import { QuizTimer } from '@/components/quiz';
 import { ButtonLink, CategoryCard, CompetitionCard, EmptyState, GameCard } from '@/components/ui';
 import { getCurrentSession } from '@/lib/auth/session';
 
 const games = [
-  { title: 'دقيقة ذكاء', description: 'عشرة أسئلة سريعة في ستين ثانية', mode: 'speed' },
-  { title: 'صح أم خطأ', description: 'اختبر حدسك ومعلوماتك في جولة خاطفة', mode: 'truefalse' },
-  { title: 'رتّبها', description: 'ضع الأحداث والعناصر في ترتيبها الصحيح', mode: 'order' },
+  { title: 'دقيقة ذكاء', description: 'أنشئ جولة قصيرة بأسئلة محددة الوقت' },
+  { title: 'صح أم خطأ', description: 'أضف أسئلة بخيارين وتصحيح مباشر' },
+  { title: 'رتّبها', description: 'جهّز أسئلة تعتمد على الترتيب الصحيح' },
 ];
 
 const categories = [
@@ -49,7 +48,7 @@ const arenaFlow = [
 ];
 
 const identitySignals = [
-  { label: 'SYSTEM', value: 'Quantum UI', icon: <Sparkles aria-hidden="true" /> },
+  { label: 'جاهز', value: 'غرف تفاعلية', icon: <Sparkles aria-hidden="true" /> },
   { label: 'API', value: 'رمز حي', icon: <Zap aria-hidden="true" /> },
   { label: 'LIVE', value: 'لوحة مباشرة', icon: <Radio aria-hidden="true" /> },
 ];
@@ -97,10 +96,10 @@ function HomePageContent({
               <Sparkles />
               منصة تحدّي المباشرة
             </span>
-            <h1>ادخل الغرفة عبر لوحة تحدّي الكمومية.</h1>
+            <h1>ادخل الغرفة عبر لوحة تحدّي.</h1>
             <p>
-              واجهة Cyber داكنة بخطوط قطرية، زجاج أسود، مؤشرات LIVE/API، وأزرار ذهبية
-              واضحة تجعل إدارة المسابقة تبدو مثل مختبر تفاعلي مباشر.
+              أنشئ مسابقة، شارك رمز الغرفة مع اللاعبين، وتابع الإجابات والنتائج مباشرة من لوحة
+              واحدة.
             </p>
             <div className="identity-signals" aria-label="ملامح الهوية البصرية">
               {identitySignals.map((item) => (
@@ -114,7 +113,7 @@ function HomePageContent({
             <div className="hero-command" aria-label="دخول سريع إلى غرفة تحدّي">
               <div className="hero-command-header">
                 <span>دخول الزائر</span>
-                <strong>A7K9PQ</strong>
+                <strong>رمز من المضيف</strong>
               </div>
               <JoinQuizForm />
             </div>
@@ -123,9 +122,9 @@ function HomePageContent({
                 <Trophy />
                 أنشئ مسابقة
               </ButtonLink>
-              <Link className="text-link" href="/demo/question">
+              <Link className="text-link" href="/questions">
                 <Zap />
-                جرّب سؤالًا سريعًا
+                استعرض بنك الأسئلة
               </Link>
             </div>
             <div className="hero-flow" aria-label="كيف تعمل التجربة">
@@ -143,25 +142,25 @@ function HomePageContent({
             <div className="arena-glow glow-two" aria-hidden="true" />
             <div className="arena-scoreboard">
               <div className="scoreboard-topline">
-                <span>غرفة مباشرة</span>
-                <strong dir="ltr">A7K9PQ</strong>
+                <span>حالة الغرفة</span>
+                <strong>غير متصلة</strong>
               </div>
               <div className="scoreboard-question">
-                <span>السؤال الآن</span>
-                <h2>ما عاصمة المملكة العربية السعودية؟</h2>
+                <span>قبل بدء الجلسة</span>
+                <h2>تظهر بيانات الغرفة الحقيقية هنا بعد تشغيلها.</h2>
               </div>
-              <div className="scoreboard-options" aria-label="اختيارات السؤال">
-                <span className="is-correct">الرياض</span>
-                <span>جدة</span>
-                <span>الدمام</span>
-                <span>مكة</span>
+              <div className="scoreboard-empty" role="status">
+                <Radio aria-hidden="true" />
+                <div>
+                  <strong>لا توجد جلسة نشطة</strong>
+                  <span>افتح مسابقة محفوظة لإنشاء رمز دعوة وبدء استقبال اللاعبين.</span>
+                </div>
               </div>
               <div className="scoreboard-footer">
                 <div>
                   <Users aria-hidden="true" />
-                  <span>لاعبون زوار</span>
+                  <span>لا يوجد لاعبون قبل فتح الغرفة</span>
                 </div>
-                <QuizTimer total={20} remaining={12} size="sm" />
               </div>
             </div>
             <div className="host-console">
@@ -207,8 +206,8 @@ function HomePageContent({
                   title={item.title}
                   description={item.description}
                   icon={<GameIcon aria-hidden="true" />}
-                  meta="العب الآن"
-                  href={`/demo/question?mode=${item.mode}`}
+                  meta="أنشئ هذا النمط"
+                  href="/quizzes/new"
                 />
               );
             })}
@@ -256,7 +255,9 @@ function HomePageContent({
                   key={quiz.id}
                   title={quiz.title}
                   description={quiz.description || 'مسابقة عامة نشطة وجاهزة للانضمام.'}
-                  meta={`${quiz.questionCount.toLocaleString('ar-SA')} سؤال · ${quiz.ownerName || 'مضيف تحدّي'}`}
+                  meta={[`${quiz.questionCount.toLocaleString('ar-SA')} سؤال`, quiz.ownerName]
+                    .filter(Boolean)
+                    .join(' · ')}
                   href={`/join/${quiz.roomCode}`}
                 />
               ))}

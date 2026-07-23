@@ -5,12 +5,15 @@ export const siteConfig = {
   slogan: 'نافس، أجب، وتصدّر',
   locale: 'ar',
   direction: 'rtl',
-  social: { x: '#', youtube: '#', instagram: '#' },
 } as const;
 
 export const competitionStatuses = {
-  live: 'مباشر الآن', waiting: 'في الانتظار', paused: 'متوقف مؤقتًا',
-  ended: 'انتهى', soon: 'يبدأ قريبًا', offline: 'غير متصل',
+  live: 'مباشر الآن',
+  waiting: 'في الانتظار',
+  paused: 'متوقف مؤقتًا',
+  ended: 'انتهى',
+  soon: 'يبدأ قريبًا',
+  offline: 'غير متصل',
 } as const;
 
 export const questionTypes = ['اختيار من متعدد', 'صح أو خطأ', 'ترتيب', 'إجابة قصيرة'] as const;

@@ -24,7 +24,9 @@ export default async function QuizzesPage() {
                   key={quiz.id}
                   title={quiz.title}
                   description={quiz.description || 'مسابقة عامة نشطة وجاهزة للانضمام.'}
-                  meta={`${quiz.questionCount.toLocaleString('ar-SA')} سؤال · ${quiz.ownerName || 'مضيف تحدّي'}`}
+                  meta={[`${quiz.questionCount.toLocaleString('ar-SA')} سؤال`, quiz.ownerName]
+                    .filter(Boolean)
+                    .join(' · ')}
                   href={`/join/${quiz.roomCode}`}
                 />
               ))}

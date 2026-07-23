@@ -48,8 +48,14 @@ describe('Header user menu', () => {
     await user.click(trigger);
 
     expect(screen.getByText('سارة')).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'الملف الشخصي' })).toHaveAttribute('href', '/profile');
-    expect(screen.getByRole('menuitem', { name: 'لوحة التحكم' })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('menuitem', { name: 'الملف الشخصي' })).toHaveAttribute(
+      'href',
+      '/profile',
+    );
+    expect(screen.getByRole('menuitem', { name: 'لوحة التحكم' })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    );
     expect(screen.queryByRole('menuitem', { name: 'تسجيل الدخول' })).not.toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'إنشاء حساب' })).not.toBeInTheDocument();
 
@@ -57,5 +63,19 @@ describe('Header user menu', () => {
     expect(signOut).toHaveBeenCalledWith({ callbackUrl: '/' });
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+
+  it('لا يعرض روابط الشاشات التدريبية في التنقل العام', () => {
+    render(
+      <SiteLayout>
+        <p>المحتوى</p>
+      </SiteLayout>,
+    );
+
+    expect(screen.queryByText('الشاشات التجريبية')).not.toBeInTheDocument();
+    expect(document.querySelector('a[href^="/demo/"]')).not.toBeInTheDocument();
+    for (const link of screen.getAllByRole('link', { name: 'انضم إلى مسابقة' })) {
+      expect(link).toHaveAttribute('href', '/join');
+    }
   });
 });

@@ -14,7 +14,7 @@ import {
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { demoNavigation, primaryNavigation } from '@/config/navigation';
+import { primaryNavigation } from '@/config/navigation';
 import { siteConfig } from '@/config/site';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '../theme-toggle';
@@ -175,12 +175,6 @@ export function Header({ user = null }: { user?: HeaderUser | null }) {
               {item.label}
             </Link>
           ))}
-          {demoNavigation.slice(0, 4).map((item) => (
-            <Link key={item.href} href={item.href} onClick={() => setOpen(false)}>
-              <ChevronLeft />
-              {item.label}
-            </Link>
-          ))}
         </nav>
       )}
     </header>
@@ -205,12 +199,10 @@ export function Footer() {
           ))}
         </div>
         <div>
-          <strong>الشاشات التجريبية</strong>
-          {demoNavigation.slice(0, 4).map((item) => (
-            <Link key={item.href} href={item.href}>
-              {item.label}
-            </Link>
-          ))}
+          <strong>ابدأ</strong>
+          <Link href="/join">انضم إلى مسابقة</Link>
+          <Link href="/quizzes/new">أنشئ مسابقة</Link>
+          <Link href="/questions">أضف سؤالًا</Link>
         </div>
       </div>
     </footer>
@@ -292,7 +284,7 @@ export function DashboardLayout({
 
 export function HostLayout({
   children,
-  players = 24,
+  players = 0,
   connected = true,
 }: {
   children: ReactNode;
