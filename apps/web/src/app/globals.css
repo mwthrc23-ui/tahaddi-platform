@@ -2074,46 +2074,48 @@ tr:last-child td {
 .offline-dot {
   background: var(--danger);
 }
+/* Hallmark · component: room QR · genre: cyber/quantum · theme: تحدّي */
 .room-code {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 1.2rem;
+  gap: var(--space-5);
 }
 .room-code > div:nth-child(2) {
   display: flex;
   flex-direction: column;
+  min-inline-size: 0;
 }
 .room-code strong {
   font-size: clamp(2rem, 5vw, 3.5rem);
   letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
 }
 .room-code small,
 .room-code span {
   color: var(--muted-foreground);
 }
+.room-invite-url {
+  overflow-wrap: anywhere;
+}
 .room-actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
-.qr-placeholder {
+.room-qr {
   inline-size: 7rem;
-  block-size: 7rem;
-  padding: 0.6rem;
-  display: grid !important;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.35rem;
+  aspect-ratio: 1;
+  padding: var(--space-2);
+  display: grid;
+  place-items: center;
   background: var(--qr-paper);
-  border-radius: 0.7rem;
+  border-radius: var(--radius-sm);
 }
-.qr-placeholder span {
-  background: var(--qr-ink) !important;
-  border-radius: 0.2rem;
-}
-.qr-placeholder span:nth-child(2),
-.qr-placeholder span:nth-child(3) {
-  transform: scale(0.55);
+.room-qr-code {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
 }
 .score-display {
   position: relative;
@@ -2881,7 +2883,7 @@ tr:last-child td {
     grid-template-columns: 1fr;
     text-align: center;
   }
-  .qr-placeholder {
+  .room-qr {
     margin-inline: auto;
   }
   .room-actions {
