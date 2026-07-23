@@ -1,6 +1,7 @@
 @import '../../tokens.css';
 @import 'tailwindcss';
 
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 */
 /* Hallmark · genre: competitive modern-minimal · macrostructure: Workbench · theme: design.md · enrichment: Tier-A product board · nav: existing SiteLayout · footer: existing SiteLayout */
 
 * {
@@ -20,6 +21,13 @@ body {
   font-weight: 400;
   line-height: 1.65;
   overflow-x: clip;
+}
+main,
+section,
+header,
+footer,
+nav {
+  min-inline-size: 0;
 }
 button,
 input,
@@ -583,6 +591,7 @@ summary:focus-visible {
   gap: 0.5rem;
   color: var(--muted-foreground);
   font-weight: 700;
+  white-space: nowrap;
 }
 .hero-stage {
   min-block-size: clamp(32rem, 52vw, 43rem);
@@ -602,7 +611,11 @@ summary:focus-visible {
 .glow-one {
   inline-size: min(42rem, 100%);
   block-size: min(42rem, 100%);
-  background: radial-gradient(circle, color-mix(in srgb, var(--primary) 14%, transparent), transparent 62%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--primary) 14%, transparent),
+    transparent 62%
+  );
 }
 .glow-two {
   inline-size: min(30rem, 78%);
@@ -623,7 +636,12 @@ summary:focus-visible {
   border-radius: calc(var(--radius-xl) + 0.8rem);
   background:
     repeating-linear-gradient(135deg, transparent 0 14px, var(--quantum-line) 14px 15px),
-    linear-gradient(90deg, transparent 0 12%, var(--surface-stage-line) 12% 13%, transparent 13% 100%),
+    linear-gradient(
+      90deg,
+      transparent 0 12%,
+      var(--surface-stage-line) 12% 13%,
+      transparent 13% 100%
+    ),
     linear-gradient(180deg, color-mix(in srgb, var(--primary) 18%, transparent), transparent 42%),
     var(--surface-stage);
   backdrop-filter: blur(10px) saturate(112%);
@@ -679,6 +697,30 @@ summary:focus-visible {
   border-color: color-mix(in srgb, var(--success) 68%, var(--border));
   background: color-mix(in srgb, var(--success) 18%, var(--muted));
   color: var(--success);
+}
+.scoreboard-empty {
+  min-inline-size: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px dashed color-mix(in srgb, var(--primary) 52%, var(--border));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+.scoreboard-empty > svg {
+  inline-size: 2rem;
+  block-size: 2rem;
+  color: var(--primary);
+}
+.scoreboard-empty > div {
+  min-inline-size: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.scoreboard-empty span {
+  color: var(--muted-foreground);
 }
 .scoreboard-footer > div {
   display: inline-flex;
@@ -1065,7 +1107,12 @@ summary:focus-visible {
   inset-inline: var(--space-6);
   block-size: 4px;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, var(--primary), var(--quantum-lime), var(--surface-stage-hotline));
+  background: linear-gradient(
+    90deg,
+    var(--primary),
+    var(--quantum-lime),
+    var(--surface-stage-hotline)
+  );
   opacity: 0.86;
 }
 .showcase-card:hover {
@@ -1129,7 +1176,11 @@ summary:focus-visible {
   color: var(--gold);
   background:
     repeating-linear-gradient(135deg, transparent 0 8px, var(--quantum-line) 8px 9px),
-    radial-gradient(circle at 30% 24%, color-mix(in srgb, var(--gold) 20%, transparent), transparent 58%),
+    radial-gradient(
+      circle at 30% 24%,
+      color-mix(in srgb, var(--gold) 20%, transparent),
+      transparent 58%
+    ),
     color-mix(in srgb, var(--primary) 14%, var(--muted));
   border-radius: var(--radius-md);
 }
@@ -1186,8 +1237,17 @@ summary:focus-visible {
 .leaderboard-section {
   background:
     repeating-linear-gradient(135deg, transparent 0 18px, var(--quantum-line) 18px 19px),
-    linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 8%, transparent), transparent),
-    linear-gradient(115deg, color-mix(in srgb, var(--primary) 9%, var(--background)), var(--background));
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--accent) 8%, transparent),
+      transparent
+    ),
+    linear-gradient(
+      115deg,
+      color-mix(in srgb, var(--primary) 9%, var(--background)),
+      var(--background)
+    );
 }
 .leaderboard-list {
   display: flex;
@@ -1268,7 +1328,13 @@ summary:focus-visible {
   inset-block-start: 0;
   block-size: 3px;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, transparent, var(--surface-stage-hotline), var(--primary), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--surface-stage-hotline),
+    var(--primary),
+    transparent
+  );
 }
 .cta > div > svg {
   color: var(--gold);
@@ -1724,6 +1790,16 @@ tr:last-child td {
   gap: 0.5rem;
   align-items: center;
   margin-block: 1rem;
+  max-inline-size: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+.pagination > *,
+.tabs > *,
+.stepper > * {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 .tabs {
   border-block-end: 1px solid var(--border);
@@ -2448,12 +2524,12 @@ tr:last-child td {
 .dashboard-layout {
   display: grid;
   grid-template-columns: 17rem 1fr;
-  min-block-size: 100vh;
+  min-block-size: 100dvh;
 }
 .sidebar {
   position: sticky;
   inset-block-start: 0;
-  block-size: 100vh;
+  block-size: 100dvh;
   padding: 1rem;
   border-inline-end: 1px solid var(--border);
   background: var(--card);
@@ -2523,6 +2599,28 @@ tr:last-child td {
 .dashboard-main .card-grid {
   margin-block-end: 1rem;
 }
+.dashboard-quiz-list {
+  display: grid;
+}
+.dashboard-quiz-row {
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-block: var(--space-4);
+  border-block-start: 1px solid var(--border);
+}
+.dashboard-quiz-row > div {
+  min-inline-size: 0;
+}
+.dashboard-quiz-row h3,
+.dashboard-quiz-row p {
+  margin-block-end: 0;
+}
+.dashboard-quiz-row .component-row {
+  justify-content: flex-start;
+}
 .dashboard-empty {
   block-size: 6rem;
   display: flex;
@@ -2563,7 +2661,7 @@ tr:last-child td {
 }
 .broadcast-layout {
   aspect-ratio: 16/9;
-  min-block-size: 100vh;
+  min-block-size: 100dvh;
   padding: clamp(2rem, 4vw, 5rem);
   background:
     radial-gradient(
@@ -2647,7 +2745,7 @@ tr:last-child td {
     min-block-size: 38rem;
   }
   .card-grid.four {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .waiting-grid,
   .split-section {
@@ -2735,6 +2833,13 @@ tr:last-child td {
   }
   .section-heading {
     align-items: flex-start;
+    flex-direction: column;
+  }
+  .section-heading > * {
+    min-inline-size: 0;
+  }
+  .inline-between {
+    flex-wrap: wrap;
   }
   .cta {
     flex-direction: column;
@@ -2806,6 +2911,10 @@ tr:last-child td {
   .demo-heading {
     flex-direction: column;
   }
+  .design-header,
+  .dashboard-header {
+    flex-wrap: wrap;
+  }
   .dashboard-layout {
     display: block;
   }
@@ -2814,7 +2923,9 @@ tr:last-child td {
     inline-size: 100%;
     block-size: auto;
     flex-direction: row;
-    overflow: auto;
+    gap: var(--space-2);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
   }
   .sidebar > .logo,
   .sidebar > button {
@@ -2823,12 +2934,24 @@ tr:last-child td {
   .sidebar nav {
     flex-direction: row;
   }
+  .sidebar nav a,
+  .sidebar .button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
   .dashboard-main {
     padding: 1rem;
+  }
+  .dashboard-quiz-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
   .host-layout > header {
     flex-wrap: wrap;
     padding-block: 0.5rem;
+  }
+  .host-layout > header > div {
+    flex-wrap: wrap;
   }
   .broadcast-layout {
     aspect-ratio: auto;
@@ -2865,6 +2988,8 @@ tr:last-child td {
   .hero-command-header {
     font-size: 0.82rem;
     padding-inline: var(--space-2);
+    align-items: flex-start;
+    flex-direction: column;
   }
   .scoreboard-options {
     grid-template-columns: 1fr;
@@ -2901,7 +3026,7 @@ tr:last-child td {
     grid-template-columns: repeat(2, 1fr);
   }
   .component-row .button {
-    flex: 1;
+    flex: 1 1 100%;
   }
   .demo-steps {
     overflow: auto;
@@ -2932,6 +3057,17 @@ tr:last-child td {
   .mobile-nav {
     max-block-size: 70vh;
     overflow: auto;
+  }
+  .dashboard-header {
+    align-items: flex-start;
+  }
+  .dashboard-header h1 {
+    font-size: clamp(1.75rem, 9vw, 2.4rem);
+  }
+  .profile-row {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-block: var(--space-3);
   }
   .quiz-builder-question-settings {
     grid-template-columns: 1fr;

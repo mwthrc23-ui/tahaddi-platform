@@ -34,40 +34,16 @@ type QuizDraft = {
 };
 
 const storageKey = 'tahaddi:quiz-builder:draft:v1';
-const fallbackQuestions: DraftQuestion[] = [
-  {
-    id: 'heritage',
-    prompt: 'ما اسم المنطقة التي اشتهرت بآثار مدائن صالح؟',
-    category: 'تراث سعودي',
-    duration: 20,
-    points: 1000,
-  },
-  {
-    id: 'science',
-    prompt: 'ما الكوكب الأقرب إلى الشمس؟',
-    category: 'علوم',
-    duration: 15,
-    points: 800,
-  },
-  { id: 'language', prompt: 'ما جمع كلمة كتاب؟', category: 'لغة عربية', duration: 15, points: 800 },
-  {
-    id: 'geography',
-    prompt: 'ما أكبر قارات العالم مساحةً؟',
-    category: 'جغرافيا',
-    duration: 20,
-    points: 1000,
-  },
-];
 
-function createInitialDraft(availableQuestions: DraftQuestion[]): QuizDraft {
+function createInitialDraft(): QuizDraft {
   return {
     version: 1,
-    title: 'مسابقة الثقافة العامة',
-    description: 'مسودة قصيرة لجولة تفاعلية من أسئلة متنوعة.',
-    roundName: 'الجولة الأولى',
+    title: '',
+    description: '',
+    roundName: '',
     presentationMode: 'SEQUENTIAL',
     playerLimit: 50,
-    questions: availableQuestions.slice(0, 2),
+    questions: [],
   };
 }
 
@@ -104,12 +80,8 @@ export function parseQuizDraft(value: string): QuizDraft | null {
   }
 }
 
-export function QuizBuilder({
-  availableQuestions = fallbackQuestions,
-}: {
-  availableQuestions?: DraftQuestion[];
-}) {
-  const [draft, setDraft] = useState<QuizDraft>(() => createInitialDraft(availableQuestions));
+export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: DraftQuestion[] }) {
+  const [draft, setDraft] = useState<QuizDraft>(createInitialDraft);
   const [storageReady, setStorageReady] = useState(false);
   const [notice, setNotice] = useState('');
   const [saveFailed, setSaveFailed] = useState(false);
