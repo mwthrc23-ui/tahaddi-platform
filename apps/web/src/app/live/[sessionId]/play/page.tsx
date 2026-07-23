@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation';
-import { submitLiveAnswer } from '@/app/live/actions';
 import { SiteLayout } from '@/components/layout';
+import { LiveAnswerForm, RoomPoller } from '@/components/live';
 import { QuestionImage } from '@/components/questions/question-image';
 import { QuestionProgress, ScoreDisplay } from '@/components/quiz';
-import { Badge, Button, Card, EmptyState } from '@/components/ui';
+import { Badge, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { getCurrentSession } from '@/lib/auth/session';
 
@@ -39,9 +39,13 @@ export default async function LivePlayPage({
         roomCode: true,
         status: true,
         currentQuestionPosition: true,
+        questionAdvanceAt: true,
         quiz: {
           select: {
             title: true,
+            autoLockAnswers: true,
+            autoAdvance: true,
+            speedScoring: true,
             questions: {
               orderBy: { position: 'asc' },
               select: {
@@ -97,6 +101,12 @@ export default async function LivePlayPage({
             />
           ) : (
             <>
+              {session.status !== 'FINISHED' && (
+                <RoomPoller
+                  endpoint={`/api/live/${session.id}/tick`}
+                  participantId={participant.id}
+                />
+              )}
               <div className="section-heading">
                 <div>
                   <span className="eyebrow">غرفة {session.roomCode}</span>
@@ -131,35 +141,42 @@ export default async function LivePlayPage({
                       eager
                     />
                   )}
-                  <div className="answers-list">
-                    {currentQuestion.options.map((option, index) => {
-                      const label = optionLabels[index] ?? String(index + 1);
-                      const selected = answer?.optionId === option.id;
-                      const state = answer
-                        ? option.isCorrect
+                  {answer ? (
+                    <div className="answers-list">
+                      {currentQuestion.options.map((option, index) => {
+                        const label = optionLabels[index] ?? String(index + 1);
+                        const selected = answer.optionId === option.id;
+                        const state = option.isCorrect
                           ? 'correct'
                           : selected
                             ? 'wrong'
-                            : 'disabled'
-                        : 'default';
-                      return (
-                        <form action={submitLiveAnswer} key={option.id}>
-                          <input type="hidden" name="sessionId" value={session.id} />
-                          <input type="hidden" name="participantId" value={participant.id} />
-                          <input type="hidden" name="questionId" value={currentQuestion.id} />
-                          <input type="hidden" name="optionId" value={option.id} />
+                            : 'disabled';
+                        return (
                           <button
-                            type="submit"
+                            key={option.id}
+                            type="button"
                             className={`answer-option option-${label.toLowerCase()} is-${state}`}
-                            disabled={Boolean(answer) || session.status === 'FINISHED'}
+                            disabled
                           >
                             <span className="answer-letter">{label}</span>
                             <span className="answer-text">{option.text}</span>
                           </button>
-                        </form>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <LiveAnswerForm
+                      sessionId={session.id}
+                      participantId={participant.id}
+                      questionId={currentQuestion.id}
+                      autoLockAnswers={session.quiz.autoLockAnswers}
+                      options={currentQuestion.options.map((option, index) => ({
+                        id: option.id,
+                        label: optionLabels[index] ?? String(index + 1),
+                        text: option.text,
+                      }))}
+                    />
+                  )}
                   {answer && (
                     <p className={answer.isCorrect ? 'text-success' : 'text-danger'} role="status">
                       {answer.isCorrect
@@ -200,9 +217,15 @@ export default async function LivePlayPage({
                       ))}
                     </div>
                   </Card>
-                  <Button variant="outline" fullWidth disabled>
-                    السؤال التالي يفتحه المضيف في المرحلة القادمة
-                  </Button>
+                  <p className="muted" role="status">
+                    {session.status === 'FINISHED'
+                      ? 'انتهت الجلسة.'
+                      : session.questionAdvanceAt
+                        ? 'اكتملت الإجابات؛ سيظهر السؤال التالي خلال لحظات.'
+                        : session.quiz.autoAdvance
+                          ? 'ينتقل السؤال تلقائيًا بعد إجابة جميع اللاعبين النشطين.'
+                          : 'يفتح المضيف السؤال التالي يدويًا.'}
+                  </p>
                 </div>
               </div>
             </>

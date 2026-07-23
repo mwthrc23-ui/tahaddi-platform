@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
-import { generateUniqueRoomCode } from '@/lib/quiz/room-code';
+import { generateUniqueActivityRoomCode } from '@/lib/quiz/room-code';
 
 const ROOM_CODE_RE = /^[34679ACDEFGHJKMNPQRTUVWXY]{6,8}$/;
 const MAX_QUIZ_QUESTIONS = 100;
@@ -15,6 +15,10 @@ export type CreateQuizInput = {
   title: string;
   description?: string;
   questionIds: string[];
+  maxPlayers?: number;
+  autoLockAnswers?: boolean;
+  autoAdvance?: boolean;
+  speedScoring?: boolean;
 };
 
 export type PublicQuiz = {
@@ -76,6 +80,7 @@ export async function createQuiz(input: CreateQuizInput): Promise<QuizActionResu
   const title = input.title.trim();
   const description = input.description?.trim() || undefined;
   const questionIds = [...new Set(input.questionIds)];
+  const maxPlayers = Math.min(500, Math.max(2, Math.trunc(input.maxPlayers ?? 50)));
 
   if (title.length < 3 || title.length > 160) {
     return { status: 'error', message: 'عنوان المسابقة يجب أن يكون بين ٣ و١٦٠ حرفًا.' };
@@ -105,7 +110,7 @@ export async function createQuiz(input: CreateQuizInput): Promise<QuizActionResu
     }
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      const roomCode = await generateUniqueRoomCode(prisma);
+      const roomCode = await generateUniqueActivityRoomCode(prisma);
       try {
         const quiz = await prisma.quiz.create({
           data: {
@@ -115,6 +120,10 @@ export async function createQuiz(input: CreateQuizInput): Promise<QuizActionResu
             roomCode,
             status: 'DRAFT',
             isPublic: false,
+            maxPlayers,
+            autoLockAnswers: input.autoLockAnswers ?? true,
+            autoAdvance: input.autoAdvance ?? false,
+            speedScoring: input.speedScoring ?? true,
             questions: {
               create: questionIds.map((questionId, position) => ({ questionId, position })),
             },

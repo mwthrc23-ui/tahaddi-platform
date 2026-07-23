@@ -17,12 +17,15 @@ describe('QuizBuilder', () => {
     await user.type(title, 'مسابقة محفوظة');
     await user.click(screen.getByRole('button', { name: 'حفظ المسودة محليًا' }));
 
-    expect(
-      JSON.parse(localStorage.getItem('tahaddi:quiz-builder:draft:v1') ?? '{}'),
-    ).toMatchObject({
-      version: 1,
-      title: 'مسابقة محفوظة',
-    });
+    expect(JSON.parse(localStorage.getItem('tahaddi:quiz-builder:draft:v1') ?? '{}')).toMatchObject(
+      {
+        version: 2,
+        title: 'مسابقة محفوظة',
+        autoLockAnswers: true,
+        autoAdvance: false,
+        speedScoring: true,
+      },
+    );
     expect(screen.getByRole('status')).toHaveTextContent('حُفظت المسودة محليًا على هذا الجهاز.');
   });
 });

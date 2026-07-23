@@ -54,6 +54,47 @@ enum LiveParticipantStatus {
   DISCONNECTED
 }
 
+enum MafiaGameStatus {
+  LOBBY
+  NIGHT
+  DAY
+  VOTING
+  FINISHED
+}
+
+enum MafiaRole {
+  KILLER
+  DETECTIVE
+  DOCTOR
+  GUARD
+  WITNESS
+  CITIZEN
+}
+
+enum MafiaPlayerStatus {
+  ALIVE
+  ELIMINATED
+}
+
+enum MafiaWinner {
+  CITIZENS
+  KILLERS
+}
+
+enum MafiaMessageChannel {
+  PUBLIC
+  KILLERS
+  GHOSTS
+  SYSTEM
+}
+
+enum MafiaActionType {
+  KILL
+  INVESTIGATE
+  HEAL
+  PROTECT
+}
+
 model User {
   id                 String        @id @default(cuid())
   name               String?       @db.VarChar(120)
@@ -75,6 +116,7 @@ model User {
   questions          Question[]
   quizzes            Quiz[]
   hostedLiveSessions LiveSession[] @relation("LiveSessionHost")
+  hostedMafiaGames   MafiaGame[]   @relation("MafiaGameHost")
 
   @@index([role])
   @@index([status])
@@ -108,18 +150,22 @@ model Question {
 }
 
 model Quiz {
-  id           String         @id @default(cuid())
-  title        String         @db.VarChar(160)
-  description  String?        @db.VarChar(1000)
-  ownerId      String
-  roomCode     String         @unique @db.VarChar(8)
-  isPublic     Boolean        @default(false)
-  status       QuizStatus     @default(DRAFT)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  owner        User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  questions    QuizQuestion[]
-  liveSessions LiveSession[]
+  id              String         @id @default(cuid())
+  title           String         @db.VarChar(160)
+  description     String?        @db.VarChar(1000)
+  ownerId         String
+  roomCode        String         @unique @db.VarChar(8)
+  isPublic        Boolean        @default(false)
+  status          QuizStatus     @default(DRAFT)
+  maxPlayers      Int            @default(50)
+  autoLockAnswers Boolean        @default(true)
+  autoAdvance     Boolean        @default(false)
+  speedScoring    Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  owner           User           @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  questions       QuizQuestion[]
+  liveSessions    LiveSession[]
 
   @@index([ownerId, status])
   @@index([isPublic, status])
@@ -157,6 +203,8 @@ model LiveSession {
   roomCode                String            @db.VarChar(8)
   status                  LiveSessionStatus @default(WAITING)
   currentQuestionPosition Int               @default(0)
+  questionStartedAt       DateTime?
+  questionAdvanceAt       DateTime?
   startedAt               DateTime?
   endedAt                 DateTime?
   createdAt               DateTime          @default(now())
@@ -179,6 +227,7 @@ model LiveParticipant {
   correctCount Int                   @default(0)
   status       LiveParticipantStatus @default(CONNECTED)
   joinedAt     DateTime              @default(now())
+  lastSeenAt   DateTime              @default(now())
   session      LiveSession           @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   answers      LiveAnswer[]
 
@@ -204,6 +253,107 @@ model LiveAnswer {
   @@index([sessionId, receivedAt])
   @@index([questionId])
   @@index([optionId])
+}
+
+model MafiaGame {
+  id                  String                @id @default(cuid())
+  hostId              String
+  roomCode            String                @unique @db.VarChar(8)
+  status              MafiaGameStatus       @default(LOBBY)
+  winner              MafiaWinner?
+  currentRound        Int                   @default(0)
+  maxPlayers          Int                   @default(20)
+  killerCount         Int                   @default(1)
+  autoMode            Boolean               @default(true)
+  daySeconds          Int                   @default(90)
+  nightSeconds        Int                   @default(45)
+  votingSeconds       Int                   @default(45)
+  chatEnabled         Boolean               @default(true)
+  slowModeSeconds     Int                   @default(2)
+  phaseEndsAt         DateTime?
+  startedAt           DateTime?
+  endedAt             DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  host                User                  @relation("MafiaGameHost", fields: [hostId], references: [id], onDelete: Restrict)
+  participants        MafiaParticipant[]
+  messages            MafiaMessage[]
+  actions             MafiaAction[]
+  votes               MafiaVote[]
+
+  @@index([hostId, createdAt])
+  @@index([roomCode, status])
+}
+
+model MafiaParticipant {
+  id            String            @id @default(cuid())
+  accessToken   String            @unique @db.VarChar(64)
+  gameId        String
+  displayName   String            @db.VarChar(80)
+  role          MafiaRole?
+  status        MafiaPlayerStatus @default(ALIVE)
+  isMuted       Boolean           @default(false)
+  privateNote   String?           @db.VarChar(500)
+  joinedAt      DateTime          @default(now())
+  lastSeenAt    DateTime          @default(now())
+  lastMessageAt DateTime?
+  eliminatedAt  DateTime?
+  game          MafiaGame         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  messages      MafiaMessage[]
+  actions       MafiaAction[]     @relation("MafiaActionActor")
+  targetedBy    MafiaAction[]     @relation("MafiaActionTarget")
+  votesCast     MafiaVote[]       @relation("MafiaVoteVoter")
+  votesReceived MafiaVote[]       @relation("MafiaVoteTarget")
+
+  @@unique([gameId, displayName])
+  @@index([gameId, status])
+  @@index([gameId, role])
+}
+
+model MafiaMessage {
+  id            String               @id @default(cuid())
+  gameId        String
+  participantId String?
+  channel       MafiaMessageChannel  @default(PUBLIC)
+  body          String               @db.VarChar(280)
+  createdAt     DateTime             @default(now())
+  game          MafiaGame            @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  participant   MafiaParticipant?    @relation(fields: [participantId], references: [id], onDelete: SetNull)
+
+  @@index([gameId, channel, createdAt])
+}
+
+model MafiaAction {
+  id             String           @id @default(cuid())
+  gameId         String
+  round          Int
+  actorId        String
+  targetId       String
+  type           MafiaActionType
+  resultIsKiller Boolean?
+  createdAt      DateTime         @default(now())
+  game           MafiaGame        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  actor          MafiaParticipant @relation("MafiaActionActor", fields: [actorId], references: [id], onDelete: Cascade)
+  target         MafiaParticipant @relation("MafiaActionTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, round, type, actorId])
+  @@index([gameId, round, type])
+  @@index([targetId])
+}
+
+model MafiaVote {
+  id        String           @id @default(cuid())
+  gameId    String
+  round     Int
+  voterId   String
+  targetId  String
+  createdAt DateTime         @default(now())
+  game      MafiaGame        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  voter     MafiaParticipant @relation("MafiaVoteVoter", fields: [voterId], references: [id], onDelete: Cascade)
+  target    MafiaParticipant @relation("MafiaVoteTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([gameId, round, voterId])
+  @@index([gameId, round, targetId])
 }
 
 model Account {
