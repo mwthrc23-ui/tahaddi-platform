@@ -3,6 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
+import {
+  deleteQuestionImage,
+  getQuestionImageFile,
+  QuestionImageError,
+  uploadQuestionImage,
+} from '@/lib/questions/media';
 import { questionSchema } from '@/lib/questions/validation';
 
 export type UpdateQuestionActionState = {
@@ -49,34 +55,84 @@ export async function updateQuestion(
 
   const { options: inputOptions, correctOption, ...question } = parsed.data;
   const client = getPrismaClient();
-  type TxClient = Omit<typeof client, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
-  const updated = await client.$transaction(async (prisma: TxClient) => {
-    const result = await prisma.question.updateMany({
-      where: { id: questionId, ownerId: user.id, status: { not: 'ARCHIVED' } },
-      data: question,
-    });
-    if (result.count === 0) return false;
-
-    await prisma.questionOption.deleteMany({ where: { questionId } });
-    await prisma.questionOption.createMany({
-      data: inputOptions.map((text, position) => ({
-        questionId,
-        text,
-        position,
-        isCorrect: position === correctOption,
-      })),
-    });
-    return true;
+  const existingQuestion = await client.question.findFirst({
+    where: { id: questionId, ownerId: user.id, status: { not: 'ARCHIVED' } },
+    select: { imageUrl: true },
   });
-
-  if (!updated) {
+  if (!existingQuestion) {
     return {
       status: 'error',
       message: 'تعذّر تعديل السؤال. قد يكون مؤرشفًا أو لا تملك صلاحية الوصول إليه.',
     };
   }
 
+  const imageFile = getQuestionImageFile(formData.get('image'));
+  const removeImage = formData.get('removeImage') === 'true';
+  let imageUrl = removeImage ? null : existingQuestion.imageUrl;
+  let uploadedImageUrl: string | null = null;
+
+  try {
+    if (imageFile) {
+      uploadedImageUrl = await uploadQuestionImage(imageFile, user.id);
+      imageUrl = uploadedImageUrl;
+    }
+  } catch (error) {
+    return {
+      status: 'error',
+      message:
+        error instanceof QuestionImageError
+          ? error.message
+          : 'تعذّر رفع الصورة الآن. حاول مرة أخرى.',
+    };
+  }
+
+  type TxClient = Omit<
+    typeof client,
+    '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+  >;
+  let updated = false;
+  try {
+    updated = await client.$transaction(async (prisma: TxClient) => {
+      const result = await prisma.question.updateMany({
+        where: { id: questionId, ownerId: user.id, status: { not: 'ARCHIVED' } },
+        data: { ...question, imageUrl },
+      });
+      if (result.count === 0) return false;
+
+      await prisma.questionOption.deleteMany({ where: { questionId } });
+      await prisma.questionOption.createMany({
+        data: inputOptions.map((text, position) => ({
+          questionId,
+          text,
+          position,
+          isCorrect: position === correctOption,
+        })),
+      });
+      return true;
+    });
+  } catch {
+    if (uploadedImageUrl) {
+      await deleteQuestionImage(uploadedImageUrl).catch(() => undefined);
+    }
+    return { status: 'error', message: 'تعذّر حفظ تعديلات السؤال الآن.' };
+  }
+
+  if (!updated) {
+    if (uploadedImageUrl) {
+      await deleteQuestionImage(uploadedImageUrl).catch(() => undefined);
+    }
+    return {
+      status: 'error',
+      message: 'تعذّر تعديل السؤال. قد يكون مؤرشفًا أو لا تملك صلاحية الوصول إليه.',
+    };
+  }
+
+  if (existingQuestion.imageUrl && existingQuestion.imageUrl !== imageUrl) {
+    await deleteQuestionImage(existingQuestion.imageUrl).catch(() => undefined);
+  }
+
   revalidatePath('/questions');
+  revalidatePath('/dashboard/questions');
   revalidatePath(`/questions/${questionId}`);
   return { status: 'success', message: 'تم حفظ تعديلات السؤال.' };
 }

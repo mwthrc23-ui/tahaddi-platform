@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/layout';
 import { Badge, Button, ButtonLink, Card, Input, Select } from '@/components/ui';
 import { ArchiveQuestionButton } from '@/components/questions/archive-question-button';
 import { QuestionEditor } from '@/components/questions/question-editor';
+import { QuestionImage } from '@/components/questions/question-image';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
 
@@ -106,6 +107,7 @@ export default async function DashboardQuestionsPage({
                 (question: {
                   id: string;
                   prompt: string;
+                  imageUrl: string | null;
                   category: string | null;
                   status: string;
                   difficulty: DifficultyKey;
@@ -113,12 +115,21 @@ export default async function DashboardQuestionsPage({
                   options: { id: string }[];
                 }) => (
                   <article key={question.id} className="list-item">
-                    <div>
-                      <strong>{question.prompt}</strong>
-                      <p>
-                        {question.category || 'بلا فئة'} · {question.options.length} خيارات ·{' '}
-                        {question.timeLimit} ثانية
-                      </p>
+                    <div className="question-list-content">
+                      {question.imageUrl && (
+                        <QuestionImage
+                          src={question.imageUrl}
+                          alt=""
+                          className="question-list-thumbnail"
+                        />
+                      )}
+                      <div>
+                        <strong>{question.prompt}</strong>
+                        <p>
+                          {question.category || 'بلا فئة'} · {question.options.length} خيارات ·{' '}
+                          {question.timeLimit} ثانية
+                        </p>
+                      </div>
                     </div>
                     <div className="inline-between">
                       <Badge>{difficultyLabel[question.difficulty]}</Badge>

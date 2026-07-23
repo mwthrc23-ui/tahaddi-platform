@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['127.0.0.1'],
   trailingSlash: true,
   basePath: isStaticExport && isGitHubPages ? '/tahaddi-platform' : '',
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '4mb',
+    },
+  },
   images: {
     unoptimized: true,
   },

@@ -88,6 +88,7 @@ model Question {
   status      QuestionStatus     @default(DRAFT)
   difficulty  QuestionDifficulty @default(MEDIUM)
   prompt      String             @db.VarChar(1000)
+  imageUrl    String?            @db.VarChar(1000)
   explanation String?            @db.VarChar(2000)
   category    String?            @db.VarChar(120)
   source      String?            @db.VarChar(500)

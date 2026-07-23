@@ -23,6 +23,7 @@ export type QuestionPayload = {
   index: number;
   total: number;
   prompt: string;
+  imageUrl: string | null;
   category: string;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
@@ -87,6 +88,7 @@ export type ServerToClientEvents = {
 export type GameQuestion = {
   id: string;
   prompt: string;
+  imageUrl?: string | null;
   category: string;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE';

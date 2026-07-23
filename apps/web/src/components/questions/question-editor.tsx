@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import { Button, Input, NumberInput, Select, Textarea } from '@/components/ui';
 import { createQuestion } from '@/app/questions/actions';
+import { QuestionImageField } from './question-image-field';
 
 const labels = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
 const initialQuestionActionState = { status: 'idle' as const, message: '' };
@@ -32,6 +33,7 @@ export function QuestionEditor() {
         minLength={8}
         placeholder="اكتب سؤالًا واضحًا ومباشرًا"
       />
+      <QuestionImageField />
       <fieldset className="field question-options">
         <legend className="field-label">الخيارات والإجابة الصحيحة</legend>
         {options.map((value, index) => (

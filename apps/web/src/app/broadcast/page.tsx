@@ -1,4 +1,5 @@
 import { BroadcastLayout } from '@/components/layout';
+import { QuestionImage } from '@/components/questions/question-image';
 import { QuestionProgress, RoomCode } from '@/components/quiz';
 import { Badge, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
@@ -35,6 +36,7 @@ export default async function Page({
               question: {
                 select: {
                   prompt: true,
+                  imageUrl: true,
                   category: true,
                   difficulty: true,
                   basePoints: true,
@@ -85,6 +87,9 @@ export default async function Page({
                 total={session.quiz.questions.length}
               />
               <h2>{currentQuestion.prompt}</h2>
+              {currentQuestion.imageUrl && (
+                <QuestionImage src={currentQuestion.imageUrl} className="question-media" eager />
+              )}
             </Card>
           </section>
           <aside>

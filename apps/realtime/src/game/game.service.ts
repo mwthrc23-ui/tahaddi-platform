@@ -294,6 +294,7 @@ export class GameService {
           index: nextIndex + 1,
           total: s.questionIds.length,
           prompt: question.prompt,
+          imageUrl: question.imageUrl ?? null,
           category: question.category,
           difficulty: question.difficulty,
           type: question.type,

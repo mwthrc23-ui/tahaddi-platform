@@ -3,6 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
+import {
+  deleteQuestionImage,
+  getQuestionImageFile,
+  QuestionImageError,
+  uploadQuestionImage,
+} from '@/lib/questions/media';
 import { questionSchema } from '@/lib/questions/validation';
 
 export type QuestionActionState = {
@@ -46,21 +52,40 @@ export async function createQuestion(
   }
 
   const { options: inputOptions, correctOption, ...question } = parsed.data;
-  await getPrismaClient().question.create({
-    data: {
-      ...question,
-      ownerId: user.id,
-      options: {
-        create: inputOptions.map((text, position) => ({
-          text,
-          position,
-          isCorrect: position === correctOption,
-        })),
+  const imageFile = getQuestionImageFile(formData.get('image'));
+  let imageUrl: string | null = null;
+
+  try {
+    imageUrl = imageFile ? await uploadQuestionImage(imageFile, user.id) : null;
+    await getPrismaClient().question.create({
+      data: {
+        ...question,
+        imageUrl,
+        ownerId: user.id,
+        options: {
+          create: inputOptions.map((text, position) => ({
+            text,
+            position,
+            isCorrect: position === correctOption,
+          })),
+        },
       },
-    },
-  });
+    });
+  } catch (error) {
+    if (imageUrl) {
+      await deleteQuestionImage(imageUrl).catch(() => undefined);
+    }
+    return {
+      status: 'error',
+      message:
+        error instanceof QuestionImageError
+          ? error.message
+          : 'تعذّر حفظ السؤال الآن. حاول مرة أخرى.',
+    };
+  }
 
   revalidatePath('/questions');
+  revalidatePath('/dashboard/questions');
   return { status: 'success', message: 'حُفظ السؤال كمسودة.' };
 }
 
@@ -74,4 +99,5 @@ export async function archiveQuestion(formData: FormData) {
     data: { status: 'ARCHIVED', archivedAt: new Date() },
   });
   revalidatePath('/questions');
+  revalidatePath('/dashboard/questions');
 }

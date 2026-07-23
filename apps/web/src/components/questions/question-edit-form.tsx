@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import { updateQuestion } from '@/app/questions/[id]/actions';
 import { Button, Input, NumberInput, Select, Textarea } from '@/components/ui';
+import { QuestionImageField } from './question-image-field';
 
 const labels = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
 const initialUpdateQuestionActionState = { status: 'idle' as const, message: '' };
@@ -12,6 +13,7 @@ type EditableQuestion = {
   id: string;
   type: QuestionType;
   prompt: string;
+  imageUrl: string | null;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   category: string | null;
   explanation: string | null;
@@ -57,6 +59,7 @@ export function QuestionEditForm({ question }: { question: EditableQuestion }) {
         minLength={8}
         defaultValue={question.prompt}
       />
+      <QuestionImageField initialImageUrl={question.imageUrl} />
       <fieldset className="field question-options">
         <legend className="field-label">الخيارات والإجابة الصحيحة</legend>
         {options.map((value, index) => (

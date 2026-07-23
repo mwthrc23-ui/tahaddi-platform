@@ -35,6 +35,7 @@ export default async function EditQuestionPage({ params }: { params: Promise<{ i
             id: question.id,
             type: question.type,
             prompt: question.prompt,
+            imageUrl: question.imageUrl,
             difficulty: question.difficulty,
             category: question.category,
             explanation: question.explanation,

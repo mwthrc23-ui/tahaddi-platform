@@ -869,6 +869,75 @@ summary:focus-visible {
 .question-editor .quiz-builder-wide {
   grid-column: 1 / -1;
 }
+.question-image-field {
+  grid-column: 1 / -1;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.question-image-control {
+  display: grid;
+  gap: var(--space-3);
+}
+.question-image-picker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: 5rem;
+  padding: var(--space-4);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--muted);
+  cursor: pointer;
+}
+.question-image-picker:hover,
+.question-image-picker:focus-within {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--muted));
+}
+.question-image-picker svg {
+  flex: 0 0 auto;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  color: var(--primary);
+}
+.question-image-picker span,
+.question-image-picker small {
+  display: block;
+}
+.question-image-picker small {
+  margin-block-start: var(--space-1);
+  color: var(--muted-foreground);
+}
+.question-image-picker input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.question-image-preview {
+  position: relative;
+  overflow: hidden;
+  inline-size: min(100%, 42rem);
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--muted);
+}
+.question-image-preview img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+.question-image-remove {
+  position: absolute;
+  inset-block-end: var(--space-3);
+  inset-inline-end: var(--space-3);
+  background: var(--card);
+}
 .question-options {
   grid-column: 1 / -1;
   border: 0;
@@ -933,6 +1002,21 @@ summary:focus-visible {
   color: var(--muted-foreground);
   font-size: 0.85rem;
   margin: 0.2rem 0 0;
+}
+.question-list-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+.question-list-thumbnail {
+  flex: 0 0 7rem;
+  inline-size: 7rem;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--muted);
 }
 
 /* Cards */
@@ -1795,6 +1879,16 @@ tr:last-child td {
   max-inline-size: 60rem;
   margin: 2rem auto;
   text-align: center;
+}
+.question-media {
+  display: block;
+  inline-size: min(100%, 56rem);
+  max-block-size: min(44vh, 30rem);
+  margin: var(--space-5) auto;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--muted);
 }
 .question-meta {
   display: flex;

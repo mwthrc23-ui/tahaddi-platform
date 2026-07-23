@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { submitLiveAnswer } from '@/app/live/actions';
 import { SiteLayout } from '@/components/layout';
+import { QuestionImage } from '@/components/questions/question-image';
 import { QuestionProgress, ScoreDisplay } from '@/components/quiz';
 import { Badge, Button, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
@@ -48,6 +49,7 @@ export default async function LivePlayPage({
                   select: {
                     id: true,
                     prompt: true,
+                    imageUrl: true,
                     type: true,
                     category: true,
                     difficulty: true,
@@ -122,6 +124,13 @@ export default async function LivePlayPage({
                     total={session.quiz.questions.length}
                   />
                   <h2>{currentQuestion.prompt}</h2>
+                  {currentQuestion.imageUrl && (
+                    <QuestionImage
+                      src={currentQuestion.imageUrl}
+                      className="question-media"
+                      eager
+                    />
+                  )}
                   <div className="answers-list">
                     {currentQuestion.options.map((option, index) => {
                       const label = optionLabels[index] ?? String(index + 1);
