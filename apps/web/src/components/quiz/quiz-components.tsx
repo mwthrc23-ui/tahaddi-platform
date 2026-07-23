@@ -21,7 +21,8 @@ import {
   WifiOff,
   X,
 } from 'lucide-react';
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import QRCode from 'react-qr-code';
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar, Badge, Button, Card, Progress } from '@/components/ui';
 
@@ -272,26 +273,56 @@ export function PlayerJoinCard({
 export function RoomCode({ code, url = '/join' }: { code: string; url?: string }) {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState(() => (url.startsWith('http') ? url : ''));
+
+  useEffect(() => {
+    const absoluteUrl = url.startsWith('http')
+      ? url
+      : new URL(url, `${window.location.origin}/`).toString();
+    const timer = window.setTimeout(() => setInviteUrl(absoluteUrl), 0);
+    return () => window.clearTimeout(timer);
+  }, [url]);
+
   const copy = async () => {
     await navigator.clipboard?.writeText(code);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
   };
   const copyLink = async () => {
-    const inviteUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
-    await navigator.clipboard?.writeText(inviteUrl);
+    const absoluteUrl =
+      inviteUrl ||
+      (url.startsWith('http') ? url : new URL(url, `${window.location.origin}/`).toString());
+    await navigator.clipboard?.writeText(absoluteUrl);
     setCopiedLink(true);
     window.setTimeout(() => setCopiedLink(false), 1500);
   };
   return (
     <Card className="room-code">
-      <div className="qr-placeholder" role="img" aria-label="رمز QR تجريبي">
-        <span /> <span /> <span /> <span />
+      <div className="room-qr">
+        {inviteUrl ? (
+          <QRCode
+            aria-label={`رمز QR للانضمام إلى الغرفة ${code}`}
+            bgColor="var(--qr-paper)"
+            className="room-qr-code"
+            fgColor="var(--qr-ink)"
+            level="M"
+            role="img"
+            size={112}
+            title={`امسح الرمز للانضمام إلى الغرفة ${code}`}
+            value={inviteUrl}
+          />
+        ) : (
+          <span className="sr-only" role="status">
+            جارٍ تجهيز رمز QR…
+          </span>
+        )}
       </div>
       <div>
         <small>رمز الغرفة</small>
         <strong dir="ltr">{code}</strong>
-        <span dir="ltr">{url}</span>
+        <span className="room-invite-url" dir="ltr">
+          {inviteUrl || url}
+        </span>
       </div>
       <div className="room-actions">
         <Button variant="outline" onClick={copy}>

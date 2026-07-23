@@ -91,6 +91,14 @@ describe('LeaderboardItem', () => {
   });
 });
 describe('RoomCode', () => {
+  it('يعرض رمز QR يحمل رابط الانضمام الكامل', async () => {
+    render(<RoomCode code="582914" url="/join/582914" />);
+    const qrCode = await screen.findByRole('img', {
+      name: 'رمز QR للانضمام إلى الغرفة 582914',
+    });
+    expect(qrCode).toContainElement(screen.getByTitle('امسح الرمز للانضمام إلى الغرفة 582914'));
+    expect(screen.getByText('http://localhost:3000/join/582914')).toBeInTheDocument();
+  });
   it('ينسخ رمز الغرفة ويؤكد العملية', async () => {
     render(<RoomCode code="582914" />);
     await userEvent.click(screen.getByRole('button', { name: 'نسخ الرمز' }));
