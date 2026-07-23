@@ -39,6 +39,7 @@ describe('HomePage actions', () => {
   it('navigates to the live quiz room after server validation succeeds', async () => {
     joinLiveSessionByCode.mockResolvedValue({
       status: 'success',
+      gameType: 'quiz',
       sessionId: 'session-123',
       participantId: 'participant-123',
       roomCode: 'A7K9PQ',
@@ -53,6 +54,28 @@ describe('HomePage actions', () => {
     expect(joinLiveSessionByCode).toHaveBeenCalledWith('A7K9PQ', 'نورة');
     expect(push).toHaveBeenCalledWith(
       '/live/session-123/play?participantId=participant-123&code=A7K9PQ',
+    );
+  });
+
+  it('routes a room code to the independent killer game when detected', async () => {
+    joinLiveSessionByCode.mockResolvedValue({
+      status: 'success',
+      gameType: 'mafia',
+      sessionId: 'mafia-123',
+      participantId: 'player-123',
+      participantToken: 'secret-token',
+      roomCode: 'A7K9PQ',
+    });
+    renderHomePage();
+    fireEvent.change(screen.getByRole('textbox', { name: 'اسم اللاعب' }), {
+      target: { value: 'نورة' },
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: 'رمز الغرفة' }), {
+      target: { value: 'A7K9PQ' },
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'انضم الآن' }));
+    expect(push).toHaveBeenCalledWith(
+      '/mafia/mafia-123/play?participantId=player-123&code=A7K9PQ&token=secret-token',
     );
   });
 
@@ -91,6 +114,9 @@ describe('HomePage actions', () => {
       'href',
       '/quizzes/new',
     );
+    for (const link of screen.getAllByRole('link', { name: /من هو القاتل؟/ })) {
+      expect(link).toHaveAttribute('href', '/mafia');
+    }
     expect(document.querySelector('a[href^="/demo/"]')).not.toBeInTheDocument();
     expect(screen.queryByText('A7K9PQ')).not.toBeInTheDocument();
 

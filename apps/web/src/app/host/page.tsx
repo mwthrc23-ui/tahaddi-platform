@@ -1,10 +1,12 @@
-import { Radio, Square, Users } from 'lucide-react';
-import { finishLiveSession, startLiveSession } from '@/app/live/actions';
+import { Radio, SkipForward, Square, Users } from 'lucide-react';
+import { advanceLiveQuestion, finishLiveSession, startLiveSession } from '@/app/live/actions';
 import { HostLayout } from '@/components/layout';
+import { HostQuestionViewer, RoomPoller } from '@/components/live';
 import { RoomCode } from '@/components/quiz';
 import { Badge, Button, ButtonLink, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
+import { getLiveActiveCutoff } from '@/lib/live/engine';
 
 export default async function Page({
   searchParams,
@@ -25,7 +27,38 @@ export default async function Page({
             roomCode: true,
             status: true,
             startedAt: true,
-            quiz: { select: { title: true, _count: { select: { questions: true } } } },
+            currentQuestionPosition: true,
+            questionStartedAt: true,
+            questionAdvanceAt: true,
+            quiz: {
+              select: {
+                title: true,
+                autoLockAnswers: true,
+                autoAdvance: true,
+                speedScoring: true,
+                questions: {
+                  orderBy: { position: 'asc' },
+                  select: {
+                    questionId: true,
+                    question: {
+                      select: {
+                        id: true,
+                        prompt: true,
+                        imageUrl: true,
+                        category: true,
+                        timeLimit: true,
+                        basePoints: true,
+                        options: {
+                          orderBy: { position: 'asc' },
+                          select: { id: true, text: true, isCorrect: true },
+                        },
+                      },
+                    },
+                  },
+                },
+                _count: { select: { questions: true } },
+              },
+            },
             participants: {
               orderBy: [{ score: 'desc' }, { joinedAt: 'asc' }],
               select: {
@@ -34,8 +67,11 @@ export default async function Page({
                 score: true,
                 correctCount: true,
                 joinedAt: true,
+                lastSeenAt: true,
+                status: true,
               },
             },
+            answers: { select: { questionId: true, participantId: true } },
           },
         })
       : null,
@@ -61,10 +97,30 @@ export default async function Page({
         description: true,
         roomCode: true,
         status: true,
+        questions: {
+          orderBy: { position: 'asc' },
+          select: { question: { select: { id: true, prompt: true } } },
+        },
         _count: { select: { questions: true } },
       },
     }),
   ]);
+  const activeCutoff = getLiveActiveCutoff();
+  const activeParticipants =
+    selectedSession?.participants.filter(
+      (participant) =>
+        participant.status === 'CONNECTED' &&
+        participant.lastSeenAt >= activeCutoff &&
+        (!selectedSession.questionStartedAt ||
+          participant.joinedAt <= selectedSession.questionStartedAt),
+    ) ?? [];
+  const currentQuestionId =
+    selectedSession?.quiz.questions[selectedSession.currentQuestionPosition]?.questionId;
+  const answeredParticipantIds = new Set(
+    selectedSession?.answers
+      .filter((answer) => answer.questionId === currentQuestionId)
+      .map((answer) => answer.participantId) ?? [],
+  );
 
   return (
     <HostLayout players={selectedSession?.participants.length ?? 0}>
@@ -92,6 +148,9 @@ export default async function Page({
 
           {selectedSession ? (
             <div className="card-grid two">
+              {selectedSession.status === 'ACTIVE' && (
+                <RoomPoller endpoint={`/api/live/${selectedSession.id}/tick`} />
+              )}
               <div>
                 <RoomCode
                   code={selectedSession.roomCode}
@@ -103,6 +162,13 @@ export default async function Page({
                       <h2>{selectedSession.quiz.title}</h2>
                       <p className="muted">
                         {selectedSession.quiz._count.questions.toLocaleString('ar-SA')} سؤال
+                      </p>
+                      <p className="muted">
+                        السؤال{' '}
+                        {(selectedSession.currentQuestionPosition + 1).toLocaleString('ar-SA')}
+                        {' · '}
+                        {answeredParticipantIds.size.toLocaleString('ar-SA')} من{' '}
+                        {activeParticipants.length.toLocaleString('ar-SA')} أجابوا
                       </p>
                     </div>
                     <Badge className="badge-live">
@@ -116,6 +182,15 @@ export default async function Page({
                     >
                       شاشة البث
                     </ButtonLink>
+                    {selectedSession.status === 'ACTIVE' && (
+                      <form action={advanceLiveQuestion}>
+                        <input type="hidden" name="sessionId" value={selectedSession.id} />
+                        <Button variant="secondary" type="submit">
+                          <SkipForward />
+                          السؤال التالي
+                        </Button>
+                      </form>
+                    )}
                     <form action={finishLiveSession}>
                       <input type="hidden" name="sessionId" value={selectedSession.id} />
                       <Button variant="destructive" type="submit">
@@ -124,6 +199,22 @@ export default async function Page({
                       </Button>
                     </form>
                   </div>
+                  <div className="question-meta">
+                    <Badge>
+                      {selectedSession.quiz.autoLockAnswers ? 'تثبيت فوري' : 'تأكيد يدوي'}
+                    </Badge>
+                    <Badge>
+                      {selectedSession.quiz.autoAdvance ? 'انتقال تلقائي' : 'انتقال يدوي'}
+                    </Badge>
+                    <Badge>
+                      {selectedSession.quiz.speedScoring ? 'نقاط حسب السرعة' : 'نقاط ثابتة'}
+                    </Badge>
+                  </div>
+                  {selectedSession.questionAdvanceAt && (
+                    <p className="text-success" role="status">
+                      اكتملت الإجابات؛ الانتقال التلقائي جارٍ.
+                    </p>
+                  )}
                 </Card>
               </div>
               <Card>
@@ -153,6 +244,12 @@ export default async function Page({
                   />
                 )}
               </Card>
+              <HostQuestionViewer
+                questions={selectedSession.quiz.questions}
+                currentPosition={selectedSession.currentQuestionPosition}
+                answeredCount={answeredParticipantIds.size}
+                activeCount={activeParticipants.length}
+              />
             </div>
           ) : (
             <EmptyState
@@ -190,6 +287,16 @@ export default async function Page({
                 <p className="muted">
                   {quiz._count.questions.toLocaleString('ar-SA')} سؤال جاهز للجلسة
                 </p>
+                {quiz.questions.length > 0 && (
+                  <details className="host-quiz-preview">
+                    <summary>مشاهدة الأسئلة</summary>
+                    <ol>
+                      {quiz.questions.map(({ question }) => (
+                        <li key={question.id}>{question.prompt}</li>
+                      ))}
+                    </ol>
+                  </details>
+                )}
                 <form action={startLiveSession}>
                   <input type="hidden" name="quizId" value={quiz.id} />
                   <Button type="submit" fullWidth disabled={quiz._count.questions === 0}>

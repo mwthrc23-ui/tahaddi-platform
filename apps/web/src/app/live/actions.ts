@@ -2,14 +2,34 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { randomBytes } from 'node:crypto';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
+import {
+  advanceLiveSessionManually,
+  calculateTimedScore,
+  scheduleAutoAdvanceIfComplete,
+} from '@/lib/live/engine';
 
 const ROOM_CODE_RE = /^[34679ACDEFGHJKMNPQRTUVWXY]{6,8}$/;
 const MAX_PLAYER_NAME_LENGTH = 40;
 
 export type JoinLiveSessionResult =
-  | { status: 'success'; sessionId: string; participantId: string; roomCode: string }
+  | {
+      status: 'success';
+      gameType: 'quiz';
+      sessionId: string;
+      participantId: string;
+      roomCode: string;
+    }
+  | {
+      status: 'success';
+      gameType: 'mafia';
+      sessionId: string;
+      participantId: string;
+      participantToken: string;
+      roomCode: string;
+    }
   | { status: 'error'; message: string };
 
 function normalizeRoomCode(value: string) {
@@ -90,15 +110,23 @@ export async function startLiveSession(formData: FormData) {
       select: { id: true },
     });
 
-    if (existing) return existing;
+    if (existing) {
+      await tx.liveSession.updateMany({
+        where: { id: existing.id, questionStartedAt: null },
+        data: { questionStartedAt: new Date() },
+      });
+      return existing;
+    }
 
+    const now = new Date();
     return tx.liveSession.create({
       data: {
         quizId: quiz.id,
         hostId: user.id,
         roomCode: quiz.roomCode,
         status: 'ACTIVE',
-        startedAt: new Date(),
+        startedAt: now,
+        questionStartedAt: now,
       },
       select: { id: true },
     });
@@ -109,6 +137,18 @@ export async function startLiveSession(formData: FormData) {
   revalidatePath('/quizzes');
   revalidatePath('/');
   redirect(`/host?sessionId=${session.id}`);
+}
+
+export async function advanceLiveQuestion(formData: FormData) {
+  requireDatabaseReady();
+  const sessionId = String(formData.get('sessionId') ?? '');
+  const user = await requireActiveUser('/host');
+  await advanceLiveSessionManually(sessionId, user.id);
+
+  revalidatePath('/host');
+  revalidatePath('/broadcast');
+  revalidatePath(`/live/${sessionId}/play`);
+  redirect(`/host?sessionId=${sessionId}`);
 }
 
 export async function finishLiveSession(formData: FormData) {
@@ -148,25 +188,73 @@ export async function joinLiveSessionByCode(
     const session = await prisma.liveSession.findFirst({
       where: { roomCode, status: { in: ['WAITING', 'ACTIVE'] } },
       orderBy: { createdAt: 'desc' },
-      select: { id: true, roomCode: true },
+      select: {
+        id: true,
+        roomCode: true,
+        quiz: { select: { maxPlayers: true } },
+        _count: { select: { participants: true } },
+      },
     });
 
-    if (!session) {
-      return { status: 'error', message: 'لم نجد جلسة مباشرة مفتوحة بهذا الرمز.' };
+    if (session) {
+      if (session._count.participants >= session.quiz.maxPlayers) {
+        return { status: 'error', message: 'اكتمل عدد اللاعبين المسموح به في هذه الغرفة.' };
+      }
+
+      const participant = await prisma.liveParticipant.create({
+        data: { sessionId: session.id, displayName },
+        select: { id: true },
+      });
+      if (session._count.participants === 0) {
+        await prisma.liveSession.updateMany({
+          where: { id: session.id, currentQuestionPosition: 0 },
+          data: { questionStartedAt: new Date() },
+        });
+      }
+
+      revalidatePath(`/live/${session.id}/play`);
+      revalidatePath('/broadcast');
+      return {
+        status: 'success',
+        gameType: 'quiz',
+        sessionId: session.id,
+        participantId: participant.id,
+        roomCode: session.roomCode,
+      };
     }
 
-    const participant = await prisma.liveParticipant.create({
-      data: { sessionId: session.id, displayName },
-      select: { id: true },
+    const mafiaGame = await prisma.mafiaGame.findUnique({
+      where: { roomCode },
+      select: {
+        id: true,
+        roomCode: true,
+        status: true,
+        maxPlayers: true,
+        _count: { select: { participants: true } },
+      },
     });
-
-    revalidatePath(`/live/${session.id}/play`);
-    revalidatePath('/broadcast');
+    if (!mafiaGame || mafiaGame.status !== 'LOBBY') {
+      return { status: 'error', message: 'لم نجد غرفة مفتوحة بهذا الرمز.' };
+    }
+    if (mafiaGame._count.participants >= mafiaGame.maxPlayers) {
+      return { status: 'error', message: 'اكتمل عدد اللاعبين المسموح به في هذه الغرفة.' };
+    }
+    const participant = await prisma.mafiaParticipant.create({
+      data: {
+        gameId: mafiaGame.id,
+        displayName,
+        accessToken: randomBytes(24).toString('hex'),
+      },
+      select: { id: true, accessToken: true },
+    });
+    revalidatePath(`/mafia/${mafiaGame.id}`);
     return {
       status: 'success',
-      sessionId: session.id,
+      gameType: 'mafia',
+      sessionId: mafiaGame.id,
       participantId: participant.id,
-      roomCode: session.roomCode,
+      participantToken: participant.accessToken,
+      roomCode: mafiaGame.roomCode,
     };
   } catch (error) {
     if (isUniqueConstraintError(error)) {
@@ -190,8 +278,10 @@ export async function submitLiveAnswer(formData: FormData) {
       id: true,
       status: true,
       currentQuestionPosition: true,
+      questionStartedAt: true,
       quiz: {
         select: {
+          speedScoring: true,
           questions: {
             orderBy: { position: 'asc' },
             select: {
@@ -199,6 +289,7 @@ export async function submitLiveAnswer(formData: FormData) {
                 select: {
                   id: true,
                   basePoints: true,
+                  timeLimit: true,
                   options: { select: { id: true, isCorrect: true } },
                 },
               },
@@ -219,6 +310,17 @@ export async function submitLiveAnswer(formData: FormData) {
     redirect(`/live/${sessionId}/play?participantId=${participantId}&answer=invalid`);
   }
 
+  const receivedAt = new Date();
+  const earnedPoints = option.isCorrect
+    ? calculateTimedScore({
+        basePoints: currentQuestion.basePoints,
+        timeLimitSeconds: currentQuestion.timeLimit,
+        questionStartedAt: session.questionStartedAt,
+        receivedAt,
+        speedScoring: session.quiz.speedScoring,
+      })
+    : 0;
+
   try {
     await prisma.$transaction(async (tx) => {
       const participant = await tx.liveParticipant.findFirst({
@@ -234,14 +336,15 @@ export async function submitLiveAnswer(formData: FormData) {
           questionId,
           optionId,
           isCorrect: option.isCorrect,
-          earnedPoints: option.isCorrect ? currentQuestion.basePoints : 0,
+          earnedPoints,
+          receivedAt,
         },
       });
 
       await tx.liveParticipant.update({
         where: { id: participantId },
         data: {
-          score: { increment: option.isCorrect ? currentQuestion.basePoints : 0 },
+          score: { increment: earnedPoints },
           correctCount: { increment: option.isCorrect ? 1 : 0 },
         },
       });
@@ -252,6 +355,7 @@ export async function submitLiveAnswer(formData: FormData) {
     }
   }
 
+  await scheduleAutoAdvanceIfComplete(sessionId, questionId);
   revalidatePath(`/live/${sessionId}/play`);
   revalidatePath('/broadcast');
   redirect(`/live/${sessionId}/play?participantId=${participantId}&answer=saved`);

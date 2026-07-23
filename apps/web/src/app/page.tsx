@@ -10,6 +10,7 @@ import {
   Medal,
   Radio,
   Sparkles,
+  Skull,
   Timer,
   Trophy,
   Users,
@@ -25,9 +26,30 @@ import { ButtonLink, CategoryCard, CompetitionCard, EmptyState, GameCard } from 
 import { getCurrentSession } from '@/lib/auth/session';
 
 const games = [
-  { title: 'دقيقة ذكاء', description: 'أنشئ جولة قصيرة بأسئلة محددة الوقت' },
-  { title: 'صح أم خطأ', description: 'أضف أسئلة بخيارين وتصحيح مباشر' },
-  { title: 'رتّبها', description: 'جهّز أسئلة تعتمد على الترتيب الصحيح' },
+  {
+    title: 'دقيقة ذكاء',
+    description: 'أنشئ جولة قصيرة بأسئلة محددة الوقت',
+    href: '/quizzes/new',
+    icon: Timer,
+  },
+  {
+    title: 'صح أم خطأ',
+    description: 'أضف أسئلة بخيارين وتصحيح مباشر',
+    href: '/quizzes/new',
+    icon: CheckCircle2,
+  },
+  {
+    title: 'رتّبها',
+    description: 'جهّز أسئلة تعتمد على الترتيب الصحيح',
+    href: '/quizzes/new',
+    icon: ListOrdered,
+  },
+  {
+    title: 'من هو القاتل؟',
+    description: 'لعبة اجتماعية مستقلة بأدوار سرية ودردشة مرحلية',
+    href: '/mafia',
+    icon: Skull,
+  },
 ];
 
 const categories = [
@@ -36,8 +58,6 @@ const categories = [
   { title: 'رياضة', icon: <Medal aria-hidden="true" />, slug: 'رياضة' },
   { title: 'تقنية', icon: <Cpu aria-hidden="true" />, slug: 'تقنية' },
 ];
-
-const gameIcons = [Timer, CheckCircle2, ListOrdered];
 
 const emptyPublicQuizzes: PublicQuizzesResult = { status: 'success', quizzes: [] };
 
@@ -198,8 +218,8 @@ function HomePageContent({
             </div>
           </div>
           <div className="card-grid three">
-            {games.map((item, index) => {
-              const GameIcon = gameIcons[index % gameIcons.length] ?? Timer;
+            {games.map((item) => {
+              const GameIcon = item.icon;
               return (
                 <GameCard
                   key={item.title}
@@ -207,7 +227,7 @@ function HomePageContent({
                   description={item.description}
                   icon={<GameIcon aria-hidden="true" />}
                   meta="أنشئ هذا النمط"
-                  href="/quizzes/new"
+                  href={item.href}
                 />
               );
             })}

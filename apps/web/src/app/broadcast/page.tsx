@@ -1,4 +1,5 @@
 import { BroadcastLayout } from '@/components/layout';
+import { RoomPoller } from '@/components/live';
 import { QuestionImage } from '@/components/questions/question-image';
 import { QuestionProgress, RoomCode } from '@/components/quiz';
 import { Badge, Card, EmptyState } from '@/components/ui';
@@ -64,59 +65,65 @@ export default async function Page({
           description="ابدأ جلسة مسابقة من لوحة المضيف لعرض شاشة البث."
         />
       ) : (
-        <div className="broadcast-stage">
-          <section>
-            <div className="section-heading">
-              <div>
-                <span className="eyebrow">غرفة {session.roomCode}</span>
-                <h1>{session.quiz.title}</h1>
-              </div>
-              <Badge className="badge-live">
-                {session.status === 'FINISHED' ? 'انتهت' : 'مباشرة'}
-              </Badge>
-            </div>
-            <Card className="question-card">
-              <div className="question-meta">
-                <Badge>{currentQuestion.category ?? 'عام'}</Badge>
-                <span>{currentQuestion.difficulty}</span>
-                <span>{currentQuestion.basePoints.toLocaleString('ar-SA')} نقطة</span>
-                <span>{currentQuestion.timeLimit.toLocaleString('ar-SA')} ثانية</span>
-              </div>
-              <QuestionProgress
-                current={session.currentQuestionPosition + 1}
-                total={session.quiz.questions.length}
-              />
-              <h2>{currentQuestion.prompt}</h2>
-              {currentQuestion.imageUrl && (
-                <QuestionImage src={currentQuestion.imageUrl} className="question-media" eager />
-              )}
-            </Card>
-          </section>
-          <aside>
-            <RoomCode code={session.roomCode} url={`/join/${session.roomCode}`} />
-            <Card>
-              <h2>الترتيب</h2>
-              {session.participants.length > 0 ? (
-                <div className="leaderboard-list">
-                  {session.participants.map((participant, index) => (
-                    <div className="leaderboard-item" key={participant.id}>
-                      <span className="rank">{index + 1}</span>
-                      <div className="player-name">
-                        <strong>{participant.displayName}</strong>
-                        <span>{participant.correctCount.toLocaleString('ar-SA')} صحيحة</span>
-                      </div>
-                      <strong className="score" dir="ltr">
-                        {participant.score.toLocaleString('ar-SA')}
-                      </strong>
-                    </div>
-                  ))}
+        <>
+          {session.status === 'ACTIVE' && <RoomPoller endpoint={`/api/live/${session.id}/tick`} />}
+          <div className="broadcast-stage">
+            <section>
+              <div className="section-heading">
+                <div>
+                  <span className="eyebrow">غرفة {session.roomCode}</span>
+                  <h1>{session.quiz.title}</h1>
                 </div>
-              ) : (
-                <EmptyState title="بانتظار اللاعبين" description="سيظهر الترتيب بعد أول انضمام." />
-              )}
-            </Card>
-          </aside>
-        </div>
+                <Badge className="badge-live">
+                  {session.status === 'FINISHED' ? 'انتهت' : 'مباشرة'}
+                </Badge>
+              </div>
+              <Card className="question-card">
+                <div className="question-meta">
+                  <Badge>{currentQuestion.category ?? 'عام'}</Badge>
+                  <span>{currentQuestion.difficulty}</span>
+                  <span>{currentQuestion.basePoints.toLocaleString('ar-SA')} نقطة</span>
+                  <span>{currentQuestion.timeLimit.toLocaleString('ar-SA')} ثانية</span>
+                </div>
+                <QuestionProgress
+                  current={session.currentQuestionPosition + 1}
+                  total={session.quiz.questions.length}
+                />
+                <h2>{currentQuestion.prompt}</h2>
+                {currentQuestion.imageUrl && (
+                  <QuestionImage src={currentQuestion.imageUrl} className="question-media" eager />
+                )}
+              </Card>
+            </section>
+            <aside>
+              <RoomCode code={session.roomCode} url={`/join/${session.roomCode}`} />
+              <Card>
+                <h2>الترتيب</h2>
+                {session.participants.length > 0 ? (
+                  <div className="leaderboard-list">
+                    {session.participants.map((participant, index) => (
+                      <div className="leaderboard-item" key={participant.id}>
+                        <span className="rank">{index + 1}</span>
+                        <div className="player-name">
+                          <strong>{participant.displayName}</strong>
+                          <span>{participant.correctCount.toLocaleString('ar-SA')} صحيحة</span>
+                        </div>
+                        <strong className="score" dir="ltr">
+                          {participant.score.toLocaleString('ar-SA')}
+                        </strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    title="بانتظار اللاعبين"
+                    description="سيظهر الترتيب بعد أول انضمام."
+                  />
+                )}
+              </Card>
+            </aside>
+          </div>
+        </>
       )}
     </BroadcastLayout>
   );

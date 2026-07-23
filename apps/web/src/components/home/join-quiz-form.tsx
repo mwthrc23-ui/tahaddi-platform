@@ -45,7 +45,14 @@ export function JoinQuizForm({
         participantId: result.participantId,
         code: result.roomCode,
       });
-      router.push(`/live/${result.sessionId}/play?${query.toString()}`);
+      if (result.gameType === 'mafia') {
+        query.set('token', result.participantToken);
+      }
+      const basePath =
+        result.gameType === 'mafia'
+          ? `/mafia/${result.sessionId}/play`
+          : `/live/${result.sessionId}/play`;
+      router.push(`${basePath}?${query.toString()}`);
     });
   }
 

@@ -127,6 +127,160 @@ summary:focus-visible {
   }
 }
 
+/* Independent social game */
+.mafia-page {
+  min-block-size: 70vh;
+}
+.mafia-page .page-header {
+  margin-block-end: clamp(1.5rem, 4vw, 3rem);
+}
+.mafia-features,
+.mafia-entry-grid,
+.mafia-host-grid,
+.mafia-play-grid,
+.mafia-history,
+.mafia-chat-card {
+  margin-block-start: var(--space-6);
+}
+.mafia-features .card > svg {
+  inline-size: 2rem;
+  block-size: 2rem;
+  color: var(--primary);
+}
+.stack-form {
+  display: grid;
+  gap: var(--space-4);
+}
+.stack-form label,
+.form-row label {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--muted-foreground);
+  font-weight: 700;
+}
+.stack-form input,
+.stack-form select,
+.mafia-chat-form input {
+  min-block-size: 3rem;
+  inline-size: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--input);
+  padding-inline: 0.9rem;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.mafia-player-list,
+.mafia-messages {
+  display: grid;
+  gap: var(--space-3);
+  max-block-size: 32rem;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.mafia-player-row,
+.mafia-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--card) 86%, transparent);
+  padding: var(--space-3);
+}
+.mafia-player-row > div,
+.mafia-message > div {
+  display: grid;
+  gap: 0.15rem;
+}
+.mafia-player-row span,
+.mafia-message span {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+.mafia-message p {
+  flex: 1;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.mafia-role-card {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 15% 15%,
+      color-mix(in srgb, var(--primary) 22%, transparent),
+      transparent 35%
+    ),
+    var(--card);
+}
+.mafia-role-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 4.5rem;
+  block-size: 4.5rem;
+  border-radius: 50%;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, var(--card));
+}
+.mafia-role-icon svg {
+  inline-size: 2.2rem;
+  block-size: 2.2rem;
+}
+.mafia-private-note {
+  border-inline-start: 4px solid var(--warning);
+  border-radius: 0.8rem;
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  padding: var(--space-3);
+}
+.mafia-reveal {
+  margin-block-start: var(--space-4);
+  border-block-start: 1px solid var(--border);
+  padding-block-start: var(--space-4);
+}
+.mafia-chat-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  margin-block-start: var(--space-4);
+}
+.mafia-phase-night {
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      color-mix(in srgb, var(--info) 12%, transparent),
+      transparent 38%
+    ),
+    var(--background);
+}
+
+@media (max-width: 720px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  .mafia-page {
+    padding-block: 2.5rem;
+  }
+  .mafia-player-row,
+  .mafia-message {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .mafia-message p {
+    flex-basis: 100%;
+  }
+  .mafia-chat-form {
+    grid-template-columns: 1fr;
+  }
+  .mafia-chat-form .button {
+    inline-size: 100%;
+  }
+}
+
 /* Buttons */
 .button {
   min-block-size: 2.75rem;
@@ -2331,12 +2485,10 @@ tr:last-child td {
 }
 
 /* Pages */
-.demo-page,
 .design-page {
   padding-block: clamp(2rem, 6vw, 5rem);
   min-block-size: 80vh;
 }
-.demo-heading,
 .question-top {
   display: flex;
   justify-content: space-between;
@@ -2344,13 +2496,11 @@ tr:last-child td {
   gap: 1rem;
   margin-block-end: 2rem;
 }
-.demo-heading h1,
 .design-header h1,
 .centered-heading h1 {
   font-size: clamp(2.2rem, 5vw, 4rem);
   margin: 0.5rem 0;
 }
-.demo-heading p,
 .design-header p,
 .centered-heading p {
   color: var(--muted-foreground);
@@ -2371,21 +2521,6 @@ tr:last-child td {
 .players-grid {
   display: grid;
   gap: 0.5rem;
-}
-.demo-steps {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-block-start: 2rem;
-}
-.demo-steps a {
-  padding: 0.45rem 0.8rem;
-  border-radius: var(--radius-full);
-  color: var(--muted-foreground);
-}
-.demo-steps a.active {
-  background: var(--primary);
-  color: var(--primary-foreground);
 }
 .question-top {
   align-items: center;
@@ -2908,9 +3043,6 @@ tr:last-child td {
     color: var(--muted-foreground);
     font-weight: 700;
   }
-  .demo-heading {
-    flex-direction: column;
-  }
   .design-header,
   .dashboard-header {
     flex-wrap: wrap;
@@ -3027,10 +3159,6 @@ tr:last-child td {
   }
   .component-row .button {
     flex: 1 1 100%;
-  }
-  .demo-steps {
-    overflow: auto;
-    justify-content: flex-start;
   }
   .question-screen > .container > .inline-between {
     align-items: stretch;
@@ -3175,5 +3303,174 @@ tr:last-child td {
 
   .auth-footer {
     flex-direction: column;
+  }
+}
+
+/* Host room question visibility */
+.host-question-panel {
+  grid-column: 1 / -1;
+}
+
+.host-question-heading {
+  align-items: flex-start;
+}
+
+.host-question-heading h2 {
+  margin-block: 0.7rem 0;
+}
+
+.host-current-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-block: var(--space-5);
+}
+
+.host-current-options > div {
+  min-block-size: 4rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: var(--space-3);
+}
+
+.host-current-options > div > span {
+  inline-size: 2rem;
+  block-size: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--secondary);
+  font-weight: 800;
+}
+
+.host-current-options p {
+  margin: 0;
+}
+
+.host-current-options strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--success);
+  font-size: 0.8rem;
+}
+
+.host-current-options .is-correct {
+  border-color: color-mix(in srgb, var(--success) 65%, var(--border));
+  background: color-mix(in srgb, var(--success) 9%, var(--card));
+}
+
+.host-question-list-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-block-start: 1px solid var(--border);
+  padding-block-start: var(--space-5);
+}
+
+.host-question-list-heading > svg {
+  color: var(--primary);
+}
+
+.host-question-list-heading h3,
+.host-question-list-heading p {
+  margin: 0;
+}
+
+.host-question-list {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-start: var(--space-4);
+}
+
+.host-question-item {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+}
+
+.host-question-item summary {
+  min-block-size: 3.25rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  cursor: pointer;
+}
+
+.host-question-item summary > span {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.host-question-item ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  border-block-start: 1px solid var(--border);
+  padding: var(--space-3) var(--space-8) var(--space-4);
+}
+
+.host-question-item li.is-correct {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.host-question-item li svg {
+  inline-size: 1rem;
+  margin-inline-start: 0.4rem;
+  vertical-align: middle;
+}
+
+.host-quiz-preview {
+  margin-block: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: var(--space-3);
+}
+
+.host-quiz-preview summary {
+  color: var(--primary);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.host-quiz-preview ol {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-end: 0;
+  padding-inline-start: 1.5rem;
+}
+
+@media (max-width: 720px) {
+  .host-question-heading {
+    display: grid;
+  }
+
+  .host-current-options {
+    grid-template-columns: 1fr;
+  }
+
+  .host-current-options > div {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .host-current-options strong {
+    grid-column: 2;
+  }
+
+  .host-question-item summary {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .host-question-item summary .badge {
+    grid-column: 2;
+    justify-self: start;
   }
 }

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { createQuiz } from '@/app/quizzes/actions';
-import { Badge, Button, Card, Input, NumberInput, Select, Textarea } from '@/components/ui';
+import { Badge, Button, Card, Input, NumberInput, Select, Switch, Textarea } from '@/components/ui';
 
 type DraftQuestion = {
   id: string;
@@ -24,12 +24,15 @@ type DraftQuestion = {
 };
 
 type QuizDraft = {
-  version: 1;
+  version: 2;
   title: string;
   description: string;
   roundName: string;
   presentationMode: 'SEQUENTIAL' | 'RANDOM';
   playerLimit: number;
+  autoLockAnswers: boolean;
+  autoAdvance: boolean;
+  speedScoring: boolean;
   questions: DraftQuestion[];
 };
 
@@ -37,12 +40,15 @@ const storageKey = 'tahaddi:quiz-builder:draft:v1';
 
 function createInitialDraft(): QuizDraft {
   return {
-    version: 1,
+    version: 2,
     title: '',
     description: '',
     roundName: '',
     presentationMode: 'SEQUENTIAL',
     playerLimit: 50,
+    autoLockAnswers: true,
+    autoAdvance: false,
+    speedScoring: true,
     questions: [],
   };
 }
@@ -61,9 +67,9 @@ function isDraftQuestion(value: unknown): value is DraftQuestion {
 
 export function parseQuizDraft(value: string): QuizDraft | null {
   try {
-    const draft = JSON.parse(value) as Partial<QuizDraft>;
+    const draft = JSON.parse(value) as Partial<QuizDraft> & { version?: number };
     if (
-      draft.version !== 1 ||
+      ![1, 2].includes(draft.version ?? 0) ||
       typeof draft.title !== 'string' ||
       typeof draft.description !== 'string' ||
       typeof draft.roundName !== 'string' ||
@@ -74,7 +80,13 @@ export function parseQuizDraft(value: string): QuizDraft | null {
     ) {
       return null;
     }
-    return draft as QuizDraft;
+    return {
+      ...(draft as Omit<QuizDraft, 'version' | 'autoLockAnswers' | 'autoAdvance' | 'speedScoring'>),
+      version: 2,
+      autoLockAnswers: draft.autoLockAnswers ?? true,
+      autoAdvance: draft.autoAdvance ?? false,
+      speedScoring: draft.speedScoring ?? true,
+    };
   } catch {
     return null;
   }
@@ -174,6 +186,10 @@ export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: 
         title: draft.title,
         description: draft.description,
         questionIds: draft.questions.map((question) => question.id),
+        maxPlayers: draft.playerLimit,
+        autoLockAnswers: draft.autoLockAnswers,
+        autoAdvance: draft.autoAdvance,
+        speedScoring: draft.speedScoring,
       });
       if (result.status === 'error') {
         setSaveFailed(true);
@@ -268,6 +284,36 @@ export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: 
                 )
               }
             />
+            <div className="quiz-builder-wide settings-stack">
+              <div>
+                <Switch
+                  label="تثبيت الإجابة فور اختيارها"
+                  checked={draft.autoLockAnswers}
+                  onChange={(checked) => updateDraft('autoLockAnswers', checked)}
+                />
+                <p className="muted">يرسل اختيار اللاعب مباشرة ولا يعرض زر تأكيد منفصل.</p>
+              </div>
+              <div>
+                <Switch
+                  label="الانتقال التلقائي بعد إجابة الجميع"
+                  checked={draft.autoAdvance}
+                  onChange={(checked) => updateDraft('autoAdvance', checked)}
+                />
+                <p className="muted">
+                  يكشف النتيجة ثم ينتقل بعد ثلاث ثوانٍ عند اكتمال إجابات اللاعبين النشطين.
+                </p>
+              </div>
+              <div>
+                <Switch
+                  label="احتساب سرعة الإجابة"
+                  checked={draft.speedScoring}
+                  onChange={(checked) => updateDraft('speedScoring', checked)}
+                />
+                <p className="muted">
+                  تتدرج نقاط الإجابة الصحيحة حسب الوقت المتبقي باستخدام توقيت الخادم.
+                </p>
+              </div>
+            </div>
           </div>
         </Card>
 
