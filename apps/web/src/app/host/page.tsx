@@ -1,7 +1,7 @@
 import { Radio, SkipForward, Square, Users } from 'lucide-react';
 import { advanceLiveQuestion, finishLiveSession, startLiveSession } from '@/app/live/actions';
 import { HostLayout } from '@/components/layout';
-import { RoomPoller } from '@/components/live';
+import { HostQuestionViewer, RoomPoller } from '@/components/live';
 import { RoomCode } from '@/components/quiz';
 import { Badge, Button, ButtonLink, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient } from '@/lib/auth/prisma';
@@ -38,7 +38,23 @@ export default async function Page({
                 speedScoring: true,
                 questions: {
                   orderBy: { position: 'asc' },
-                  select: { questionId: true },
+                  select: {
+                    questionId: true,
+                    question: {
+                      select: {
+                        id: true,
+                        prompt: true,
+                        imageUrl: true,
+                        category: true,
+                        timeLimit: true,
+                        basePoints: true,
+                        options: {
+                          orderBy: { position: 'asc' },
+                          select: { id: true, text: true, isCorrect: true },
+                        },
+                      },
+                    },
+                  },
                 },
                 _count: { select: { questions: true } },
               },
@@ -81,6 +97,10 @@ export default async function Page({
         description: true,
         roomCode: true,
         status: true,
+        questions: {
+          orderBy: { position: 'asc' },
+          select: { question: { select: { id: true, prompt: true } } },
+        },
         _count: { select: { questions: true } },
       },
     }),
@@ -224,6 +244,12 @@ export default async function Page({
                   />
                 )}
               </Card>
+              <HostQuestionViewer
+                questions={selectedSession.quiz.questions}
+                currentPosition={selectedSession.currentQuestionPosition}
+                answeredCount={answeredParticipantIds.size}
+                activeCount={activeParticipants.length}
+              />
             </div>
           ) : (
             <EmptyState
@@ -261,6 +287,16 @@ export default async function Page({
                 <p className="muted">
                   {quiz._count.questions.toLocaleString('ar-SA')} سؤال جاهز للجلسة
                 </p>
+                {quiz.questions.length > 0 && (
+                  <details className="host-quiz-preview">
+                    <summary>مشاهدة الأسئلة</summary>
+                    <ol>
+                      {quiz.questions.map(({ question }) => (
+                        <li key={question.id}>{question.prompt}</li>
+                      ))}
+                    </ol>
+                  </details>
+                )}
                 <form action={startLiveSession}>
                   <input type="hidden" name="quizId" value={quiz.id} />
                   <Button type="submit" fullWidth disabled={quiz._count.questions === 0}>
