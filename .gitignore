@@ -16,6 +16,7 @@ next-env.d.ts
 .codex/
 .serena/
 .turbo/
+.vercel/
 /packages/database/src/generated/
 .DS_Store
 Thumbs.db
