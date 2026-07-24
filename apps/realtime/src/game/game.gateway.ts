@@ -1,166 +1,205 @@
 import {
   ConnectedSocket,
   MessageBody,
-  OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import type { ClientToServerEvents, ServerToClientEvents } from './types.js';
+import { ConfigService } from '@nestjs/config';
+import { verifyLiveAccessToken } from '@tahaddi/contracts';
+import type {
+  ClientToServerEvents,
+  LiveRole,
+  ServerToClientEvents,
+} from '@tahaddi/contracts';
 import type { Server, Socket } from 'socket.io';
-import { GameService } from './game.service.js';
+import { GameService, gameRoom, hostRoom, playerRoom } from './game.service.js';
+import type { LiveSocketIdentity } from './types.js';
 
 type GameSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 type GameServer = Server<ClientToServerEvents, ServerToClientEvents>;
 
-@WebSocketGateway({ cors: { origin: '*', credentials: false }, namespace: '/' })
+@WebSocketGateway({
+  cors: {
+    origin: (process.env.WEB_ORIGIN ?? 'http://localhost:3000').split(','),
+    credentials: true,
+  },
+  namespace: '/',
+})
 export class GameGateway
-  implements
-    OnGatewayInit<GameServer>,
-    OnGatewayConnection<GameSocket>,
-    OnGatewayDisconnect<GameSocket>
+  implements OnGatewayInit<GameServer>, OnGatewayDisconnect<GameSocket>
 {
   @WebSocketServer()
   server!: GameServer;
 
-  /** Map from socketId → PIN (to track which room a player is in) */
-  private readonly socketRooms = new Map<string, string>();
+  private readonly identities = new Map<string, LiveSocketIdentity>();
 
-  constructor(private readonly gameService: GameService) {}
+  constructor(
+    private readonly gameService: GameService,
+    private readonly config: ConfigService,
+  ) {}
 
   afterInit(server: GameServer) {
     this.gameService.setServer(server);
   }
 
-  handleConnection(client: GameSocket) {
-    console.log(`[Gateway] client connected: ${client.id}`);
-  }
-
   async handleDisconnect(client: GameSocket) {
-    const pin = this.socketRooms.get(client.id);
-    if (pin) {
-      this.socketRooms.delete(client.id);
-      await this.gameService.playerLeft(client.id, pin);
-    }
-    console.log(`[Gateway] client disconnected: ${client.id}`);
+    const identity = this.identities.get(client.id);
+    this.identities.delete(client.id);
+    if (identity) await this.gameService.disconnected(identity);
   }
 
-  // ─── Create room ────────────────────────────────────────────────────────────
-
-  @SubscribeMessage('room:start')
-  async handleRoomCreate(@ConnectedSocket() client: GameSocket) {
-    try {
-      const session = await this.gameService.createRoom(client.id);
-      await client.join(session.pin);
-      this.socketRooms.set(client.id, session.pin);
-
-      client.emit('room:state', {
-        pin: session.pin,
-        phase: session.phase,
-        players: [],
-        hostId: session.hostId,
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      client.emit('game:error', { code: 'CREATE_FAILED', message });
-    }
-  }
-
-  // ─── Join room ──────────────────────────────────────────────────────────────
-
-  @SubscribeMessage('room:join')
-  async handleRoomJoin(
+  @SubscribeMessage('game:join')
+  async handleGameJoin(
     @ConnectedSocket() client: GameSocket,
-    @MessageBody() payload: { pin: string; playerName: string },
+    @MessageBody()
+    payload: {
+      sessionId: string;
+      subjectId: string;
+      accessToken: string;
+      role: LiveRole;
+    },
   ) {
-    if (!payload?.pin || !payload?.playerName) {
+    if (
+      !payload?.sessionId ||
+      !payload.subjectId ||
+      !payload.accessToken ||
+      !['host', 'player'].includes(payload.role)
+    ) {
       client.emit('game:error', {
-        code: 'INVALID_PAYLOAD',
-        message: 'pin and playerName required',
+        code: 'INVALID_JOIN',
+        message: 'بيانات الانضمام إلى الجلسة غير مكتملة.',
       });
       return;
     }
 
-    const result = await this.gameService.joinRoom(
-      client.id,
-      payload.pin,
-      payload.playerName,
-    );
-    if (!result.ok) {
-      client.emit('game:error', { code: result.error, message: result.error });
+    const secret = this.config.get<string>('AUTH_SECRET', '');
+    const identity: LiveSocketIdentity = {
+      sessionId: payload.sessionId,
+      subjectId: payload.subjectId,
+      role: payload.role,
+    };
+    const validToken = verifyLiveAccessToken(secret, {
+      ...identity,
+      token: payload.accessToken,
+    });
+    if (!validToken || !(await this.gameService.validateIdentity(identity))) {
+      client.emit('game:error', {
+        code: 'JOIN_DENIED',
+        message: 'تعذّر التحقق من هوية الجلسة. افتح رابط الغرفة من جديد.',
+      });
       return;
     }
 
-    await client.join(payload.pin);
-    this.socketRooms.set(client.id, payload.pin);
-
-    // Tell the joining player the current room state
-    client.emit('room:state', {
-      pin: payload.pin,
-      phase: result.session.phase,
-      players: result.players,
-      hostId: result.session.hostId,
-    });
-
-    // Broadcast new player to everyone in the room
-    const newPlayer = result.players.find((p) => p.id === client.id);
-    if (newPlayer) {
-      client.to(payload.pin).emit('room:player_joined', { player: newPlayer });
+    const oldIdentity = this.identities.get(client.id);
+    if (oldIdentity) {
+      await client.leave(gameRoom(oldIdentity.sessionId));
+      await client.leave(hostRoom(oldIdentity.sessionId));
+      await client.leave(
+        playerRoom(oldIdentity.sessionId, oldIdentity.subjectId),
+      );
     }
+    this.identities.set(client.id, identity);
+    await client.join(gameRoom(identity.sessionId));
+    if (identity.role === 'host') {
+      await client.join(hostRoom(identity.sessionId));
+    } else {
+      await client.join(playerRoom(identity.sessionId, identity.subjectId));
+    }
+
+    const snapshot = await this.gameService.joined(identity);
+    if (!snapshot) {
+      client.emit('game:error', {
+        code: 'SESSION_NOT_FOUND',
+        message: 'الجلسة غير متاحة.',
+      });
+      return;
+    }
+    client.emit('game:snapshot', snapshot);
   }
 
-  // ─── Start game ─────────────────────────────────────────────────────────────
+  @SubscribeMessage('question:start')
+  async handleQuestionStart(
+    @ConnectedSocket() client: GameSocket,
+    @MessageBody() payload: { sessionId: string },
+  ) {
+    const identity = this.requireHost(client, payload?.sessionId);
+    if (!identity) return;
+    await this.gameService.startQuestion(
+      identity.sessionId,
+      identity.subjectId,
+    );
+  }
 
   @SubscribeMessage('question:next')
-  async handleStartGame(
+  async handleQuestionNext(
     @ConnectedSocket() client: GameSocket,
-    @MessageBody() payload: { pin: string },
+    @MessageBody() payload: { sessionId: string },
   ) {
-    if (!payload?.pin) {
-      client.emit('game:error', {
-        code: 'INVALID_PAYLOAD',
-        message: 'pin required',
-      });
-      return;
-    }
-
-    const result = await this.gameService.startGame(payload.pin, client.id);
-    if (!result.ok) {
-      client.emit('game:error', {
-        code: result.error ?? 'START_FAILED',
-        message: result.error ?? 'start failed',
-      });
-    }
+    const identity = this.requireHost(client, payload?.sessionId);
+    if (!identity) return;
+    await this.gameService.next(identity.sessionId, identity.subjectId);
   }
-
-  // ─── Submit answer ──────────────────────────────────────────────────────────
 
   @SubscribeMessage('answer:submit')
   async handleAnswerSubmit(
     @ConnectedSocket() client: GameSocket,
     @MessageBody()
-    payload: {
-      pin: string;
-      questionId: string;
-      optionId: string;
-      clientTs: number;
-    },
+    payload: { sessionId: string; questionId: string; optionId: string },
   ) {
-    if (!payload?.pin || !payload?.questionId || !payload?.optionId) {
-      client.emit('game:error', {
-        code: 'INVALID_PAYLOAD',
-        message: 'pin, questionId, optionId required',
+    const identity = this.identities.get(client.id);
+    if (
+      !identity ||
+      identity.role !== 'player' ||
+      identity.sessionId !== payload?.sessionId ||
+      !payload.questionId ||
+      !payload.optionId
+    ) {
+      client.emit('answer:rejected', {
+        questionId: payload?.questionId ?? '',
+        reason: 'INVALID_PLAYER',
       });
       return;
     }
+    await this.gameService.submitAnswer(identity, client.id, payload);
+  }
 
-    await this.gameService.submitAnswer(
-      client.id,
-      payload.pin,
-      payload.questionId,
-      payload.optionId,
-    );
+  @SubscribeMessage('game:finish')
+  async handleGameFinish(
+    @ConnectedSocket() client: GameSocket,
+    @MessageBody() payload: { sessionId: string },
+  ) {
+    const identity = this.requireHost(client, payload?.sessionId);
+    if (!identity) return;
+    await this.gameService.finishGame(identity.sessionId, identity.subjectId);
+  }
+
+  @SubscribeMessage('clock:ping')
+  handleClockPing(
+    @ConnectedSocket() client: GameSocket,
+    @MessageBody() payload: { clientSentAt: number },
+  ) {
+    client.emit('clock:pong', {
+      clientSentAt: Number(payload?.clientSentAt) || Date.now(),
+      serverTime: Date.now(),
+    });
+  }
+
+  private requireHost(client: GameSocket, sessionId: string | undefined) {
+    const identity = this.identities.get(client.id);
+    if (
+      !identity ||
+      identity.role !== 'host' ||
+      identity.sessionId !== sessionId
+    ) {
+      client.emit('game:error', {
+        code: 'HOST_ONLY',
+        message: 'هذا الإجراء متاح للمضيف فقط.',
+      });
+      return null;
+    }
+    return identity;
   }
 }

@@ -1,90 +1,36 @@
 import { redirect } from 'next/navigation';
 import { SiteLayout } from '@/components/layout';
-import { LiveAnswerForm, RoomPoller } from '@/components/live';
-import { QuestionImage } from '@/components/questions/question-image';
-import { QuestionProgress, ScoreDisplay } from '@/components/quiz';
-import { Badge, Card, EmptyState } from '@/components/ui';
+import { LivePlayerExperience } from '@/components/live';
+import { EmptyState } from '@/components/ui';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { getCurrentSession } from '@/lib/auth/session';
-
-const optionLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
-
-function getAnswerNotice(value: string | undefined) {
-  if (value === 'saved') return 'تم تسجيل إجابتك وحفظ نتيجتك.';
-  if (value === 'closed') return 'السؤال غير مفتوح الآن.';
-  if (value === 'invalid') return 'الخيار غير صالح لهذا السؤال.';
-  if (value === 'error') return 'تعذّر تسجيل الإجابة الآن.';
-  return '';
-}
+import { verifyPlayerLiveAccessToken } from '@/lib/live/access-token';
 
 export default async function LivePlayPage({
   params,
   searchParams,
 }: {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ participantId?: string; answer?: string }>;
+  searchParams: Promise<{ participantId?: string; token?: string }>;
 }) {
-  const [{ sessionId }, query] = await Promise.all([params, searchParams]);
-  const participantId = query.participantId ?? '';
-
-  if (!hasDatabaseUrl()) {
-    redirect('/');
-  }
-
-  const [session, authSession] = await Promise.all([
-    getPrismaClient().liveSession.findUnique({
-      where: { id: sessionId },
-      select: {
-        id: true,
-        roomCode: true,
-        status: true,
-        currentQuestionPosition: true,
-        questionAdvanceAt: true,
-        quiz: {
-          select: {
-            title: true,
-            autoLockAnswers: true,
-            autoAdvance: true,
-            speedScoring: true,
-            questions: {
-              orderBy: { position: 'asc' },
-              select: {
-                question: {
-                  select: {
-                    id: true,
-                    prompt: true,
-                    imageUrl: true,
-                    type: true,
-                    category: true,
-                    difficulty: true,
-                    timeLimit: true,
-                    basePoints: true,
-                    explanation: true,
-                    options: {
-                      orderBy: { position: 'asc' },
-                      select: { id: true, text: true, isCorrect: true },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        participants: {
-          orderBy: [{ score: 'desc' }, { joinedAt: 'asc' }],
-          select: { id: true, displayName: true, score: true, correctCount: true },
-        },
-      },
-    }),
+  const [{ sessionId }, query, authSession] = await Promise.all([
+    params,
+    searchParams,
     getCurrentSession(),
   ]);
+  const participantId = query.participantId ?? '';
+  const accessToken = query.token ?? '';
 
-  const participant = session?.participants.find((item) => item.id === participantId);
-  const currentQuestion = session?.quiz.questions[session.currentQuestionPosition]?.question;
-  const answer = participantId
-    ? await getPrismaClient().liveAnswer.findFirst({
-        where: { sessionId, participantId, questionId: currentQuestion?.id ?? '' },
-        select: { optionId: true, isCorrect: true, earnedPoints: true },
+  if (!hasDatabaseUrl()) redirect('/');
+
+  const validAccess =
+    participantId &&
+    accessToken &&
+    verifyPlayerLiveAccessToken(sessionId, participantId, accessToken);
+  const participant = validAccess
+    ? await getPrismaClient().liveParticipant.findFirst({
+        where: { id: participantId, sessionId },
+        select: { id: true, displayName: true },
       })
     : null;
 
@@ -92,143 +38,18 @@ export default async function LivePlayPage({
     <SiteLayout user={authSession?.user ? { name: authSession.user.name } : null}>
       <section className="section">
         <div className="container live-play">
-          {!session || !currentQuestion ? (
-            <EmptyState title="الجلسة غير متاحة" description="تحقق من الرابط أو رمز الغرفة." />
-          ) : !participant ? (
+          {!participant ? (
             <EmptyState
-              title="لم يتم تأكيد انضمامك"
-              description="ارجع للصفحة الرئيسية وأدخل اسمك ورمز الغرفة مرة أخرى."
+              title="رابط اللاعب غير صالح"
+              description="ارجع إلى رابط الدعوة وأدخل اسمك للانضمام من جديد."
             />
           ) : (
-            <>
-              {session.status !== 'FINISHED' && (
-                <RoomPoller
-                  endpoint={`/api/live/${session.id}/tick`}
-                  participantId={participant.id}
-                />
-              )}
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">غرفة {session.roomCode}</span>
-                  <h1>{session.quiz.title}</h1>
-                  <p>
-                    {participant.displayName} · {participant.score.toLocaleString('ar-SA')} نقطة
-                  </p>
-                </div>
-                <Badge className="badge-live">
-                  {session.status === 'FINISHED' ? 'انتهت' : 'مباشرة'}
-                </Badge>
-              </div>
-
-              <div className="card-grid two">
-                <Card className="question-card">
-                  <div className="question-meta">
-                    <Badge>السؤال {session.currentQuestionPosition + 1}</Badge>
-                    <Badge>{currentQuestion.category ?? 'عام'}</Badge>
-                    <span>{currentQuestion.difficulty}</span>
-                    <span>{currentQuestion.basePoints.toLocaleString('ar-SA')} نقطة</span>
-                    <span>{currentQuestion.timeLimit.toLocaleString('ar-SA')} ثانية</span>
-                  </div>
-                  <QuestionProgress
-                    current={session.currentQuestionPosition + 1}
-                    total={session.quiz.questions.length}
-                  />
-                  <h2>{currentQuestion.prompt}</h2>
-                  {currentQuestion.imageUrl && (
-                    <QuestionImage
-                      src={currentQuestion.imageUrl}
-                      className="question-media"
-                      eager
-                    />
-                  )}
-                  {answer ? (
-                    <div className="answers-list">
-                      {currentQuestion.options.map((option, index) => {
-                        const label = optionLabels[index] ?? String(index + 1);
-                        const selected = answer.optionId === option.id;
-                        const state = option.isCorrect
-                          ? 'correct'
-                          : selected
-                            ? 'wrong'
-                            : 'disabled';
-                        return (
-                          <button
-                            key={option.id}
-                            type="button"
-                            className={`answer-option option-${label.toLowerCase()} is-${state}`}
-                            disabled
-                          >
-                            <span className="answer-letter">{label}</span>
-                            <span className="answer-text">{option.text}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <LiveAnswerForm
-                      sessionId={session.id}
-                      participantId={participant.id}
-                      questionId={currentQuestion.id}
-                      autoLockAnswers={session.quiz.autoLockAnswers}
-                      options={currentQuestion.options.map((option, index) => ({
-                        id: option.id,
-                        label: optionLabels[index] ?? String(index + 1),
-                        text: option.text,
-                      }))}
-                    />
-                  )}
-                  {answer && (
-                    <p className={answer.isCorrect ? 'text-success' : 'text-danger'} role="status">
-                      {answer.isCorrect
-                        ? `إجابة صحيحة +${answer.earnedPoints.toLocaleString('ar-SA')}`
-                        : 'إجابة غير صحيحة'}
-                    </p>
-                  )}
-                  {answer && currentQuestion.explanation && (
-                    <p className="question-explanation">{currentQuestion.explanation}</p>
-                  )}
-                  {getAnswerNotice(query.answer) && (
-                    <p className="muted" role="status">
-                      {getAnswerNotice(query.answer)}
-                    </p>
-                  )}
-                </Card>
-
-                <div>
-                  <ScoreDisplay
-                    score={participant.score}
-                    earned={answer?.earnedPoints ?? 0}
-                    streak={participant.correctCount}
-                  />
-                  <Card>
-                    <h2>الترتيب الحالي</h2>
-                    <div className="leaderboard-list">
-                      {session.participants.map((item, index) => (
-                        <div className="leaderboard-item" key={item.id}>
-                          <span className="rank">{index + 1}</span>
-                          <div className="player-name">
-                            <strong>{item.displayName}</strong>
-                            <span>{item.correctCount.toLocaleString('ar-SA')} إجابات صحيحة</span>
-                          </div>
-                          <strong className="score" dir="ltr">
-                            {item.score.toLocaleString('ar-SA')}
-                          </strong>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                  <p className="muted" role="status">
-                    {session.status === 'FINISHED'
-                      ? 'انتهت الجلسة.'
-                      : session.questionAdvanceAt
-                        ? 'اكتملت الإجابات؛ سيظهر السؤال التالي خلال لحظات.'
-                        : session.quiz.autoAdvance
-                          ? 'ينتقل السؤال تلقائيًا بعد إجابة جميع اللاعبين النشطين.'
-                          : 'يفتح المضيف السؤال التالي يدويًا.'}
-                  </p>
-                </div>
-              </div>
-            </>
+            <LivePlayerExperience
+              sessionId={sessionId}
+              participantId={participant.id}
+              accessToken={accessToken}
+              displayName={participant.displayName}
+            />
           )}
         </div>
       </section>

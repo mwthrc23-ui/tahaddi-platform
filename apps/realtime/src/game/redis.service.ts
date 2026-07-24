@@ -1,9 +1,10 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import type { GameSession, PlayerState } from './types.js';
+import type { LiveGameState } from './types.js';
 
-const GAME_TTL_SECONDS = 3 * 60 * 60; // 3 hours
+const GAME_TTL_SECONDS = 3 * 60 * 60;
+const TRANSITION_LOCK_SECONDS = 8;
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
@@ -19,119 +20,56 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         maxRetriesPerRequest: 3,
       },
     );
-    this.client.on('error', (err: Error) => {
-      console.error('[Redis] connection error:', err.message);
+    this.client.on('error', (error: Error) => {
+      console.error('[Redis] connection error:', error.message);
     });
   }
 
   onModuleDestroy() {
-    void this.client.quit();
+    void this.client?.quit();
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-
-  private sessionKey(pin: string) {
-    return `game:${pin}:session`;
-  }
-  private playersKey(pin: string) {
-    return `game:${pin}:players`;
-  }
-  private answersKey(pin: string, questionId: string) {
-    return `game:${pin}:answers:${questionId}`;
+  private stateKey(sessionId: string) {
+    return `live:${sessionId}:state`;
   }
 
-  // ── Session ────────────────────────────────────────────────────────────────
+  private transitionKey(sessionId: string) {
+    return `live:${sessionId}:transition`;
+  }
 
-  async saveSession(session: GameSession): Promise<void> {
+  async saveGameState(state: LiveGameState) {
     await this.client.set(
-      this.sessionKey(session.pin),
-      JSON.stringify(session),
+      this.stateKey(state.sessionId),
+      JSON.stringify(state),
       'EX',
       GAME_TTL_SECONDS,
     );
   }
 
-  async loadSession(pin: string): Promise<GameSession | null> {
-    const raw = await this.client.get(this.sessionKey(pin));
-    return raw ? (JSON.parse(raw) as GameSession) : null;
+  async loadGameState(sessionId: string): Promise<LiveGameState | null> {
+    const raw = await this.client.get(this.stateKey(sessionId));
+    return raw ? (JSON.parse(raw) as LiveGameState) : null;
   }
 
-  async deleteSession(pin: string): Promise<void> {
-    await this.client.del(this.sessionKey(pin));
-  }
-
-  // ── Players ────────────────────────────────────────────────────────────────
-
-  async savePlayers(
-    pin: string,
-    players: Map<string, PlayerState>,
-  ): Promise<void> {
-    const obj: Record<string, PlayerState> = {};
-    for (const [id, p] of players) obj[id] = p;
-    await this.client.set(
-      this.playersKey(pin),
-      JSON.stringify(obj),
+  async acquireTransition(sessionId: string) {
+    const result = await this.client.set(
+      this.transitionKey(sessionId),
+      String(Date.now()),
       'EX',
-      GAME_TTL_SECONDS,
+      TRANSITION_LOCK_SECONDS,
+      'NX',
     );
+    return result === 'OK';
   }
 
-  async loadPlayers(pin: string): Promise<Map<string, PlayerState>> {
-    const raw = await this.client.get(this.playersKey(pin));
-    if (!raw) return new Map();
-    const obj = JSON.parse(raw) as Record<string, PlayerState>;
-    return new Map(Object.entries(obj));
+  async releaseTransition(sessionId: string) {
+    await this.client.del(this.transitionKey(sessionId));
   }
 
-  async deletePlayers(pin: string): Promise<void> {
-    await this.client.del(this.playersKey(pin));
-  }
-
-  // ── Answers ────────────────────────────────────────────────────────────────
-
-  async recordAnswer(
-    pin: string,
-    questionId: string,
-    playerId: string,
-    optionId: string,
-    serverTs: number,
-  ): Promise<void> {
-    const key = this.answersKey(pin, questionId);
-    await this.client.hset(
-      key,
-      playerId,
-      JSON.stringify({ optionId, serverTs }),
+  async deleteGameState(sessionId: string) {
+    await this.client.del(
+      this.stateKey(sessionId),
+      this.transitionKey(sessionId),
     );
-    await this.client.expire(key, GAME_TTL_SECONDS);
-  }
-
-  async loadAnswers(
-    pin: string,
-    questionId: string,
-  ): Promise<Map<string, { optionId: string; serverTs: number }>> {
-    const raw = await this.client.hgetall(this.answersKey(pin, questionId));
-    const result = new Map<string, { optionId: string; serverTs: number }>();
-    for (const [playerId, json] of Object.entries(raw)) {
-      result.set(
-        playerId,
-        JSON.parse(json) as { optionId: string; serverTs: number },
-      );
-    }
-    return result;
-  }
-
-  // ── Active PIN set ─────────────────────────────────────────────────────────
-
-  async addActivePin(pin: string): Promise<void> {
-    await this.client.sadd('pins:active', pin);
-    await this.client.expire('pins:active', GAME_TTL_SECONDS);
-  }
-
-  async removeActivePin(pin: string): Promise<void> {
-    await this.client.srem('pins:active', pin);
-  }
-
-  async isPinActive(pin: string): Promise<boolean> {
-    return (await this.client.sismember('pins:active', pin)) === 1;
   }
 }
