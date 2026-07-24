@@ -42,6 +42,12 @@
   --timer-safe: var(--success);
   --timer-warning: var(--warning);
   --timer-danger: var(--danger);
+  --live-option-red: #dc2626;
+  --live-option-blue: #2563eb;
+  --live-option-orange: #c2410c;
+  --live-option-green: #15803d;
+  --live-option-ink: #ffffff;
+  --live-option-dim: rgb(255 255 255 / 0.48);
 
   --surface-glass: rgb(0 0 0 / 0.54);
   --surface-glass-strong: rgb(0 0 0 / 0.74);

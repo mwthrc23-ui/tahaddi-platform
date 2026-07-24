@@ -10,6 +10,7 @@ import {
   calculateTimedScore,
   scheduleAutoAdvanceIfComplete,
 } from '@/lib/live/engine';
+import { createPlayerLiveAccessToken } from '@/lib/live/access-token';
 
 const ROOM_CODE_RE = /^[34679ACDEFGHJKMNPQRTUVWXY]{6,8}$/;
 const MAX_PLAYER_NAME_LENGTH = 40;
@@ -20,6 +21,7 @@ export type JoinLiveSessionResult =
       gameType: 'quiz';
       sessionId: string;
       participantId: string;
+      participantToken: string;
       roomCode: string;
     }
   | {
@@ -111,22 +113,15 @@ export async function startLiveSession(formData: FormData) {
     });
 
     if (existing) {
-      await tx.liveSession.updateMany({
-        where: { id: existing.id, questionStartedAt: null },
-        data: { questionStartedAt: new Date() },
-      });
       return existing;
     }
 
-    const now = new Date();
     return tx.liveSession.create({
       data: {
         quizId: quiz.id,
         hostId: user.id,
         roomCode: quiz.roomCode,
-        status: 'ACTIVE',
-        startedAt: now,
-        questionStartedAt: now,
+        status: 'WAITING',
       },
       select: { id: true },
     });
@@ -205,12 +200,6 @@ export async function joinLiveSessionByCode(
         data: { sessionId: session.id, displayName },
         select: { id: true },
       });
-      if (session._count.participants === 0) {
-        await prisma.liveSession.updateMany({
-          where: { id: session.id, currentQuestionPosition: 0 },
-          data: { questionStartedAt: new Date() },
-        });
-      }
 
       revalidatePath(`/live/${session.id}/play`);
       revalidatePath('/broadcast');
@@ -219,6 +208,7 @@ export async function joinLiveSessionByCode(
         gameType: 'quiz',
         sessionId: session.id,
         participantId: participant.id,
+        participantToken: createPlayerLiveAccessToken(session.id, participant.id),
         roomCode: session.roomCode,
       };
     }

@@ -42,6 +42,7 @@ describe('HomePage actions', () => {
       gameType: 'quiz',
       sessionId: 'session-123',
       participantId: 'participant-123',
+      participantToken: 'signed-player-token',
       roomCode: 'A7K9PQ',
     });
     renderHomePage();
@@ -53,7 +54,7 @@ describe('HomePage actions', () => {
     await userEvent.click(screen.getByRole('button', { name: 'انضم الآن' }));
     expect(joinLiveSessionByCode).toHaveBeenCalledWith('A7K9PQ', 'نورة');
     expect(push).toHaveBeenCalledWith(
-      '/live/session-123/play?participantId=participant-123&code=A7K9PQ',
+      '/live/session-123/play?participantId=participant-123&code=A7K9PQ&token=signed-player-token',
     );
   });
 

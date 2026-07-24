@@ -1,12 +1,11 @@
-import { Radio, SkipForward, Square, Users } from 'lucide-react';
-import { advanceLiveQuestion, finishLiveSession, startLiveSession } from '@/app/live/actions';
+import { Radio } from 'lucide-react';
+import { startLiveSession } from '@/app/live/actions';
 import { HostLayout } from '@/components/layout';
-import { HostQuestionViewer, RoomPoller } from '@/components/live';
-import { RoomCode } from '@/components/quiz';
+import { HostQuestionViewer, LiveHostExperience } from '@/components/live';
 import { Badge, Button, ButtonLink, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
-import { getLiveActiveCutoff } from '@/lib/live/engine';
+import { createHostLiveAccessToken } from '@/lib/live/access-token';
 
 export default async function Page({
   searchParams,
@@ -26,16 +25,11 @@ export default async function Page({
             id: true,
             roomCode: true,
             status: true,
-            startedAt: true,
             currentQuestionPosition: true,
-            questionStartedAt: true,
-            questionAdvanceAt: true,
             quiz: {
               select: {
                 title: true,
-                autoLockAnswers: true,
                 autoAdvance: true,
-                speedScoring: true,
                 questions: {
                   orderBy: { position: 'asc' },
                   select: {
@@ -56,22 +50,9 @@ export default async function Page({
                     },
                   },
                 },
-                _count: { select: { questions: true } },
               },
             },
-            participants: {
-              orderBy: [{ score: 'desc' }, { joinedAt: 'asc' }],
-              select: {
-                id: true,
-                displayName: true,
-                score: true,
-                correctCount: true,
-                joinedAt: true,
-                lastSeenAt: true,
-                status: true,
-              },
-            },
-            answers: { select: { questionId: true, participantId: true } },
+            _count: { select: { participants: true, answers: true } },
           },
         })
       : null,
@@ -105,25 +86,14 @@ export default async function Page({
       },
     }),
   ]);
-  const activeCutoff = getLiveActiveCutoff();
-  const activeParticipants =
-    selectedSession?.participants.filter(
-      (participant) =>
-        participant.status === 'CONNECTED' &&
-        participant.lastSeenAt >= activeCutoff &&
-        (!selectedSession.questionStartedAt ||
-          participant.joinedAt <= selectedSession.questionStartedAt),
-    ) ?? [];
-  const currentQuestionId =
-    selectedSession?.quiz.questions[selectedSession.currentQuestionPosition]?.questionId;
-  const answeredParticipantIds = new Set(
-    selectedSession?.answers
-      .filter((answer) => answer.questionId === currentQuestionId)
-      .map((answer) => answer.participantId) ?? [],
-  );
+
+  const siteUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+  const hostAccessToken = selectedSession
+    ? createHostLiveAccessToken(selectedSession.id, user.id)
+    : '';
 
   return (
-    <HostLayout players={selectedSession?.participants.length ?? 0}>
+    <HostLayout players={selectedSession?._count.participants ?? 0}>
       <div className="host-stage">
         <section>
           <div className="section-heading">
@@ -133,7 +103,7 @@ export default async function Page({
                 تشغيل مباشر
               </span>
               <h1>لوحة المضيف</h1>
-              <p>افتح غرفة من مسابقة محفوظة وشارك الرمز مع اللاعبين.</p>
+              <p>حالة موحدة من الخادم، وتوقيت متزامن لجميع اللاعبين.</p>
             </div>
             <ButtonLink href="/quizzes/new" variant="gold">
               مسابقة جديدة
@@ -142,115 +112,27 @@ export default async function Page({
 
           {liveError && (
             <p className="text-danger" role="alert">
-              تعذّر تنفيذ العملية. تأكد أن المسابقة تحتوي على سؤال واحد على الأقل.
+              تعذّر تشغيل المسابقة. تأكد أنها تحتوي على سؤال واحد على الأقل.
             </p>
           )}
 
           {selectedSession ? (
-            <div className="card-grid two">
-              {selectedSession.status === 'ACTIVE' && (
-                <RoomPoller endpoint={`/api/live/${selectedSession.id}/tick`} />
-              )}
-              <div>
-                <RoomCode
-                  code={selectedSession.roomCode}
-                  url={`/join/${selectedSession.roomCode}`}
-                />
-                <Card>
-                  <div className="inline-between">
-                    <div>
-                      <h2>{selectedSession.quiz.title}</h2>
-                      <p className="muted">
-                        {selectedSession.quiz._count.questions.toLocaleString('ar-SA')} سؤال
-                      </p>
-                      <p className="muted">
-                        السؤال{' '}
-                        {(selectedSession.currentQuestionPosition + 1).toLocaleString('ar-SA')}
-                        {' · '}
-                        {answeredParticipantIds.size.toLocaleString('ar-SA')} من{' '}
-                        {activeParticipants.length.toLocaleString('ar-SA')} أجابوا
-                      </p>
-                    </div>
-                    <Badge className="badge-live">
-                      {selectedSession.status === 'FINISHED' ? 'انتهت' : 'مباشرة'}
-                    </Badge>
-                  </div>
-                  <div className="dashboard-actions">
-                    <ButtonLink
-                      href={`/broadcast?sessionId=${selectedSession.id}`}
-                      variant="outline"
-                    >
-                      شاشة البث
-                    </ButtonLink>
-                    {selectedSession.status === 'ACTIVE' && (
-                      <form action={advanceLiveQuestion}>
-                        <input type="hidden" name="sessionId" value={selectedSession.id} />
-                        <Button variant="secondary" type="submit">
-                          <SkipForward />
-                          السؤال التالي
-                        </Button>
-                      </form>
-                    )}
-                    <form action={finishLiveSession}>
-                      <input type="hidden" name="sessionId" value={selectedSession.id} />
-                      <Button variant="destructive" type="submit">
-                        <Square />
-                        إنهاء الجلسة
-                      </Button>
-                    </form>
-                  </div>
-                  <div className="question-meta">
-                    <Badge>
-                      {selectedSession.quiz.autoLockAnswers ? 'تثبيت فوري' : 'تأكيد يدوي'}
-                    </Badge>
-                    <Badge>
-                      {selectedSession.quiz.autoAdvance ? 'انتقال تلقائي' : 'انتقال يدوي'}
-                    </Badge>
-                    <Badge>
-                      {selectedSession.quiz.speedScoring ? 'نقاط حسب السرعة' : 'نقاط ثابتة'}
-                    </Badge>
-                  </div>
-                  {selectedSession.questionAdvanceAt && (
-                    <p className="text-success" role="status">
-                      اكتملت الإجابات؛ الانتقال التلقائي جارٍ.
-                    </p>
-                  )}
-                </Card>
-              </div>
-              <Card>
-                <h2>
-                  <Users />
-                  اللاعبون
-                </h2>
-                {selectedSession.participants.length > 0 ? (
-                  <div className="leaderboard-list">
-                    {selectedSession.participants.map((participant, index) => (
-                      <div className="leaderboard-item" key={participant.id}>
-                        <span className="rank">{index + 1}</span>
-                        <div className="player-name">
-                          <strong>{participant.displayName}</strong>
-                          <span>{participant.correctCount.toLocaleString('ar-SA')} صحيحة</span>
-                        </div>
-                        <strong className="score" dir="ltr">
-                          {participant.score.toLocaleString('ar-SA')}
-                        </strong>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    title="بانتظار اللاعبين"
-                    description="شارك رمز الغرفة ليبدأ الانضمام."
-                  />
-                )}
-              </Card>
+            <>
+              <LiveHostExperience
+                sessionId={selectedSession.id}
+                hostId={user.id}
+                accessToken={hostAccessToken}
+                roomCode={selectedSession.roomCode}
+                joinUrl={`${siteUrl.replace(/\/$/, '')}/join/${selectedSession.roomCode}`}
+                initialAutoAdvance={selectedSession.quiz.autoAdvance}
+              />
               <HostQuestionViewer
                 questions={selectedSession.quiz.questions}
                 currentPosition={selectedSession.currentQuestionPosition}
-                answeredCount={answeredParticipantIds.size}
-                activeCount={activeParticipants.length}
+                answeredCount={selectedSession._count.answers}
+                activeCount={selectedSession._count.participants}
               />
-            </div>
+            </>
           ) : (
             <EmptyState
               title="اختر مسابقة لتشغيلها"

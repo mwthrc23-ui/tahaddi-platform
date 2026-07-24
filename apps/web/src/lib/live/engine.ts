@@ -7,6 +7,38 @@ export function getLiveActiveCutoff() {
   return new Date(Date.now() - LIVE_ACTIVE_WINDOW_MS);
 }
 
+export function calculateLiveQuestionProgress({
+  participants,
+  answers,
+  questionId,
+  questionStartedAt,
+}: {
+  participants: { id: string; joinedAt: Date }[];
+  answers: { participantId: string; questionId: string }[];
+  questionId: string | null | undefined;
+  questionStartedAt: Date | null;
+}) {
+  if (!questionId) return { answeredCount: 0, participantCount: 0 };
+
+  const participantIds = new Set(
+    participants
+      .filter((participant) => !questionStartedAt || participant.joinedAt <= questionStartedAt)
+      .map((participant) => participant.id),
+  );
+  const answeredParticipantIds = new Set(
+    answers
+      .filter(
+        (answer) => answer.questionId === questionId && participantIds.has(answer.participantId),
+      )
+      .map((answer) => answer.participantId),
+  );
+
+  return {
+    answeredCount: answeredParticipantIds.size,
+    participantCount: participantIds.size,
+  };
+}
+
 export function calculateTimedScore({
   basePoints,
   timeLimitSeconds,

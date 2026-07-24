@@ -44,10 +44,8 @@ export function JoinQuizForm({
       const query = new URLSearchParams({
         participantId: result.participantId,
         code: result.roomCode,
+        token: result.participantToken,
       });
-      if (result.gameType === 'mafia') {
-        query.set('token', result.participantToken);
-      }
       const basePath =
         result.gameType === 'mafia'
           ? `/mafia/${result.sessionId}/play`

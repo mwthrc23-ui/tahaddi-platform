@@ -1,5 +1,4 @@
-// ─── REST API response envelopes ────────────────────────────────────────────
-
+// REST envelopes stay separate from the transient live-game protocol.
 export type ApiSuccess<T> = {
   ok: true;
   data: T;
@@ -15,17 +14,8 @@ export type ApiError = {
   };
 };
 
-// ─── Game session state machine ──────────────────────────────────────────────
-
-export type GamePhase =
-  | 'lobby'
-  | 'starting'
-  | 'question_intro'
-  | 'question_live'
-  | 'question_reveal'
-  | 'interim_leaderboard'
-  | 'final_results'
-  | 'ended';
+export type GamePhase = 'LOBBY' | 'QUESTION' | 'REVEAL' | 'LEADERBOARD' | 'FINISHED';
+export type LiveRole = 'host' | 'player';
 
 export type PlayerInfo = {
   id: string;
@@ -35,76 +25,112 @@ export type PlayerInfo = {
   rank: number;
 };
 
-export type QuestionPayload = {
-  questionId: string;
-  index: number;
-  total: number;
-  prompt: string;
-  category: string;
-  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
-  type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
-  options: { id: string; text: string }[];
-  timeLimit: number;
-  basePoints: number;
-  startsAt: number; // Unix ms — authoritative server timestamp
+export type QuestionOptionPayload = {
+  id: string;
+  text: string;
+  position: number;
 };
 
-export type RevealPayload = {
+export type QuestionMediaPayload = {
+  type: 'image' | 'video';
+  url: string;
+  alt?: string;
+};
+
+/** Safe to send during QUESTION: it never contains the correct option. */
+export type QuestionPayload = {
+  questionId: string;
+  prompt: string;
+  options: QuestionOptionPayload[];
+  media: QuestionMediaPayload[];
+  questionStartedAt: number;
+  questionEndsAt: number;
+  questionNumber: number;
+  totalQuestions: number;
+};
+
+export type QuestionOptionStats = {
+  optionId: string;
+  count: number;
+  percentage: number;
+};
+
+export type QuestionStatsPayload = {
+  questionId: string;
+  answeredCount: number;
+  participantCount: number;
+  options: QuestionOptionStats[];
+};
+
+export type PlayerQuestionResult = {
+  optionId: string;
+  correct: boolean;
+  earnedPoints: number;
+  totalScore: number;
+  rank: number;
+};
+
+export type QuestionRevealPayload = {
   questionId: string;
   correctOptionId: string;
   explanation: string | null;
-  leaderboard: PlayerInfo[];
+  stats: QuestionStatsPayload;
+  playerResult?: PlayerQuestionResult | null;
 };
 
-// ─── Socket.IO event contracts ────────────────────────────────────────────────
-// Naming: <namespace>:<action>
-// Client → Server events (emitted by browser, handled by gateway)
+export type GameSnapshot = {
+  sessionId: string;
+  roomCode: string;
+  phase: GamePhase;
+  serverTime: number;
+  question: QuestionPayload | null;
+  reveal: QuestionRevealPayload | null;
+  leaderboard: PlayerInfo[];
+  participantCount: number;
+  playerAnswer: {
+    optionId: string;
+    receivedAt: number;
+  } | null;
+  playerResult: PlayerQuestionResult | null;
+};
+
+export type AnswerRejectionReason =
+  | 'INVALID_SESSION'
+  | 'INVALID_PLAYER'
+  | 'QUESTION_NOT_ACTIVE'
+  | 'QUESTION_MISMATCH'
+  | 'INVALID_OPTION'
+  | 'DUPLICATE_ANSWER'
+  | 'ANSWER_TOO_LATE';
 
 export type ClientToServerEvents = {
-  /** Join an existing game room using a 6-digit PIN */
-  'room:join': (payload: { pin: string; playerName: string }) => void;
-  /** Host starts the game */
-  'room:start': (payload: { pin: string }) => void;
-  /** Player submits an answer */
-  'answer:submit': (payload: {
-    pin: string;
-    questionId: string;
-    optionId: string;
-    /** Client timestamp in Unix ms — used for RTT diagnostics only, not for scoring */
-    clientTs: number;
+  'game:join': (payload: {
+    sessionId: string;
+    subjectId: string;
+    accessToken: string;
+    role: LiveRole;
   }) => void;
-  /** Host advances to the next question */
-  'question:next': (payload: { pin: string }) => void;
+  'question:start': (payload: { sessionId: string }) => void;
+  'question:next': (payload: { sessionId: string }) => void;
+  'answer:submit': (payload: { sessionId: string; questionId: string; optionId: string }) => void;
+  'game:finish': (payload: { sessionId: string }) => void;
+  'clock:ping': (payload: { clientSentAt: number }) => void;
 };
-
-// Server → Client events (emitted by gateway, handled by browser)
 
 export type ServerToClientEvents = {
-  /** Acknowledged after room:join — carries initial room snapshot */
-  'room:state': (payload: {
-    pin: string;
-    phase: GamePhase;
-    players: PlayerInfo[];
-    hostId: string;
-  }) => void;
-  /** A new player joined the lobby */
-  'room:player_joined': (payload: { player: PlayerInfo }) => void;
-  /** A player left or disconnected */
-  'room:player_left': (payload: { playerId: string }) => void;
-  /** Countdown before first question */
-  'room:starting': (payload: { countdownSeconds: number }) => void;
-  /** Question intro phase — show category/difficulty, no options yet */
-  'question:intro': (payload: Pick<QuestionPayload, 'index' | 'total' | 'category' | 'difficulty' | 'basePoints' | 'timeLimit'>) => void;
-  /** Question live — show full question + options + server timer reference */
-  'question:show': (payload: QuestionPayload) => void;
-  /** Answer acknowledged for the submitting player */
-  'answer:ack': (payload: { questionId: string; earned: number; correct: boolean; streak: number }) => void;
-  /** Reveal correct answer + leaderboard snapshot */
-  'question:reveal': (payload: RevealPayload) => void;
-  /** Interim leaderboard between questions */
-  'game:leaderboard': (payload: { leaderboard: PlayerInfo[] }) => void;
-  /** Game over — final results */
-  'game:end': (payload: { leaderboard: PlayerInfo[]; gameId: string }) => void;
-  /** Generic error from server */
+  'game:snapshot': (payload: GameSnapshot) => void;
+  'question:started': (payload: QuestionPayload) => void;
+  'answer:accepted': (payload: { questionId: string; receivedAt: number }) => void;
+  'answer:rejected': (payload: { questionId: string; reason: AnswerRejectionReason }) => void;
+  'question:stats': (payload: QuestionStatsPayload) => void;
+  'question:revealed': (payload: QuestionRevealPayload) => void;
+  'leaderboard:shown': (payload: { leaderboard: PlayerInfo[] }) => void;
+  'game:finished': (payload: { leaderboard: PlayerInfo[]; sessionId: string }) => void;
+  'game:player_joined': (payload: { player: PlayerInfo; participantCount: number }) => void;
+  'game:player_left': (payload: { playerId: string; participantCount: number }) => void;
+  'clock:pong': (payload: { clientSentAt: number; serverTime: number }) => void;
   'game:error': (payload: { code: string; message: string }) => void;
 };
+
+export * from './live-access-token';
+export * from './clock-sync';
