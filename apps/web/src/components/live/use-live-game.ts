@@ -41,7 +41,7 @@ export function useLiveGame(input: {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const realtimeUrl = process.env.NEXT_PUBLIC_REALTIME_URL ?? 'http://localhost:3001';
+    const realtimeUrl = process.env.NEXT_PUBLIC_REALTIME_URL?.trim() || window.location.origin;
     const socket: LiveSocket = io(realtimeUrl, {
       transports: ['websocket'],
       reconnection: true,

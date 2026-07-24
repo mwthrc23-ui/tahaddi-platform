@@ -15,6 +15,7 @@ import type {
   ServerToClientEvents,
 } from '@tahaddi/contracts';
 import type { Server, Socket } from 'socket.io';
+import { getAllowedWebOrigins } from '../config/web-origins.js';
 import { GameService, gameRoom, hostRoom, playerRoom } from './game.service.js';
 import type { LiveSocketIdentity } from './types.js';
 
@@ -23,7 +24,7 @@ type GameServer = Server<ClientToServerEvents, ServerToClientEvents>;
 
 @WebSocketGateway({
   cors: {
-    origin: (process.env.WEB_ORIGIN ?? 'http://localhost:3000').split(','),
+    origin: getAllowedWebOrigins(),
     credentials: true,
   },
   namespace: '/',
