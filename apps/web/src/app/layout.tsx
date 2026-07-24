@@ -2,6 +2,7 @@ import { APP_CONFIG } from '@tahaddi/config';
 import type { Metadata } from 'next';
 import { Readex_Pro } from 'next/font/google';
 import Script from 'next/script';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
@@ -63,6 +64,7 @@ export default function RootLayout({
       </head>
       <body className={arabicFont.variable}>
         <ThemeProvider>{children}</ThemeProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
