@@ -1,4 +1,14 @@
-import { Eye, MessageCircle, Moon, Shield, UserRoundSearch, Users } from 'lucide-react';
+import {
+  Clock3,
+  Eye,
+  MessageCircle,
+  Moon,
+  Shield,
+  Sun,
+  UserRoundSearch,
+  Users,
+  Vote,
+} from 'lucide-react';
 import { createMafiaGame } from '@/app/mafia/actions';
 import { JoinQuizForm } from '@/components/home/join-quiz-form';
 import { SiteLayout } from '@/components/layout';
@@ -40,6 +50,47 @@ export default async function MafiaPage() {
               دخول لاعب
             </ButtonLink>
           </div>
+
+          <section className="mafia-flow" aria-labelledby="mafia-flow-title">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">
+                  <Clock3 aria-hidden="true" />
+                  دورة تلقائية واضحة
+                </span>
+                <h2 id="mafia-flow-title">متى تبدأ كل مرحلة وماذا يحدث؟</h2>
+                <p>
+                  يبدأ العد فور توزيع الأدوار، ثم ينتقل النظام تلقائيًا عند وصول المؤقت إلى الصفر.
+                </p>
+              </div>
+            </div>
+            <ol className="mafia-flow-list">
+              <li>
+                <Moon aria-hidden="true" />
+                <div>
+                  <strong>١. الليل</strong>
+                  <span>الأدوار السرية تنفذ مهامها. الوقت الافتراضي ٤٥ ثانية.</span>
+                </div>
+              </li>
+              <li>
+                <Sun aria-hidden="true" />
+                <div>
+                  <strong>٢. النهار</strong>
+                  <span>تُعلن نتيجة الليل ويبدأ النقاش العام. الوقت الافتراضي ٩٠ ثانية.</span>
+                </div>
+              </li>
+              <li>
+                <Vote aria-hidden="true" />
+                <div>
+                  <strong>٣. التصويت</strong>
+                  <span>يثبت كل لاعب حي صوته. الوقت الافتراضي ٤٥ ثانية.</span>
+                </div>
+              </li>
+            </ol>
+            <p className="mafia-flow-loop">
+              بعد التصويت يبدأ ليل جديد تلقائيًا، وتستمر الدورة حتى يفوز القتلة أو المواطنون.
+            </p>
+          </section>
 
           <div className="card-grid three mafia-features">
             <Card>
@@ -86,7 +137,7 @@ export default async function MafiaPage() {
                   </label>
                   <div className="form-row">
                     <label>
-                      وقت الليل
+                      وقت الليل بالثواني
                       <input
                         name="nightSeconds"
                         type="number"
@@ -96,11 +147,11 @@ export default async function MafiaPage() {
                       />
                     </label>
                     <label>
-                      وقت النهار
+                      وقت النهار بالثواني
                       <input name="daySeconds" type="number" min="30" max="300" defaultValue="90" />
                     </label>
                     <label>
-                      وقت التصويت
+                      وقت التصويت بالثواني
                       <input
                         name="votingSeconds"
                         type="number"

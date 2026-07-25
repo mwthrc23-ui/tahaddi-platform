@@ -1,20 +1,28 @@
-import { Eye, MessageCircle, Moon, Shield, Skull, Sun, Vote } from 'lucide-react';
+import {
+  Eye,
+  ListChecks,
+  MessageCircle,
+  Moon,
+  Shield,
+  Skull,
+  Sun,
+  Target,
+  Vote,
+} from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { sendMafiaMessage, submitMafiaAction, submitMafiaVote } from '@/app/mafia/actions';
 import { SiteLayout } from '@/components/layout';
 import { RoomPoller } from '@/components/live';
+import { MafiaPhaseTimer } from '@/components/mafia/mafia-phase-timer';
 import { Badge, Button, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
+import {
+  getMafiaMission,
+  mafiaPhaseGuides,
+  mafiaRoleGuides,
+  type MafiaPhaseName,
+} from '@/lib/mafia/guidance';
 import { mafiaPhaseLabels, mafiaRoleLabels, type MafiaRoleName } from '@/lib/mafia/rules';
-
-const roleInstructions: Record<MafiaRoleName, string> = {
-  KILLER: 'اختر ضحيتك ليلًا وتعاون مع القتلة في القناة السرية.',
-  DETECTIVE: 'تحقق من لاعب واحد كل ليلة؛ تظهر النتيجة لك وحدك.',
-  DOCTOR: 'اختر لاعبًا لحمايته من القتل في هذه الليلة.',
-  GUARD: 'احمِ لاعبًا آخر. لا يمكنك حماية نفسك.',
-  WITNESS: 'يصلك دليل مختصر بعد كل ليلة، لكن لا تكشف نفسك سريعًا.',
-  CITIZEN: 'راقب النقاش وصوّت لطرد القاتل.',
-};
 
 export default async function MafiaPlayerPage({
   params,
@@ -37,6 +45,10 @@ export default async function MafiaPlayerPage({
       winner: true,
       currentRound: true,
       phaseEndsAt: true,
+      autoMode: true,
+      daySeconds: true,
+      nightSeconds: true,
+      votingSeconds: true,
       chatEnabled: true,
       slowModeSeconds: true,
       participants: {
@@ -75,6 +87,17 @@ export default async function MafiaPlayerPage({
   if (!game || !player) redirect(`/join/${game?.roomCode ?? ''}?error=player`);
 
   const role = player.role as MafiaRoleName | null;
+  const phase = game.status as MafiaPhaseName;
+  const roleGuide = role ? mafiaRoleGuides[role] : null;
+  const mission = role ? getMafiaMission(role, phase, player.status === 'ELIMINATED') : null;
+  const phaseDuration =
+    game.status === 'NIGHT'
+      ? game.nightSeconds
+      : game.status === 'DAY'
+        ? game.daySeconds
+        : game.status === 'VOTING'
+          ? game.votingSeconds
+          : null;
   const visibleMessages = game.messages.filter(
     (message) =>
       message.channel === 'SYSTEM' ||
@@ -126,6 +149,18 @@ export default async function MafiaPlayerPage({
             </Badge>
           </div>
 
+          {game.status !== 'LOBBY' && game.status !== 'FINISHED' && (
+            <MafiaPhaseTimer
+              phase={phase}
+              phaseEndsAt={game.phaseEndsAt?.toISOString() ?? null}
+              durationSeconds={phaseDuration}
+              autoMode={game.autoMode}
+              tickEndpoint={`/api/mafia/${game.id}/tick`}
+              participantId={player.id}
+              participantToken={participantToken}
+            />
+          )}
+
           {game.status === 'LOBBY' ? (
             <EmptyState
               title="بانتظار المضيف"
@@ -142,7 +177,29 @@ export default async function MafiaPlayerPage({
                   {role === 'KILLER' ? <Skull /> : <Shield />}
                 </div>
                 <h2>{role ? mafiaRoleLabels[role] : 'لم يوزع الدور بعد'}</h2>
-                <p>{role ? roleInstructions[role] : 'انتظر المضيف.'}</p>
+                {roleGuide ? (
+                  <div className="mafia-role-brief">
+                    <p>{roleGuide.identity}</p>
+                    <dl>
+                      <div>
+                        <dt>
+                          <Target aria-hidden="true" />
+                          هدفك
+                        </dt>
+                        <dd>{roleGuide.objective}</dd>
+                      </div>
+                      <div>
+                        <dt>
+                          <Eye aria-hidden="true" />
+                          حافظ على السر
+                        </dt>
+                        <dd>{roleGuide.privacy}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ) : (
+                  <p>انتظر المضيف.</p>
+                )}
                 {player.privateNote && (
                   <p className="mafia-private-note" role="status">
                     <strong>معلومة خاصة:</strong> {player.privateNote}
@@ -164,18 +221,26 @@ export default async function MafiaPlayerPage({
 
               <Card>
                 <div className="inline-between">
-                  <h2>قرار المرحلة</h2>
-                  {game.phaseEndsAt && (
-                    <Badge>
-                      حتى{' '}
-                      {game.phaseEndsAt.toLocaleTimeString('ar-SA', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                      })}
-                    </Badge>
-                  )}
+                  <h2>
+                    <ListChecks aria-hidden="true" />
+                    مهمتك الآن
+                  </h2>
+                  <Badge>{mafiaPhaseLabels[game.status]}</Badge>
                 </div>
+                {mission && (
+                  <section className="mafia-mission" aria-labelledby="mafia-current-mission">
+                    <h3 id="mafia-current-mission">{mission.title}</h3>
+                    <p>{mission.summary}</p>
+                    <ol>
+                      {mission.steps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ol>
+                    <p className="mafia-mission-next">
+                      بعد هذه المرحلة: {mafiaPhaseGuides[phase].next}
+                    </p>
+                  </section>
+                )}
                 {player.status === 'ELIMINATED' ? (
                   <p className="muted">يمكنك متابعة النقاش والكتابة في قناة المستبعدين فقط.</p>
                 ) : game.status === 'NIGHT' && nightActionRole ? (
