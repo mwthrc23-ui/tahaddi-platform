@@ -17,10 +17,12 @@ import {
 } from '@/app/mafia/actions';
 import { SiteLayout } from '@/components/layout';
 import { RoomPoller } from '@/components/live';
+import { MafiaPhaseTimer } from '@/components/mafia/mafia-phase-timer';
 import { RoomCode } from '@/components/quiz';
 import { Badge, Button, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
+import { mafiaPhaseGuides, type MafiaPhaseName } from '@/lib/mafia/guidance';
 import { mafiaPhaseLabels, mafiaRoleLabels, type MafiaRoleName } from '@/lib/mafia/rules';
 
 export default async function MafiaHostPage({
@@ -46,6 +48,9 @@ export default async function MafiaHostPage({
       autoMode: true,
       chatEnabled: true,
       phaseEndsAt: true,
+      daySeconds: true,
+      nightSeconds: true,
+      votingSeconds: true,
       maxPlayers: true,
       participants: {
         orderBy: { joinedAt: 'asc' },
@@ -65,6 +70,15 @@ export default async function MafiaHostPage({
     },
   });
   if (!game) notFound();
+  const phase = game.status as MafiaPhaseName;
+  const phaseDuration =
+    game.status === 'NIGHT'
+      ? game.nightSeconds
+      : game.status === 'DAY'
+        ? game.daySeconds
+        : game.status === 'VOTING'
+          ? game.votingSeconds
+          : null;
 
   return (
     <SiteLayout user={{ name: user.name }}>
@@ -86,6 +100,16 @@ export default async function MafiaHostPage({
             <Badge className="badge-live">{game.roomCode}</Badge>
           </div>
 
+          {game.status !== 'LOBBY' && game.status !== 'FINISHED' && (
+            <MafiaPhaseTimer
+              phase={phase}
+              phaseEndsAt={game.phaseEndsAt?.toISOString() ?? null}
+              durationSeconds={phaseDuration}
+              autoMode={game.autoMode}
+              tickEndpoint={`/api/mafia/${game.id}/tick`}
+            />
+          )}
+
           {query.error === 'players' && (
             <p className="text-danger" role="alert">
               تحتاج اللعبة إلى خمسة لاعبين على الأقل قبل البدء.
@@ -99,17 +123,14 @@ export default async function MafiaHostPage({
                 <div className="inline-between">
                   <div>
                     <h2>التحكم في المرحلة</h2>
-                    <p className="muted">
-                      {game.phaseEndsAt
-                        ? `تنتهي تلقائيًا ${game.phaseEndsAt.toLocaleTimeString('ar-SA', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit',
-                          })}`
-                        : 'المضيف يتحكم في الانتقال.'}
-                    </p>
+                    <p className="muted">{mafiaPhaseGuides[phase].summary}</p>
                   </div>
-                  <Badge>{game.status}</Badge>
+                  <Badge>{mafiaPhaseLabels[game.status]}</Badge>
+                </div>
+                <div className="mafia-host-task">
+                  <strong>مهمة المضيف</strong>
+                  <p>{mafiaPhaseGuides[phase].hostTask}</p>
+                  <span>التالي: {mafiaPhaseGuides[phase].next}</span>
                 </div>
                 <div className="dashboard-actions">
                   {game.status === 'LOBBY' ? (
