@@ -17,6 +17,7 @@
     "@tahaddi/contracts": "workspace:*",
     "@tahaddi/database": "workspace:*",
     "@tanstack/react-query": "^5.101.2",
+    "@tahaddi/domain": "workspace:*",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",

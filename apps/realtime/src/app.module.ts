@@ -4,6 +4,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { validateEnvironment } from './config/environment.js';
 import { GameModule } from './game/game.module.js';
+import { SpecialGamesModule } from './special-games/special-games.module.js';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { GameModule } from './game/game.module.js';
       validate: validateEnvironment,
     }),
     GameModule,
+    SpecialGamesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

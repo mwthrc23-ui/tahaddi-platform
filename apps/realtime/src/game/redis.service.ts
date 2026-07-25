@@ -32,6 +32,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private stateKey(sessionId: string) {
     return `live:${sessionId}:state`;
   }
+  private specialRoomKey(pin: string) {
+    return `special-game:${pin}:room`;
+  }
 
   private transitionKey(sessionId: string) {
     return `live:${sessionId}:transition`;
@@ -71,5 +74,38 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       this.stateKey(sessionId),
       this.transitionKey(sessionId),
     );
+  }
+
+  // ── Special game rooms ───────────────────────────────────────────────────
+
+  async saveSpecialRoom<T>(pin: string, room: T): Promise<void> {
+    await this.client.set(
+      this.specialRoomKey(pin),
+      JSON.stringify(room),
+      'EX',
+      GAME_TTL_SECONDS,
+    );
+  }
+
+  async loadSpecialRoom<T>(pin: string): Promise<T | null> {
+    const raw = await this.client.get(this.specialRoomKey(pin));
+    return raw ? (JSON.parse(raw) as T) : null;
+  }
+
+  async deleteSpecialRoom(pin: string): Promise<void> {
+    await this.client.del(this.specialRoomKey(pin));
+  }
+
+  async addActivePin(pin: string): Promise<void> {
+    await this.client.sadd('special-game:pins:active', pin);
+    await this.client.expire('special-game:pins:active', GAME_TTL_SECONDS);
+  }
+
+  async removeActivePin(pin: string): Promise<void> {
+    await this.client.srem('special-game:pins:active', pin);
+  }
+
+  async isPinActive(pin: string): Promise<boolean> {
+    return (await this.client.sismember('special-game:pins:active', pin)) === 1;
   }
 }
