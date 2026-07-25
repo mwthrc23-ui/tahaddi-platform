@@ -24,6 +24,15 @@ export function createPlayerLiveAccessToken(sessionId: string, participantId: st
   });
 }
 
+export function verifyHostLiveAccessToken(sessionId: string, hostId: string, token: string) {
+  return verifyLiveAccessToken(getLiveAccessSecret(), {
+    sessionId,
+    subjectId: hostId,
+    role: 'host',
+    token,
+  });
+}
+
 export function verifyPlayerLiveAccessToken(
   sessionId: string,
   participantId: string,
