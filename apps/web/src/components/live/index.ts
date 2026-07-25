@@ -1,4 +1,5 @@
 export * from './host-question-viewer';
+export * from './live-finale-experience';
 export * from './live-host-experience';
 export * from './live-player-experience';
 export * from './live-answer-form';

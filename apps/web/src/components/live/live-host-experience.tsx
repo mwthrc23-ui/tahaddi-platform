@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Settings, SkipForward, Square, Volume2, VolumeX, Wifi, WifiOff } from 'lucide-react';
 import QRCode from 'react-qr-code';
-import { WinnerPodium } from '@/components/quiz';
 import { Button, Card } from '@/components/ui';
+import { LiveFinaleExperience } from './live-finale-experience';
 import { LiveQuestionStage } from './live-question-stage';
 import { useLiveGame } from './use-live-game';
 
@@ -148,7 +148,7 @@ export function LiveHostExperience({
           </Button>
         </Card>
       ) : snapshot.phase === 'FINISHED' ? (
-        <Leaderboard title="النتائج النهائية" players={snapshot.leaderboard} showPodium />
+        <LiveFinaleExperience players={snapshot.leaderboard} soundEnabled={soundEnabled} />
       ) : snapshot.phase === 'LEADERBOARD' ? (
         <Leaderboard title="الترتيب الحالي" players={snapshot.leaderboard} />
       ) : snapshot.question ? (
@@ -200,42 +200,26 @@ export function LiveHostExperience({
 function Leaderboard({
   title,
   players,
-  showPodium = false,
 }: {
   title: string;
   players: { id: string; name: string; score: number; rank: number }[];
-  showPodium?: boolean;
 }) {
-  const winners = players.slice(0, 3).map((player) => ({
-    name: player.name,
-    initials: getInitials(player.name),
-    score: player.score,
-  }));
-
   return (
     <Card className="live-leaderboard">
       <h2>{title}</h2>
       {players.length === 0 ? (
         <p>لا توجد نتائج حتى الآن.</p>
       ) : (
-        <>
-          {showPodium && <WinnerPodium winners={winners} />}
-          <ol>
-            {players.slice(0, 10).map((player) => (
-              <li key={player.id}>
-                <span>{player.rank.toLocaleString('ar-SA')}</span>
-                <strong>{player.name}</strong>
-                <b>{player.score.toLocaleString('ar-SA')}</b>
-              </li>
-            ))}
-          </ol>
-        </>
+        <ol>
+          {players.slice(0, 10).map((player) => (
+            <li key={player.id}>
+              <span>{player.rank.toLocaleString('ar-SA')}</span>
+              <strong>{player.name}</strong>
+              <b>{player.score.toLocaleString('ar-SA')}</b>
+            </li>
+          ))}
+        </ol>
       )}
     </Card>
   );
-}
-
-function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return (parts[0]?.[0] ?? '؟') + (parts[1]?.[0] ?? '');
 }
