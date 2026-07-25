@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SpecialGameRoom } from './special-game-room';
 
+const ioMock = vi.hoisted(() => vi.fn());
+
 const socketMock = vi.hoisted(() => {
   const listeners = new Map<string, (...args: never[]) => void>();
   return {
@@ -17,7 +19,10 @@ const socketMock = vi.hoisted(() => {
 });
 
 vi.mock('socket.io-client', () => ({
-  io: () => socketMock,
+  io: (...args: unknown[]) => {
+    ioMock(...args);
+    return socketMock;
+  },
 }));
 
 describe('SpecialGameRoom', () => {
@@ -25,6 +30,7 @@ describe('SpecialGameRoom', () => {
     socketMock.emit.mockClear();
     socketMock.disconnect.mockClear();
     socketMock.listeners.clear();
+    ioMock.mockClear();
   });
 
   it('shows the parallel-world rules and creates a room after connecting', async () => {
@@ -33,6 +39,12 @@ describe('SpecialGameRoom', () => {
 
     expect(screen.getByRole('heading', { name: 'العالم الموازي' })).toBeInTheDocument();
     expect(screen.getByText('٢ لاعبين')).toBeInTheDocument();
+    expect(ioMock).toHaveBeenCalledWith(
+      '/special-games',
+      expect.objectContaining({
+        transports: ['websocket', 'polling'],
+      }),
+    );
 
     socketMock.listeners.get('connect')?.();
     await user.click(screen.getByRole('button', { name: /أنشئ الغرفة/ }));
