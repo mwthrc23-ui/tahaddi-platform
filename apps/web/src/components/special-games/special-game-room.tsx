@@ -115,8 +115,7 @@ type ClientEvents = {
 };
 type GameSocket = Socket<ServerEvents, ClientEvents>;
 
-const REALTIME_URL =
-  process.env.NEXT_PUBLIC_REALTIME_URL?.replace(/\/$/, '') ?? 'http://localhost:3001';
+const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL?.replace(/\/$/, '') ?? '';
 
 function Timer({ startsAt, timeLimit }: { startsAt: number; timeLimit: number }) {
   const [remaining, setRemaining] = useState(timeLimit);
