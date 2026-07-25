@@ -3688,6 +3688,13 @@ tr:last-child td {
     flex-direction: column;
     align-items: stretch;
   }
+  .join-box > .join-field,
+  .join-box > .join-notice,
+  .join-box > button {
+    flex: none;
+    inline-size: 100%;
+    max-inline-size: 100%;
+  }
   .hero-command {
     margin-block: 1.25rem 0.85rem;
   }
