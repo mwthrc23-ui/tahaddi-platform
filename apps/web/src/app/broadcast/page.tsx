@@ -1,9 +1,14 @@
 import { BroadcastLayout } from '@/components/layout';
 import { RoomPoller } from '@/components/live';
 import { QuestionImage } from '@/components/questions/question-image';
-import { QuestionProgress, RoomCode } from '@/components/quiz';
+import { QuestionProgress, RoomCode, WinnerPodium } from '@/components/quiz';
 import { Badge, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return (parts[0]?.[0] ?? '؟') + (parts[1]?.[0] ?? '');
+}
 
 export default async function Page({
   searchParams,
@@ -56,10 +61,61 @@ export default async function Page({
   });
 
   const currentQuestion = session?.quiz.questions[session.currentQuestionPosition]?.question;
+  const winners =
+    session?.participants.slice(0, 3).map((participant) => ({
+      name: participant.displayName,
+      initials: getInitials(participant.displayName),
+      score: participant.score,
+    })) ?? [];
 
   return (
     <BroadcastLayout>
-      {!session || !currentQuestion ? (
+      {!session ? (
+        <EmptyState
+          title="لا توجد جلسة بث نشطة"
+          description="ابدأ جلسة مسابقة من لوحة المضيف لعرض شاشة البث."
+        />
+      ) : session.status === 'FINISHED' ? (
+        <div className="broadcast-stage">
+          <section>
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">غرفة {session.roomCode}</span>
+                <h1>النتيجة النهائية</h1>
+                <p>انتهت مسابقة {session.quiz.title}، وهذه مراكز المتسابقين الثلاثة الأولى.</p>
+              </div>
+              <Badge>انتهت</Badge>
+            </div>
+            <Card className="results-screen">
+              <h2>منصة الفائزين</h2>
+              {winners.length > 0 ? (
+                <WinnerPodium winners={winners} />
+              ) : (
+                <EmptyState title="لا توجد نتائج بعد" description="لم ينضم أي متسابق للجلسة." />
+              )}
+            </Card>
+          </section>
+          <aside>
+            <Card>
+              <h2>ترتيب المتسابقين</h2>
+              <div className="leaderboard-list">
+                {session.participants.map((participant, index) => (
+                  <div className="leaderboard-item" key={participant.id}>
+                    <span className="rank">{index + 1}</span>
+                    <div className="player-name">
+                      <strong>{participant.displayName}</strong>
+                      <span>{participant.correctCount.toLocaleString('ar-SA')} صحيحة</span>
+                    </div>
+                    <strong className="score" dir="ltr">
+                      {participant.score.toLocaleString('ar-SA')}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </aside>
+        </div>
+      ) : !currentQuestion ? (
         <EmptyState
           title="لا توجد جلسة بث نشطة"
           description="ابدأ جلسة مسابقة من لوحة المضيف لعرض شاشة البث."
@@ -74,9 +130,7 @@ export default async function Page({
                   <span className="eyebrow">غرفة {session.roomCode}</span>
                   <h1>{session.quiz.title}</h1>
                 </div>
-                <Badge className="badge-live">
-                  {session.status === 'FINISHED' ? 'انتهت' : 'مباشرة'}
-                </Badge>
+                <Badge className="badge-live">مباشرة</Badge>
               </div>
               <Card className="question-card">
                 <div className="question-meta">

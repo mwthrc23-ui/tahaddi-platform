@@ -1,8 +1,14 @@
 'use client';
 
 import { Badge, Card } from '@/components/ui';
+import { WinnerPodium } from '@/components/quiz';
 import { LiveQuestionStage } from './live-question-stage';
 import { useLiveGame } from './use-live-game';
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return (parts[0]?.[0] ?? '؟') + (parts[1]?.[0] ?? '');
+}
 
 export function LivePlayerExperience({
   sessionId,
@@ -23,6 +29,12 @@ export function LivePlayerExperience({
   });
   const snapshot = game.snapshot;
   const selectedOptionId = snapshot?.playerAnswer?.optionId || undefined;
+  const winners =
+    snapshot?.leaderboard.slice(0, 3).map((player) => ({
+      name: player.name,
+      initials: getInitials(player.name),
+      score: player.score,
+    })) ?? [];
 
   return (
     <div className="live-experience live-player-experience">
@@ -48,10 +60,27 @@ export function LivePlayerExperience({
           <p>ستظهر خيارات السؤال هنا فور بدء الجولة.</p>
         </Card>
       ) : snapshot.phase === 'FINISHED' ? (
-        <Card className="live-player-result">
-          <h1>انتهت المسابقة</h1>
-          <p>شكرًا لمشاركتك.</p>
-        </Card>
+        <>
+          <Card className="live-player-result">
+            <h1>النتيجة النهائية</h1>
+            <p>انتهت المسابقة، وهذه المراكز الثلاثة الأولى.</p>
+            {winners.length > 0 ? <WinnerPodium winners={winners} /> : <p>لا توجد نتائج مسجلة.</p>}
+          </Card>
+          {snapshot.leaderboard.length > 0 && (
+            <Card className="live-leaderboard">
+              <h2>ترتيب المتسابقين</h2>
+              <ol>
+                {snapshot.leaderboard.slice(0, 10).map((player) => (
+                  <li key={player.id}>
+                    <span>{player.rank.toLocaleString('ar-SA')}</span>
+                    <strong>{player.name}</strong>
+                    <b>{player.score.toLocaleString('ar-SA')}</b>
+                  </li>
+                ))}
+              </ol>
+            </Card>
+          )}
+        </>
       ) : snapshot.phase === 'LEADERBOARD' ? (
         <Card className="live-lobby">
           <h1>يُعرض الترتيب الآن</h1>
