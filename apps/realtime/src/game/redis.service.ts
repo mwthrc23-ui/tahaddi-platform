@@ -39,6 +39,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private answersKey(pin: string, questionId: string) {
     return `game:${pin}:answers:${questionId}`;
   }
+  private specialRoomKey(pin: string) {
+    return `special-game:${pin}:room`;
+  }
 
   // ── Session ────────────────────────────────────────────────────────────────
 
@@ -133,5 +136,25 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async isPinActive(pin: string): Promise<boolean> {
     return (await this.client.sismember('pins:active', pin)) === 1;
+  }
+
+  // ── Special game rooms ───────────────────────────────────────────────────
+
+  async saveSpecialRoom<T>(pin: string, room: T): Promise<void> {
+    await this.client.set(
+      this.specialRoomKey(pin),
+      JSON.stringify(room),
+      'EX',
+      GAME_TTL_SECONDS,
+    );
+  }
+
+  async loadSpecialRoom<T>(pin: string): Promise<T | null> {
+    const raw = await this.client.get(this.specialRoomKey(pin));
+    return raw ? (JSON.parse(raw) as T) : null;
+  }
+
+  async deleteSpecialRoom(pin: string): Promise<void> {
+    await this.client.del(this.specialRoomKey(pin));
   }
 }

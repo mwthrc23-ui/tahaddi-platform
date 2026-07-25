@@ -16,6 +16,7 @@
     "@tahaddi/config": "workspace:*",
     "@tahaddi/database": "workspace:*",
     "@tanstack/react-query": "^5.101.2",
+    "@tahaddi/domain": "workspace:*",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "class-variance-authority": "^0.7.1",
@@ -29,6 +30,7 @@
     "react-hook-form": "^7.82.0",
     "react-qr-code": "^2.2.0",
     "resend": "^6.17.2",
+    "socket.io-client": "^4.8.3",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },

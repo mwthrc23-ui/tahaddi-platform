@@ -5,5 +5,6 @@ import { RedisService } from './redis.service.js';
 
 @Module({
   providers: [GameGateway, GameService, RedisService],
+  exports: [RedisService],
 })
 export class GameModule {}
