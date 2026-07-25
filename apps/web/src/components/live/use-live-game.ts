@@ -13,6 +13,18 @@ import {
 import { io, type Socket } from 'socket.io-client';
 
 type LiveSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
+type LiveTransport = 'socket' | 'http';
+type HttpOperation = 'snapshot' | 'start' | 'next' | 'finish' | 'answer';
+
+type HttpRoomResponse = {
+  ok: boolean;
+  snapshot?: GameSnapshot;
+  stats?: QuestionStatsPayload | null;
+  reason?: AnswerRejectionReason;
+  error?: string;
+};
+
+const HTTP_POLL_INTERVAL_MS = 1_000;
 
 const rejectionMessages: Record<AnswerRejectionReason, string> = {
   INVALID_SESSION: 'الجلسة غير متاحة.',
@@ -24,6 +36,34 @@ const rejectionMessages: Record<AnswerRejectionReason, string> = {
   ANSWER_TOO_LATE: 'انتهى وقت الإجابة.',
 };
 
+async function requestHttpRoom(input: {
+  sessionId: string;
+  subjectId: string;
+  accessToken: string;
+  role: LiveRole;
+  operation: HttpOperation;
+  questionId?: string;
+  optionId?: string;
+  signal?: AbortSignal;
+}): Promise<HttpRoomResponse> {
+  const response = await fetch(`/api/live/${encodeURIComponent(input.sessionId)}/room`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    cache: 'no-store',
+    signal: input.signal,
+    body: JSON.stringify({
+      operation: input.operation,
+      subjectId: input.subjectId,
+      accessToken: input.accessToken,
+      role: input.role,
+      questionId: input.questionId,
+      optionId: input.optionId,
+    }),
+  });
+  const body = (await response.json().catch(() => null)) as HttpRoomResponse | null;
+  return body ?? { ok: false, error: 'INVALID_RESPONSE' };
+}
+
 export function useLiveGame(input: {
   sessionId: string;
   subjectId: string;
@@ -32,6 +72,7 @@ export function useLiveGame(input: {
 }) {
   const { sessionId, subjectId, accessToken, role } = input;
   const socketRef = useRef<LiveSocket | null>(null);
+  const transportRef = useRef<LiveTransport | null>(null);
   const bestRtt = useRef(Number.POSITIVE_INFINITY);
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
   const [stats, setStats] = useState<QuestionStatsPayload | null>(null);
@@ -40,8 +81,86 @@ export function useLiveGame(input: {
   const [message, setMessage] = useState('جارٍ الاتصال بالغرفة…');
   const [busy, setBusy] = useState(false);
 
+  const applyHttpState = useCallback(
+    (response: HttpRoomResponse, clientSentAt: number, clientReceivedAt: number) => {
+      if (!response.ok || !response.snapshot) return false;
+      setSnapshot(response.snapshot);
+      setStats(response.stats ?? response.snapshot.reveal?.stats ?? null);
+      setClockOffset(
+        calculateClockOffset({
+          clientSentAt,
+          clientReceivedAt,
+          serverTime: response.snapshot.serverTime,
+        }),
+      );
+      setConnected(true);
+      setMessage('');
+      return true;
+    },
+    [],
+  );
+
   useEffect(() => {
-    const realtimeUrl = process.env.NEXT_PUBLIC_REALTIME_URL?.trim() || window.location.origin;
+    let cancelled = false;
+    let pollingStarted = false;
+    let pollTimer: number | null = null;
+    let pollController: AbortController | null = null;
+
+    const poll = async () => {
+      if (cancelled) return;
+      pollController = new AbortController();
+      const clientSentAt = Date.now();
+      try {
+        const response = await requestHttpRoom({
+          sessionId,
+          subjectId,
+          accessToken,
+          role,
+          operation: 'snapshot',
+          signal: pollController.signal,
+        });
+        if (cancelled) return;
+        const applied = applyHttpState(response, clientSentAt, Date.now());
+        if (!applied) {
+          setConnected(false);
+          setMessage(
+            response.error === 'UNAUTHORIZED'
+              ? 'تعذّر التحقق من صلاحية دخول الغرفة.'
+              : 'تعذّر تحديث الغرفة؛ نحاول إعادة الاتصال…',
+          );
+        }
+      } catch (error) {
+        if (!cancelled && !(error instanceof DOMException && error.name === 'AbortError')) {
+          setConnected(false);
+          setMessage('تعذّر تحديث الغرفة؛ نحاول إعادة الاتصال…');
+        }
+      } finally {
+        pollController = null;
+        if (!cancelled) {
+          pollTimer = window.setTimeout(poll, HTTP_POLL_INTERVAL_MS);
+        }
+      }
+    };
+
+    const startPolling = () => {
+      if (pollingStarted || cancelled) return;
+      pollingStarted = true;
+      transportRef.current = 'http';
+      setMessage('جارٍ مزامنة الغرفة…');
+      void poll();
+    };
+
+    const realtimeUrl = process.env.NEXT_PUBLIC_REALTIME_URL?.trim();
+    if (!realtimeUrl) {
+      startPolling();
+      return () => {
+        cancelled = true;
+        if (pollTimer !== null) window.clearTimeout(pollTimer);
+        pollController?.abort();
+        transportRef.current = null;
+      };
+    }
+
     const socket: LiveSocket = io(realtimeUrl, {
       transports: ['websocket'],
       reconnection: true,
@@ -49,6 +168,7 @@ export function useLiveGame(input: {
       reconnectionDelayMax: 4_000,
     });
     socketRef.current = socket;
+    transportRef.current = 'socket';
 
     const join = () => {
       setConnected(true);
@@ -64,8 +184,10 @@ export function useLiveGame(input: {
     socket.on('connect', join);
     socket.on('disconnect', disconnected);
     socket.on('connect_error', () => {
-      setConnected(false);
-      setMessage('خدمة اللعب المباشر غير متاحة الآن.');
+      socket.removeAllListeners();
+      socket.disconnect();
+      socketRef.current = null;
+      startPolling();
     });
     socket.on('clock:pong', (payload) => {
       const receivedAt = Date.now();
@@ -186,26 +308,77 @@ export function useLiveGame(input: {
     }, 10_000);
 
     return () => {
+      cancelled = true;
       window.clearInterval(clockTimer);
+      if (pollTimer !== null) window.clearTimeout(pollTimer);
+      pollController?.abort();
       socket.removeAllListeners();
       socket.disconnect();
       socketRef.current = null;
+      transportRef.current = null;
     };
-  }, [accessToken, role, sessionId, subjectId]);
+  }, [accessToken, applyHttpState, role, sessionId, subjectId]);
+
+  const sendHttpCommand = useCallback(
+    async (
+      operation: Exclude<HttpOperation, 'snapshot'>,
+      answer?: { questionId: string; optionId: string },
+    ) => {
+      const clientSentAt = Date.now();
+      try {
+        const response = await requestHttpRoom({
+          sessionId,
+          subjectId,
+          accessToken,
+          role,
+          operation,
+          ...answer,
+        });
+        if (response.reason) {
+          if (response.reason !== 'DUPLICATE_ANSWER') {
+            setSnapshot((current) => (current ? { ...current, playerAnswer: null } : current));
+          }
+          setMessage(rejectionMessages[response.reason]);
+          return;
+        }
+        if (!applyHttpState(response, clientSentAt, Date.now())) {
+          setMessage('تعذّر تنفيذ الأمر في حالته الحالية.');
+        } else if (operation === 'answer') {
+          setMessage('تم استلام إجابتك.');
+        }
+      } catch {
+        setConnected(false);
+        setMessage('تعذّر الاتصال بالغرفة؛ سنحاول مجددًا.');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [accessToken, applyHttpState, role, sessionId, subjectId],
+  );
 
   const command = useCallback(
     (event: 'question:start' | 'question:next' | 'game:finish') => {
-      if (!socketRef.current?.connected || busy) return;
+      if (!connected || busy) return;
       setBusy(true);
+      if (transportRef.current === 'http') {
+        const operation =
+          event === 'question:start' ? 'start' : event === 'question:next' ? 'next' : 'finish';
+        void sendHttpCommand(operation);
+        return;
+      }
+      if (!socketRef.current?.connected) {
+        setBusy(false);
+        return;
+      }
       socketRef.current.emit(event, { sessionId });
       window.setTimeout(() => setBusy(false), 3_000);
     },
-    [busy, sessionId],
+    [busy, connected, sendHttpCommand, sessionId],
   );
 
   const submitAnswer = useCallback(
     (questionId: string, optionId: string) => {
-      if (!socketRef.current?.connected || busy || snapshot?.playerAnswer) return;
+      if (!connected || busy || snapshot?.playerAnswer) return;
       setBusy(true);
       setSnapshot((current) =>
         current
@@ -215,13 +388,21 @@ export function useLiveGame(input: {
             }
           : current,
       );
+      if (transportRef.current === 'http') {
+        void sendHttpCommand('answer', { questionId, optionId });
+        return;
+      }
+      if (!socketRef.current?.connected) {
+        setBusy(false);
+        return;
+      }
       socketRef.current.emit('answer:submit', {
         sessionId,
         questionId,
         optionId,
       });
     },
-    [busy, sessionId, snapshot?.playerAnswer],
+    [busy, connected, sendHttpCommand, sessionId, snapshot?.playerAnswer],
   );
   const startQuestion = useCallback(() => command('question:start'), [command]);
   const nextQuestion = useCallback(() => command('question:next'), [command]);
