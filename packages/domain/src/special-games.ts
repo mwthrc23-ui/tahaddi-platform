@@ -1,0 +1,289 @@
+export type SpecialGameMode = 'parallel-world' | 'reverse-time';
+
+export type SpecialGameMeta = {
+  mode: SpecialGameMode;
+  title: string;
+  shortTitle: string;
+  description: string;
+  minimumPlayers: number;
+  roundSeconds: number;
+};
+
+export type ParallelWorldVariant = {
+  face: 'geography' | 'history' | 'culture' | 'tourism' | 'science' | 'sport';
+  faceLabel: string;
+  prompt: string;
+  options: string[];
+};
+
+export type ParallelWorldRound = {
+  id: string;
+  answer: string;
+  reveal: string;
+  variants: ParallelWorldVariant[];
+};
+
+export type ReverseTimeRound = {
+  id: string;
+  answer: string;
+  category: string;
+  hint: string;
+};
+
+export const SPECIAL_GAME_META: Record<SpecialGameMode, SpecialGameMeta> = {
+  'parallel-world': {
+    mode: 'parallel-world',
+    title: 'العالم الموازي',
+    shortTitle: 'العوالم',
+    description: 'أسئلة مختلفة لكل لاعب، لكن الإجابة التي تجمع العوالم واحدة.',
+    minimumPlayers: 2,
+    roundSeconds: 25,
+  },
+  'reverse-time': {
+    mode: 'reverse-time',
+    title: 'الزمن المقلوب',
+    shortTitle: 'الزمن',
+    description: 'تظهر الإجابة أولًا، ثم يصنع اللاعبون السؤال الأذكى ويصوّتون له.',
+    minimumPlayers: 3,
+    roundSeconds: 35,
+  },
+};
+
+export const PARALLEL_WORLD_BANK: ParallelWorldRound[] = [
+  {
+    id: 'parallel-cairo',
+    answer: 'القاهرة',
+    reveal: 'كل الطرق كانت تقود إلى القاهرة، مهما اختلف مجال السؤال.',
+    variants: [
+      {
+        face: 'geography',
+        faceLabel: 'جغرافيا',
+        prompt: 'ما عاصمة جمهورية مصر العربية؟',
+        options: ['القاهرة', 'الإسكندرية', 'الأقصر', 'أسوان'],
+      },
+      {
+        face: 'history',
+        faceLabel: 'تاريخ',
+        prompt: 'في أي مدينة تأسس الجامع الأزهر في العصر الفاطمي؟',
+        options: ['القاهرة', 'القيروان', 'دمشق', 'بغداد'],
+      },
+      {
+        face: 'culture',
+        faceLabel: 'ثقافة',
+        prompt: 'أي مدينة عربية اشتهرت بلقب «أم الدنيا»؟',
+        options: ['القاهرة', 'بيروت', 'الرباط', 'عمّان'],
+      },
+      {
+        face: 'tourism',
+        faceLabel: 'سياحة',
+        prompt: 'في أي مدينة يقف البرج الشهير المطل على نهر النيل؟',
+        options: ['القاهرة', 'الخرطوم', 'طرابلس', 'تونس'],
+      },
+    ],
+  },
+  {
+    id: 'parallel-riyadh',
+    answer: 'الرياض',
+    reveal: 'العاصمة والتاريخ والموسم والملعب اجتمعت كلها في الرياض.',
+    variants: [
+      {
+        face: 'geography',
+        faceLabel: 'جغرافيا',
+        prompt: 'ما عاصمة المملكة العربية السعودية؟',
+        options: ['الرياض', 'جدة', 'الدمام', 'أبها'],
+      },
+      {
+        face: 'history',
+        faceLabel: 'تاريخ',
+        prompt: 'في أي مدينة يقع قصر المصمك التاريخي؟',
+        options: ['الرياض', 'الدرعية', 'الطائف', 'حائل'],
+      },
+      {
+        face: 'culture',
+        faceLabel: 'ثقافة',
+        prompt: 'أي مدينة تستضيف فعاليات «موسم الرياض»؟',
+        options: ['الرياض', 'جدة', 'العلا', 'الخبر'],
+      },
+      {
+        face: 'sport',
+        faceLabel: 'رياضة',
+        prompt: 'في أي مدينة يقع ملعب الملك فهد الدولي؟',
+        options: ['الرياض', 'جدة', 'بريدة', 'تبوك'],
+      },
+    ],
+  },
+  {
+    id: 'parallel-nile',
+    answer: 'النيل',
+    reveal: 'الحضارة والسد والمصب والرحلات كانت خيوطًا لنهر النيل.',
+    variants: [
+      {
+        face: 'geography',
+        faceLabel: 'جغرافيا',
+        prompt: 'أي نهر يصب في البحر المتوسط بعد مروره بمصر؟',
+        options: ['النيل', 'دجلة', 'الفرات', 'الأردن'],
+      },
+      {
+        face: 'history',
+        faceLabel: 'تاريخ',
+        prompt: 'حول أي نهر ازدهرت الحضارة المصرية القديمة؟',
+        options: ['النيل', 'الغانج', 'السند', 'الدانوب'],
+      },
+      {
+        face: 'science',
+        faceLabel: 'علوم',
+        prompt: 'على أي نهر بُني السد العالي في أسوان؟',
+        options: ['النيل', 'الأمازون', 'الكونغو', 'الراين'],
+      },
+      {
+        face: 'tourism',
+        faceLabel: 'سياحة',
+        prompt: 'ما النهر الذي تعبره الرحلات السياحية بين الأقصر وأسوان؟',
+        options: ['النيل', 'الفرات', 'السنغال', 'الفولغا'],
+      },
+    ],
+  },
+  {
+    id: 'parallel-arabic',
+    answer: 'اللغة العربية',
+    reveal: 'لغة الضاد ويومها العالمي ومكانتها الأممية كشفت الإجابة.',
+    variants: [
+      {
+        face: 'culture',
+        faceLabel: 'ثقافة',
+        prompt: 'ما اللغة التي تُعرف باسم «لغة الضاد»؟',
+        options: ['اللغة العربية', 'اللغة الفارسية', 'اللغة التركية', 'اللغة السواحلية'],
+      },
+      {
+        face: 'history',
+        faceLabel: 'تاريخ',
+        prompt: 'ما لغة المعلقات التي وصلتنا من الشعر الجاهلي؟',
+        options: ['اللغة العربية', 'اللغة اللاتينية', 'اللغة اليونانية', 'اللغة السريانية'],
+      },
+      {
+        face: 'geography',
+        faceLabel: 'جغرافيا',
+        prompt: 'ما اللغة الرسمية المشتركة بين دول جامعة الدول العربية؟',
+        options: ['اللغة العربية', 'اللغة الفرنسية', 'اللغة الإنجليزية', 'اللغة الإسبانية'],
+      },
+      {
+        face: 'culture',
+        faceLabel: 'مناسبات',
+        prompt: 'أي لغة يحتفل العالم بيومها في 18 ديسمبر؟',
+        options: ['اللغة العربية', 'اللغة الصينية', 'اللغة الروسية', 'اللغة البرتغالية'],
+      },
+    ],
+  },
+  {
+    id: 'parallel-jupiter',
+    answer: 'المشتري',
+    reveal: 'الحجم والبقعة الحمراء والأقمار كشفت عملاق المجموعة الشمسية.',
+    variants: [
+      {
+        face: 'science',
+        faceLabel: 'فضاء',
+        prompt: 'ما أكبر كوكب في المجموعة الشمسية؟',
+        options: ['المشتري', 'زحل', 'نبتون', 'الأرض'],
+      },
+      {
+        face: 'science',
+        faceLabel: 'فلك',
+        prompt: 'على أي كوكب تقع «البقعة الحمراء العظيمة»؟',
+        options: ['المشتري', 'المريخ', 'الزهرة', 'عطارد'],
+      },
+      {
+        face: 'history',
+        faceLabel: 'اكتشافات',
+        prompt: 'أي كوكب تدور حوله الأقمار الغاليلية الأربعة؟',
+        options: ['المشتري', 'أورانوس', 'زحل', 'نبتون'],
+      },
+      {
+        face: 'geography',
+        faceLabel: 'ترتيب كوني',
+        prompt: 'ما الكوكب الخامس في البعد عن الشمس؟',
+        options: ['المشتري', 'الأرض', 'المريخ', 'زحل'],
+      },
+    ],
+  },
+  {
+    id: 'parallel-gold',
+    answer: 'الذهب',
+    reveal: 'العنصر والميدالية والزينة والاحتياطي حملت جميعها بريق الذهب.',
+    variants: [
+      {
+        face: 'science',
+        faceLabel: 'كيمياء',
+        prompt: 'ما العنصر الكيميائي الذي رمزه Au؟',
+        options: ['الذهب', 'الفضة', 'النحاس', 'الحديد'],
+      },
+      {
+        face: 'sport',
+        faceLabel: 'رياضة',
+        prompt: 'ما معدن الميدالية التي ينالها صاحب المركز الأول؟',
+        options: ['الذهب', 'الفضة', 'البرونز', 'البلاتين'],
+      },
+      {
+        face: 'culture',
+        faceLabel: 'تراث',
+        prompt: 'ما المعدن النفيس الأكثر ارتباطًا بصياغة الحلي التقليدية؟',
+        options: ['الذهب', 'القصدير', 'الألمنيوم', 'الزنك'],
+      },
+      {
+        face: 'geography',
+        faceLabel: 'اقتصاد',
+        prompt: 'ما المعدن الذي تحتفظ به البنوك المركزية ضمن احتياطاتها؟',
+        options: ['الذهب', 'الرصاص', 'النيكل', 'الكروم'],
+      },
+    ],
+  },
+];
+
+export const REVERSE_TIME_BANK: ReverseTimeRound[] = [
+  {
+    id: 'reverse-riyadh',
+    answer: 'الرياض',
+    category: 'مكان',
+    hint: 'اصنع سؤالًا لا يذكر كلمة «عاصمة».',
+  },
+  {
+    id: 'reverse-moon',
+    answer: 'القمر',
+    category: 'فضاء',
+    hint: 'اربط الإجابة بظاهرة أو رحلة أو تشبيه.',
+  },
+  {
+    id: 'reverse-zero',
+    answer: 'الصفر',
+    category: 'أرقام',
+    hint: 'اجعل السؤال بسيطًا في ظاهره ومخادعًا في معناه.',
+  },
+  { id: 'reverse-palm', answer: 'النخلة', category: 'تراث', hint: 'فكّر في رمز أو ثمرة أو بيئة.' },
+  {
+    id: 'reverse-red-sea',
+    answer: 'البحر الأحمر',
+    category: 'جغرافيا',
+    hint: 'استخدم دولة أو مدينة أو كائنًا بحريًا كدليل.',
+  },
+  {
+    id: 'reverse-arabic',
+    answer: 'اللغة العربية',
+    category: 'ثقافة',
+    hint: 'ابنِ السؤال حول حرف أو مناسبة أو كتاب.',
+  },
+  {
+    id: 'reverse-jupiter',
+    answer: 'المشتري',
+    category: 'علوم',
+    hint: 'استعن بحجمه أو أقماره أو ترتيبه.',
+  },
+  {
+    id: 'reverse-time',
+    answer: 'الوقت',
+    category: 'ألغاز',
+    hint: 'اكتب سؤالًا لا يمكن تخزين إجابته في صندوق.',
+  },
+];
+
+export function isSpecialGameMode(value: string): value is SpecialGameMode {
+  return value === 'parallel-world' || value === 'reverse-time';
+}

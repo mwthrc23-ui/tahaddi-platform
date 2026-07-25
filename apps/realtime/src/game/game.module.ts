@@ -6,5 +6,6 @@ import { DatabaseService } from './database.service.js';
 
 @Module({
   providers: [GameGateway, GameService, RedisService, DatabaseService],
+  exports: [RedisService],
 })
 export class GameModule {}
