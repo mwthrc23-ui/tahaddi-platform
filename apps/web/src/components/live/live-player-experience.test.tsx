@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LiveHostExperience } from './live-host-experience';
 import { LivePlayerExperience } from './live-player-experience';
 
@@ -35,6 +35,14 @@ vi.mock('./use-live-game', () => ({
 }));
 
 describe('LivePlayerExperience final results', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('shows the podium and contestant ranking after the session finishes', () => {
     render(
       <LivePlayerExperience
@@ -44,6 +52,7 @@ describe('LivePlayerExperience final results', () => {
         displayName="خالد الدوسري"
       />,
     );
+    act(() => vi.runAllTimers());
 
     expect(screen.getByRole('heading', { name: 'النتيجة النهائية' })).toBeInTheDocument();
     expect(screen.getByLabelText('منصة الفائزين')).toBeInTheDocument();
@@ -65,8 +74,9 @@ describe('LivePlayerExperience final results', () => {
         initialAutoAdvance
       />,
     );
+    act(() => vi.runAllTimers());
 
-    expect(screen.getByRole('heading', { name: 'النتائج النهائية' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'النتيجة النهائية' })).toBeInTheDocument();
     expect(screen.getByLabelText('منصة الفائزين')).toBeInTheDocument();
     expect(screen.getAllByText('سارة العتيبي')).toHaveLength(2);
     expect(screen.getAllByText('محمد القحطاني')).toHaveLength(2);
