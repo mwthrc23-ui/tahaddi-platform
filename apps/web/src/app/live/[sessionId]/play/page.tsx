@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { submitLiveAnswer } from '@/app/live/actions';
 import { SiteLayout } from '@/components/layout';
 import { QuestionImage } from '@/components/questions/question-image';
-import { QuestionProgress, ScoreDisplay } from '@/components/quiz';
+import { QuestionProgress, ScoreDisplay, WinnerPodium } from '@/components/quiz';
 import { Badge, Button, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { getCurrentSession } from '@/lib/auth/session';
@@ -15,6 +15,11 @@ function getAnswerNotice(value: string | undefined) {
   if (value === 'invalid') return 'الخيار غير صالح لهذا السؤال.';
   if (value === 'error') return 'تعذّر تسجيل الإجابة الآن.';
   return '';
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return (parts[0]?.[0] ?? '؟') + (parts[1]?.[0] ?? '');
 }
 
 export default async function LivePlayPage({
@@ -77,7 +82,13 @@ export default async function LivePlayPage({
 
   const participant = session?.participants.find((item) => item.id === participantId);
   const currentQuestion = session?.quiz.questions[session.currentQuestionPosition]?.question;
-  const answer = participantId
+  const winners =
+    session?.participants.slice(0, 3).map((item) => ({
+      name: item.displayName,
+      initials: getInitials(item.displayName),
+      score: item.score,
+    })) ?? [];
+  const answer = participantId && currentQuestion
     ? await getPrismaClient().liveAnswer.findFirst({
         where: { sessionId, participantId, questionId: currentQuestion?.id ?? '' },
         select: { optionId: true, isCorrect: true, earnedPoints: true },
@@ -88,13 +99,60 @@ export default async function LivePlayPage({
     <SiteLayout user={authSession?.user ? { name: authSession.user.name } : null}>
       <section className="section">
         <div className="container live-play">
-          {!session || !currentQuestion ? (
+          {!session ? (
             <EmptyState title="الجلسة غير متاحة" description="تحقق من الرابط أو رمز الغرفة." />
           ) : !participant ? (
             <EmptyState
               title="لم يتم تأكيد انضمامك"
               description="ارجع للصفحة الرئيسية وأدخل اسمك ورمز الغرفة مرة أخرى."
             />
+          ) : session.status === 'FINISHED' ? (
+            <>
+              <div className="section-heading">
+                <div>
+                  <span className="eyebrow">غرفة {session.roomCode}</span>
+                  <h1>النتيجة النهائية</h1>
+                  <p>
+                    انتهت مسابقة {session.quiz.title}، وهذه مراكز المتسابقين الثلاثة الأولى.
+                  </p>
+                </div>
+                <Badge>انتهت</Badge>
+              </div>
+
+              <div className="card-grid two">
+                <Card className="results-screen">
+                  <h2>منصة الفائزين</h2>
+                  {winners.length > 0 ? (
+                    <WinnerPodium winners={winners} />
+                  ) : (
+                    <EmptyState title="لا توجد نتائج بعد" description="لم ينضم أي متسابق للجلسة." />
+                  )}
+                </Card>
+
+                <div>
+                  <ScoreDisplay score={participant.score} streak={participant.correctCount} />
+                  <Card>
+                    <h2>ترتيب المتسابقين</h2>
+                    <div className="leaderboard-list">
+                      {session.participants.map((item, index) => (
+                        <div className="leaderboard-item" key={item.id}>
+                          <span className="rank">{index + 1}</span>
+                          <div className="player-name">
+                            <strong>{item.displayName}</strong>
+                            <span>{item.correctCount.toLocaleString('ar-SA')} إجابات صحيحة</span>
+                          </div>
+                          <strong className="score" dir="ltr">
+                            {item.score.toLocaleString('ar-SA')}
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              </div>
+            </>
+          ) : !currentQuestion ? (
+            <EmptyState title="الجلسة غير متاحة" description="تحقق من الرابط أو رمز الغرفة." />
           ) : (
             <>
               <div className="section-heading">
@@ -105,9 +163,7 @@ export default async function LivePlayPage({
                     {participant.displayName} · {participant.score.toLocaleString('ar-SA')} نقطة
                   </p>
                 </div>
-                <Badge className="badge-live">
-                  {session.status === 'FINISHED' ? 'انتهت' : 'مباشرة'}
-                </Badge>
+                <Badge className="badge-live">مباشرة</Badge>
               </div>
 
               <div className="card-grid two">
