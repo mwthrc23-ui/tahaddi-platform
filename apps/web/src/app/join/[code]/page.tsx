@@ -1,7 +1,18 @@
+import type { Metadata } from 'next';
 import { JoinQuizForm } from '@/components/home/join-quiz-form';
 import { SiteLayout } from '@/components/layout';
 import { Card } from '@/components/ui';
 import { getCurrentSession } from '@/lib/auth/session';
+import { buildJoinMetadata } from '@/lib/metadata/site';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}): Promise<Metadata> {
+  const { code } = await params;
+  return buildJoinMetadata(code);
+}
 
 export default async function JoinCodePage({ params }: { params: Promise<{ code: string }> }) {
   const [{ code }, session] = await Promise.all([params, getCurrentSession()]);
