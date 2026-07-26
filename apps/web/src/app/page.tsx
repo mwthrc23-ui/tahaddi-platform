@@ -50,6 +50,12 @@ const games = [
     href: '/mafia',
     icon: Skull,
   },
+  {
+    title: 'اختر قانون الجولة',
+    description: 'العالم الموازي والزمن المقلوب بغرف مباشرة ورمز QR',
+    href: '/games',
+    icon: Gamepad2,
+  },
 ];
 
 const categories = [
