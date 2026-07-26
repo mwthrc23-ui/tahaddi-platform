@@ -4,6 +4,7 @@ import { Readex_Pro } from 'next/font/google';
 import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '@/components/theme-provider';
+import { SHARE_IMAGE, SHARE_IMAGE_URL, SITE_URL } from '@/lib/metadata/site';
 import './globals.css';
 
 const arabicFont = Readex_Pro({
@@ -14,33 +15,26 @@ const arabicFont = Readex_Pro({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://mwthrc23-ui.github.io'),
+  metadataBase: SITE_URL,
   title: `${APP_CONFIG.name} | مسابقات عربية مباشرة`,
   description: 'أنشئ مسابقات عربية تفاعلية، شارك رمز الغرفة، وتابع النتائج والترتيب لحظة بلحظة.',
   alternates: {
-    canonical: '/tahaddi-platform/',
+    canonical: '/',
   },
   openGraph: {
     title: `${APP_CONFIG.name} | مسابقات عربية مباشرة`,
     description: 'سؤال يشعل الحماس، وترتيب يصنع الصدارة في تجربة مسابقات عربية مباشرة.',
-    url: '/tahaddi-platform/',
+    url: '/',
     siteName: APP_CONFIG.name,
     locale: 'ar_SA',
     type: 'website',
-    images: [
-      {
-        url: '/tahaddi-platform/og.png',
-        width: 1200,
-        height: 630,
-        alt: 'تحدّي — منصة مسابقات عربية مباشرة',
-      },
-    ],
+    images: [SHARE_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: `${APP_CONFIG.name} | مسابقات عربية مباشرة`,
     description: 'سؤال يشعل الحماس، وترتيب يصنع الصدارة.',
-    images: ['/tahaddi-platform/og.png'],
+    images: [SHARE_IMAGE_URL],
   },
 };
 
