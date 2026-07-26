@@ -9,6 +9,14 @@ export type SpecialGameMeta = {
   roundSeconds: number;
 };
 
+export type UpcomingSpecialGame = {
+  slug: string;
+  title: string;
+  description: string;
+  minimumPlayers: number;
+  roundSeconds: number;
+};
+
 export type ParallelWorldVariant = {
   face: 'geography' | 'history' | 'culture' | 'tourism' | 'science' | 'sport';
   faceLabel: string;
@@ -48,6 +56,25 @@ export const SPECIAL_GAME_META: Record<SpecialGameMode, SpecialGameMeta> = {
     roundSeconds: 35,
   },
 };
+
+export const SPECIAL_GAME_ORDER: SpecialGameMode[] = ['parallel-world', 'reverse-time'];
+
+export const UPCOMING_SPECIAL_GAMES: UpcomingSpecialGame[] = [
+  {
+    slug: 'answer-trap',
+    title: 'فخّ الإجابات',
+    description: 'اكتب إجابة مزيّفة مقنعة، واكسب نقطة كلما وقع لاعب في فخّك.',
+    minimumPlayers: 3,
+    roundSeconds: 45,
+  },
+  {
+    slug: 'confidence-auction',
+    title: 'مزاد الثقة',
+    description: 'راهن بجزء من رصيدك قبل ظهور السؤال، والصحيح يضاعف والخطأ يحرق.',
+    minimumPlayers: 2,
+    roundSeconds: 30,
+  },
+];
 
 export const PARALLEL_WORLD_BANK: ParallelWorldRound[] = [
   {

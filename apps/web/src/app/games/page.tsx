@@ -1,69 +1,113 @@
-import { Clock3, Orbit, QrCode, UsersRound } from 'lucide-react';
+import type { Metadata } from 'next';
+import { SPECIAL_GAME_META, SPECIAL_GAME_ORDER, UPCOMING_SPECIAL_GAMES } from '@tahaddi/domain';
+import { CcButton, CcFlag, CcPrompt, CcRule } from '@/components/claude-code';
 import { SiteLayout } from '@/components/layout';
-import { ButtonLink, Card } from '@/components/ui';
 import { getCurrentSession } from '@/lib/auth/session';
+import { toArabicDigits } from '@/lib/utils';
 
-const games = [
-  {
-    href: '/games/parallel-world',
-    title: 'العالم الموازي',
-    description: 'وزّع سؤالًا مختلفًا على كل لاعب، ثم اكشف أن الإجابة كانت واحدة.',
-    players: 'لاعبان أو أكثر',
-    time: '25 ثانية',
-    icon: Orbit,
-  },
-  {
-    href: '/games/reverse-time',
-    title: 'الزمن المقلوب',
-    description: 'اعرض الإجابة أولًا، واجعل اللاعبين يصنعون السؤال ثم يصوّتون للأذكى.',
-    players: '3 لاعبين أو أكثر',
-    time: '35 ثانية',
-    icon: Clock3,
-  },
-] as const;
+export const metadata: Metadata = {
+  title: 'الألعاب الخاصة | تحدّي',
+  description:
+    'أوضاع لعب جماعية بقوانين مقلوبة وبنك أسئلة جاهز. أنشئ الغرفة، شارك الرمز، وابدأ الجولة.',
+  alternates: { canonical: '/games' },
+};
 
 export default async function GamesPage() {
   const session = await getCurrentSession();
+  const games = SPECIAL_GAME_ORDER.map((mode) => SPECIAL_GAME_META[mode]);
 
   return (
     <SiteLayout user={session?.user ? { name: session.user.name } : null}>
-      <section className="section special-games-index">
-        <div className="container">
-          <div className="special-games-heading">
-            <div>
-              <h1>اختر قانون الجولة</h1>
-              <p>لعبتان جماعيتان ببنك أسئلة جاهز. أنشئ الغرفة، شارك الرمز أو امسح QR، ثم ابدأ.</p>
-            </div>
-            <QrCode aria-hidden="true" />
+      <section className="cc">
+        <div className="cc-shell">
+          <CcPrompt command="tahaddi games --list" />
+
+          <header className="cc-head">
+            <h1>اختر قانون الجولة</h1>
+            <p>
+              {toArabicDigits(games.length)} أوضاع لعب جماعية ببنك أسئلة جاهز. أنشئ الغرفة، شارك
+              الرمز أو امسح QR، ثم ابدأ الجولة.
+            </p>
+          </header>
+
+          <div className="cc-status" dir="ltr">
+            <span>
+              <span className="cc-dot" aria-hidden="true" />
+              {games.length} modes ready
+            </span>
+            <span>{UPCOMING_SPECIAL_GAMES.length} in development</span>
+            <span>no account required</span>
           </div>
 
-          <div className="special-games-catalogue">
+          <ul className="cc-list" role="list">
             {games.map((game, index) => (
-              <Card className="special-game-card" key={game.href}>
-                <div className="special-game-card__number" aria-hidden="true">
-                  {String(index + 1).padStart(2, '0')}
-                </div>
-                <div className="special-game-card__body">
-                  <game.icon aria-hidden="true" />
-                  <h2>{game.title}</h2>
-                  <p>{game.description}</p>
-                  <div className="special-game-card__facts">
-                    <span>
-                      <UsersRound aria-hidden="true" />
-                      {game.players}
+              <li className="cc-item" key={game.mode}>
+                <article className="cc-card">
+                  <span className="cc-card__index" aria-hidden="true" dir="ltr">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+
+                  <div className="cc-card__body">
+                    <span className="cc-card__slug" dir="ltr" aria-hidden="true">
+                      games/{game.mode}
                     </span>
-                    <span>
-                      <Clock3 aria-hidden="true" />
-                      {game.time}
-                    </span>
+
+                    <h2 id={`mode-${game.mode}`}>{game.title}</h2>
+                    <p>{game.description}</p>
+
+                    <dl className="cc-flags" dir="ltr">
+                      <CcFlag
+                        name="--players"
+                        value={`${game.minimumPlayers}+`}
+                        label="الحد الأدنى للاعبين"
+                      />
+                      <CcFlag
+                        name="--timer"
+                        value={`${game.roundSeconds}s`}
+                        label="مدة الجولة بالثواني"
+                      />
+                      <CcFlag name="--bank" value="ready" label="حالة بنك الأسئلة" />
+                    </dl>
+
+                    <CcButton href={`/games/${game.mode}`} aria-labelledby={`mode-${game.mode}`}>
+                      شغّل الوضع
+                    </CcButton>
                   </div>
-                  <ButtonLink href={game.href} variant={index === 0 ? 'gold' : 'primary'}>
-                    افتح اللعبة
-                  </ButtonLink>
-                </div>
-              </Card>
+                </article>
+              </li>
             ))}
-          </div>
+          </ul>
+
+          {UPCOMING_SPECIAL_GAMES.length > 0 && (
+            <section aria-labelledby="cc-soon-title">
+              <CcRule label="# in development" />
+              <h2 id="cc-soon-title" className="sr-only">
+                أوضاع قيد التطوير
+              </h2>
+              <ul className="cc-soon" role="list">
+                {UPCOMING_SPECIAL_GAMES.map((game) => (
+                  <li key={game.slug}>
+                    <span className="cc-soon__mark" dir="ltr" aria-hidden="true">
+                      {'//'}
+                    </span>
+                    <span>
+                      <b>{game.title}</b> — {game.description}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <aside className="cc-join">
+            <p>
+              <strong>وصلك رمز دعوة من المضيف؟</strong>
+              ادخل كزائر بالاسم فقط دون إنشاء حساب.
+            </p>
+            <CcButton href="/join" variant="ghost">
+              ادخل بالرمز
+            </CcButton>
+          </aside>
         </div>
       </section>
     </SiteLayout>

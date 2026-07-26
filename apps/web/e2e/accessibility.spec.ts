@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-for (const route of ['/', '/join', '/mafia']) {
+for (const route of ['/', '/join', '/mafia', '/games']) {
   test(`لا توجد مخالفات وصولية آلية حرجة في ${route}`, async ({ page }) => {
     await page.goto(route);
     const results = await new AxeBuilder({ page })

@@ -1,11 +1,11 @@
 import { notFound } from 'next/navigation';
-import { isSpecialGameMode, type SpecialGameMode } from '@tahaddi/domain';
+import { isSpecialGameMode, SPECIAL_GAME_ORDER, type SpecialGameMode } from '@tahaddi/domain';
 import { SiteLayout } from '@/components/layout';
 import { SpecialGameRoom } from '@/components/special-games/special-game-room';
 import { getCurrentSession } from '@/lib/auth/session';
 
 export function generateStaticParams() {
-  return [{ mode: 'parallel-world' }, { mode: 'reverse-time' }];
+  return SPECIAL_GAME_ORDER.map((mode) => ({ mode }));
 }
 
 export default async function SpecialGamePage({
