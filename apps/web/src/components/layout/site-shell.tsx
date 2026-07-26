@@ -188,6 +188,7 @@ export function Footer() {
         <div>
           <Logo />
           <p>{siteConfig.description}</p>
+          <small className="site-owner">صاحب الموقع: عبدالعزيز بن سلطان العتيبي</small>
           <small>© ٢٠٢٦ تحدّي. جميع الحقوق محفوظة.</small>
         </div>
         <div>
