@@ -118,6 +118,10 @@ describe('HomePage actions', () => {
     for (const link of screen.getAllByRole('link', { name: /من هو القاتل؟/ })) {
       expect(link).toHaveAttribute('href', '/mafia');
     }
+    expect(screen.getByRole('link', { name: /اختر قانون الجولة/ })).toHaveAttribute(
+      'href',
+      '/games',
+    );
     expect(document.querySelector('a[href^="/demo/"]')).not.toBeInTheDocument();
     expect(screen.queryByText('A7K9PQ')).not.toBeInTheDocument();
 
