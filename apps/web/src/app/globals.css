@@ -1,5 +1,6 @@
 @import '../../tokens.css';
 @import 'tailwindcss';
+@import '../styles/claude-code.css';
 
 /* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 */
 /* Hallmark · genre: competitive modern-minimal · macrostructure: Workbench · theme: design.md · enrichment: Tier-A product board · nav: existing SiteLayout · footer: existing SiteLayout */
@@ -4776,128 +4777,16 @@ tr:last-child td {
  * theme: locked design.md · enrichment: functional QR · motion: state crossfade + timer pulse
  * contrast: pass (40–41) · nav/footer: existing · slop: pass (42–49) · mobile: pass (34, 49–57)
  */
-.special-games-index,
 .special-game-entry,
 .special-game-stage {
   min-block-size: 72dvh;
 }
 
-.special-games-heading {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: var(--space-6);
-  margin-block-end: var(--space-10);
-}
-
-.special-games-heading h1,
 .special-entry-copy h1,
 .special-stage-header h1 {
   min-inline-size: 0;
   overflow-wrap: anywhere;
   font-style: normal;
-}
-
-.special-games-heading h1 {
-  max-inline-size: 12ch;
-  margin: 0;
-  font-size: clamp(2.5rem, 8vw, 5rem);
-  line-height: 1.05;
-}
-
-.special-games-heading p {
-  max-inline-size: 62ch;
-  margin-block: var(--space-4) 0;
-  color: var(--muted-foreground);
-}
-
-.special-games-heading > svg {
-  inline-size: clamp(3rem, 12vw, 7rem);
-  block-size: auto;
-  color: var(--primary);
-  opacity: 0.72;
-}
-
-.special-games-catalogue {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6);
-}
-
-.special-game-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--space-5);
-  padding: var(--space-6);
-  overflow: clip;
-}
-
-.special-game-card:nth-child(2) {
-  margin-inline-start: 0;
-}
-
-.special-game-card__number {
-  align-self: start;
-  color: var(--muted-foreground);
-  font-size: clamp(2.5rem, 8vw, 5.5rem);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  opacity: 0.26;
-}
-
-.special-game-card__body {
-  min-inline-size: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-4);
-}
-
-.special-game-card__body > svg {
-  inline-size: 2rem;
-  block-size: 2rem;
-  color: var(--primary);
-}
-
-.special-game-card:nth-child(2) .special-game-card__body > svg {
-  color: var(--accent);
-}
-
-.special-game-card h2 {
-  margin: 0;
-  font-size: clamp(1.75rem, 5vw, 3rem);
-  font-style: normal;
-}
-
-.special-game-card p {
-  max-inline-size: 48ch;
-  margin: 0;
-  color: var(--muted-foreground);
-}
-
-.special-game-card__facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
-.special-game-card__facts span {
-  min-block-size: 2.75rem;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding-inline: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  color: var(--muted-foreground);
-  white-space: nowrap;
-}
-
-.special-game-card__facts svg {
-  inline-size: 1rem;
-  block-size: 1rem;
-  color: var(--primary);
 }
 
 .special-game-entry__heading,
@@ -5661,7 +5550,6 @@ tr:last-child td {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .special-game-card:hover,
   .special-option:not(:disabled):hover,
   .special-vote-list button:not(:disabled):hover {
     transform: translateY(-1px);
@@ -5673,14 +5561,6 @@ tr:last-child td {
 }
 
 @media (min-width: 40rem) {
-  .special-games-catalogue {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .special-game-card:nth-child(2) {
-    margin-block-start: var(--space-10);
-  }
-
   .special-entry-copy dl {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -5738,7 +5618,6 @@ tr:last-child td {
     animation: none;
   }
 
-  .special-game-card,
   .special-option,
   .special-vote-list button {
     transition-duration: var(--duration-fast);
