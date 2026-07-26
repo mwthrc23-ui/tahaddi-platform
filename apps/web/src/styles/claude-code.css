@@ -1,17 +1,19 @@
 /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V4 · genre: Cyber / Quantum · macrostructure: command catalogue · design-system: design.md · contrast: pass (40–41) · nav/footer: existing · chrome: pass (47) · tokens: pass (48) · mobile: pass (34, 49–57) */
 
 .cc {
-  --cc-paper: #faf9f5;
-  --cc-surface: #f5f3ee;
-  --cc-sunken: #efece4;
-  --cc-ink: #141413;
-  --cc-ink-soft: #3d3b37;
-  --cc-muted: #6b6862;
-  --cc-faint: #79756e;
-  --cc-line: #e3dfd5;
-  --cc-line-strong: #d3cec1;
-  --cc-clay: #a94424;
-  --cc-clay-soft: #f0e2db;
+  --cc-paper: #070a0f;
+  --cc-surface: #0b1119;
+  --cc-sunken: #04070b;
+  --cc-ink: #ffffff;
+  --cc-ink-soft: #d9f8ff;
+  --cc-muted: #a9bec7;
+  --cc-faint: #83a2ad;
+  --cc-line: rgb(0 212 255 / 0.2);
+  --cc-line-strong: rgb(0 212 255 / 0.42);
+  --cc-clay: #00d4ff;
+  --cc-clay-soft: rgb(0 212 255 / 0.12);
+  --cc-gold: #ffb000;
+  --cc-success: #10b981;
   --cc-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
   --cc-text: var(--font-arabic), system-ui, sans-serif;
   --cc-xs: 0.75rem;
@@ -22,31 +24,19 @@
   --cc-gap: 0.5rem;
   --cc-step: 1.5rem;
   --cc-block: clamp(2.5rem, 6vw, 5rem);
-  --cc-radius: 3px;
+  --cc-radius: 14px;
   --cc-ease: cubic-bezier(0.32, 0.72, 0, 1);
 
   min-block-size: 72dvh;
-  background: var(--cc-paper);
+  background:
+    radial-gradient(circle at 88% 8%, rgb(0 212 255 / 0.12), transparent 28rem),
+    radial-gradient(circle at 8% 82%, rgb(255 176 0 / 0.08), transparent 24rem), var(--cc-paper);
   color: var(--cc-ink);
   font-family: var(--cc-text);
   font-size: var(--cc-base);
   line-height: 1.85;
   padding-block: var(--cc-block);
   -webkit-font-smoothing: antialiased;
-}
-
-[data-theme='dark'] .cc {
-  --cc-paper: #1a1a18;
-  --cc-surface: #211f1d;
-  --cc-sunken: #262421;
-  --cc-ink: #edeae3;
-  --cc-ink-soft: #cfcabf;
-  --cc-muted: #aaa59b;
-  --cc-faint: #8f8a80;
-  --cc-line: #3d3a34;
-  --cc-line-strong: #514b43;
-  --cc-clay: #e48868;
-  --cc-clay-soft: #33241d;
 }
 
 .cc ::selection {
@@ -95,10 +85,14 @@
   font-family: var(--cc-mono);
   font-size: var(--cc-sm);
   user-select: none;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-radius);
+  background: rgb(0 0 0 / 0.35);
 }
 
 .cc-prompt__path {
-  color: var(--cc-clay);
+  color: var(--cc-gold);
   font-weight: 600;
 }
 
@@ -168,7 +162,8 @@
   inline-size: 6px;
   block-size: 6px;
   border-radius: 50%;
-  background: var(--cc-clay);
+  background: var(--cc-success);
+  box-shadow: 0 0 0.85rem rgb(16 185 129 / 0.7);
 }
 
 .cc-rule {
@@ -199,6 +194,10 @@
   border-block-start: 1px solid var(--cc-line);
   list-style: none;
 }
+.cc-group-label .cc-rule--labeled {
+  margin-block: calc(var(--cc-step) * 1.25) 0;
+  color: var(--cc-clay);
+}
 
 .cc-item {
   border-block-end: 1px solid var(--cc-line);
@@ -210,12 +209,15 @@
   grid-template-columns: 3.5ch minmax(0, 1fr);
   gap: 1.5rem;
   padding: calc(var(--cc-step) * 1.15) 0.85rem;
-  transition: background 0.2s var(--cc-ease);
+  transition:
+    background 0.2s var(--cc-ease),
+    transform 0.2s var(--cc-ease);
 }
 
 .cc-item:hover .cc-card,
 .cc-item:focus-within .cc-card {
   background: var(--cc-surface);
+  transform: translateY(-2px);
 }
 
 .cc-card::before {
@@ -246,7 +248,7 @@
 .cc-card__slug {
   display: block;
   margin-block-end: 0.4rem;
-  color: var(--cc-clay);
+  color: var(--cc-gold);
   font-family: var(--cc-mono);
   font-size: var(--cc-xs);
 }
@@ -287,7 +289,7 @@
 }
 
 .cc-flags dt {
-  color: var(--cc-faint);
+  color: var(--cc-clay);
 }
 
 .cc-flags dd {
@@ -313,7 +315,7 @@
   gap: 0.7ch;
   padding: 0.65rem 1rem;
   border: 1px solid transparent;
-  border-radius: var(--cc-radius);
+  border-radius: 12px;
   cursor: pointer;
   font-family: var(--cc-mono);
   font-size: var(--cc-sm);
@@ -331,9 +333,11 @@
 }
 
 .cc-btn--solid {
-  border-color: var(--cc-ink);
-  background: var(--cc-ink);
-  color: var(--cc-paper);
+  border-color: var(--cc-gold);
+  background: var(--cc-gold);
+  color: #070a0f;
+  font-weight: 700;
+  box-shadow: 0 0.55rem 1.4rem rgb(255 176 0 / 0.16);
 }
 
 .cc-btn--solid:hover {
@@ -391,7 +395,7 @@
   padding: var(--cc-step);
   border: 1px solid var(--cc-line);
   border-radius: var(--cc-radius);
-  background: var(--cc-surface);
+  background: linear-gradient(135deg, rgb(0 212 255 / 0.09), transparent 65%), var(--cc-surface);
 }
 
 .cc-join p {

@@ -172,6 +172,33 @@ describe('GameService live safety', () => {
     });
   });
 
+  it('preserves the gateway receipt time while loading and scoring', async () => {
+    const { service, transaction, session } = setup();
+    const receivedAt = session.questionStartedAt.getTime() + 250;
+
+    await service.submitAnswer(
+      { sessionId: 'session-1', subjectId: 'player-1', role: 'player' },
+      'socket-1',
+      {
+        questionId: 'question-1',
+        optionId: 'option-1',
+        receivedAt,
+      },
+    );
+
+    expect(transaction.liveAnswer.create).toHaveBeenCalledWith({
+      data: {
+        sessionId: 'session-1',
+        participantId: 'player-1',
+        questionId: 'question-1',
+        optionId: 'option-1',
+        isCorrect: true,
+        earnedPoints: 994,
+        receivedAt: new Date(receivedAt),
+      },
+    });
+  });
+
   it('restores the player answer without exposing other players', async () => {
     const session = makeSession();
     session.answers.push({

@@ -48,11 +48,11 @@ export function CcButton({
 export function CcFlag({ name, value, label }: { name: string; value: string; label: string }) {
   return (
     <div>
-      <dt>{name}</dt>
-      <dd>
-        <span className="sr-only">{label} </span>
-        {value}
-      </dd>
+      <dt>
+        <span aria-hidden="true">--{name}</span>
+        <span className="sr-only">{label}</span>
+      </dt>
+      <dd>{value}</dd>
     </div>
   );
 }

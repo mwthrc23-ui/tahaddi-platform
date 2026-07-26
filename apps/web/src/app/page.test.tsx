@@ -124,6 +124,7 @@ describe('HomePage actions', () => {
     );
     expect(document.querySelector('a[href^="/demo/"]')).not.toBeInTheDocument();
     expect(screen.queryByText('A7K9PQ')).not.toBeInTheDocument();
+    expect(screen.getByText('صاحب الموقع: عبدالعزيز بن سلطان العتيبي')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'قائمة المستخدم' }));
     expect(screen.getByRole('menu')).toBeInTheDocument();

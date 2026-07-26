@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { SPECIAL_GAME_META, SPECIAL_GAME_ORDER, UPCOMING_SPECIAL_GAMES } from '@tahaddi/domain';
+import { Fragment } from 'react';
 import { CcButton, CcFlag, CcPrompt, CcRule } from '@/components/claude-code';
+import { INSTANT_GAME_META, INSTANT_GAME_ORDER } from '@/components/instant-games';
 import { SiteLayout } from '@/components/layout';
 import { getCurrentSession } from '@/lib/auth/session';
 import { toArabicDigits } from '@/lib/utils';
@@ -14,7 +16,14 @@ export const metadata: Metadata = {
 
 export default async function GamesPage() {
   const session = await getCurrentSession();
-  const games = SPECIAL_GAME_ORDER.map((mode) => SPECIAL_GAME_META[mode]);
+  const games = [
+    ...SPECIAL_GAME_ORDER.map((mode) => ({
+      ...SPECIAL_GAME_META[mode],
+      kind: 'room' as const,
+      contentLabel: 'بنك أسئلة',
+    })),
+    ...INSTANT_GAME_ORDER.map((mode) => ({ ...INSTANT_GAME_META[mode], kind: 'instant' as const })),
+  ];
 
   return (
     <SiteLayout user={session?.user ? { name: session.user.name } : null}>
@@ -25,62 +34,71 @@ export default async function GamesPage() {
           <header className="cc-head">
             <h1>اختر قانون الجولة</h1>
             <p>
-              {toArabicDigits(games.length)} أوضاع لعب جماعية ببنك أسئلة جاهز. أنشئ الغرفة، شارك
-              الرمز أو امسح QR، ثم ابدأ الجولة.
+              {toArabicDigits(games.length)} ألعاب جاهزة: غرف جماعية برمز وQR، وتحديات فورية تبدأ من
+              جهازك بلا تسجيل.
             </p>
           </header>
 
-          <div className="cc-status" dir="ltr">
+          <div className="cc-status" aria-label="حالة أوضاع اللعب">
             <span>
               <span className="cc-dot" aria-hidden="true" />
-              {games.length} modes ready
+              {toArabicDigits(games.length)} جاهزة للعب
             </span>
-            <span>{UPCOMING_SPECIAL_GAMES.length} in development</span>
-            <span>no account required</span>
+            <span>{toArabicDigits(UPCOMING_SPECIAL_GAMES.length)} قيد التطوير</span>
+            <span>الدخول للضيوف بلا حساب</span>
           </div>
 
           <ul className="cc-list" role="list">
             {games.map((game, index) => (
-              <li className="cc-item" key={game.mode}>
-                <article className="cc-card">
-                  <span className="cc-card__index" aria-hidden="true" dir="ltr">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-
-                  <div className="cc-card__body">
-                    <span className="cc-card__slug" dir="ltr" aria-hidden="true">
-                      games/{game.mode}
+              <Fragment key={game.mode}>
+                {(index === 0 || index === SPECIAL_GAME_ORDER.length) && (
+                  <li className="cc-group-label" aria-hidden="true">
+                    <CcRule
+                      label={index === 0 ? '# غرف جماعية حماسية' : '# تحديات فورية من جهازك'}
+                    />
+                  </li>
+                )}
+                <li className="cc-item">
+                  <article className="cc-card">
+                    <span className="cc-card__index" aria-hidden="true" dir="ltr">
+                      {String(index + 1).padStart(2, '0')}
                     </span>
 
-                    <h2 id={`mode-${game.mode}`}>{game.title}</h2>
-                    <p>{game.description}</p>
+                    <div className="cc-card__body">
+                      <span className="cc-card__slug" dir="ltr" aria-hidden="true">
+                        games/{game.mode}
+                      </span>
 
-                    <dl className="cc-flags" dir="ltr">
-                      <CcFlag
-                        name="--players"
-                        value={`${game.minimumPlayers}+`}
-                        label="الحد الأدنى للاعبين"
-                      />
-                      <CcFlag
-                        name="--timer"
-                        value={`${game.roundSeconds}s`}
-                        label="مدة الجولة بالثواني"
-                      />
-                      <CcFlag name="--bank" value="ready" label="حالة بنك الأسئلة" />
-                    </dl>
+                      <h2 id={`mode-${game.mode}`}>{game.title}</h2>
+                      <p>{game.description}</p>
 
-                    <CcButton href={`/games/${game.mode}`} aria-labelledby={`mode-${game.mode}`}>
-                      شغّل الوضع
-                    </CcButton>
-                  </div>
-                </article>
-              </li>
+                      <dl className="cc-flags" dir="ltr">
+                        <CcFlag
+                          name="players"
+                          value={`${toArabicDigits(game.minimumPlayers)}+`}
+                          label="الحد الأدنى للاعبين"
+                        />
+                        <CcFlag
+                          name="timer"
+                          value={`${toArabicDigits(game.roundSeconds)} ث`}
+                          label="مدة الجولة بالثواني"
+                        />
+                        <CcFlag name="content" value={game.contentLabel} label="نوع محتوى اللعبة" />
+                      </dl>
+
+                      <CcButton href={`/games/${game.mode}`} aria-labelledby={`mode-${game.mode}`}>
+                        {game.kind === 'room' ? 'أنشئ الغرفة' : 'ابدأ اللعب'}
+                      </CcButton>
+                    </div>
+                  </article>
+                </li>
+              </Fragment>
             ))}
           </ul>
 
           {UPCOMING_SPECIAL_GAMES.length > 0 && (
             <section aria-labelledby="cc-soon-title">
-              <CcRule label="# in development" />
+              <CcRule label="# قريبًا في تحدّي" />
               <h2 id="cc-soon-title" className="sr-only">
                 أوضاع قيد التطوير
               </h2>

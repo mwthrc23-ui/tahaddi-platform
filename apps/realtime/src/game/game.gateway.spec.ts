@@ -121,4 +121,38 @@ describe('GameGateway', () => {
     });
     now.mockRestore();
   });
+
+  it('timestamps an answer as soon as it reaches the gateway', async () => {
+    const { gateway, gameService } = setup();
+    const client = createClient();
+    const token = createLiveAccessToken(secret, {
+      sessionId: 'session-1',
+      subjectId: 'player-1',
+      role: 'player',
+    });
+    await gateway.handleGameJoin(client as never, {
+      sessionId: 'session-1',
+      subjectId: 'player-1',
+      accessToken: token,
+      role: 'player',
+    });
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_234);
+
+    await gateway.handleAnswerSubmit(client as never, {
+      sessionId: 'session-1',
+      questionId: 'question-1',
+      optionId: 'option-1',
+    });
+
+    expect(gameService.submitAnswer).toHaveBeenCalledWith(
+      expect.objectContaining({ subjectId: 'player-1' }),
+      'socket-1',
+      {
+        questionId: 'question-1',
+        optionId: 'option-1',
+        receivedAt: 1_234,
+      },
+    );
+    now.mockRestore();
+  });
 });

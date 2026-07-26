@@ -150,6 +150,7 @@ export class GameGateway
     @MessageBody()
     payload: { sessionId: string; questionId: string; optionId: string },
   ) {
+    const receivedAt = Date.now();
     const identity = this.identities.get(client.id);
     if (
       !identity ||
@@ -164,7 +165,11 @@ export class GameGateway
       });
       return;
     }
-    await this.gameService.submitAnswer(identity, client.id, payload);
+    await this.gameService.submitAnswer(identity, client.id, {
+      questionId: payload.questionId,
+      optionId: payload.optionId,
+      receivedAt,
+    });
   }
 
   @SubscribeMessage('game:finish')

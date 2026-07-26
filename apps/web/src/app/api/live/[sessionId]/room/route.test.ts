@@ -80,4 +80,30 @@ describe('POST /api/live/[sessionId]/room', () => {
       role: 'player',
     });
   });
+
+  it('passes the request receipt time to answer scoring', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-26T20:00:00.000Z'));
+    mocks.answer.mockResolvedValue({ ok: true });
+
+    const response = await POST(
+      roomRequest({
+        operation: 'answer',
+        subjectId: 'player-1',
+        accessToken: 'signed-token',
+        role: 'player',
+        questionId: 'question-1',
+        optionId: 'option-1',
+      }),
+      { params: Promise.resolve({ sessionId: 'session-1' }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.answer).toHaveBeenCalledWith(expect.objectContaining({ subjectId: 'player-1' }), {
+      questionId: 'question-1',
+      optionId: 'option-1',
+      receivedAt: new Date('2026-07-26T20:00:00.000Z'),
+    });
+    vi.useRealTimers();
+  });
 });

@@ -1,14 +1,26 @@
 import { expect, test } from '@playwright/test';
 
-test('كتالوج الألعاب يعرض الأوضاع المتاحة ويقود إلى الغرفة', async ({ page }) => {
+test('كتالوج الألعاب يعرض الغرف والتحديات الفورية ويقود إلى اللعبة', async ({ page }) => {
   await page.goto('/games/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('اختر قانون الجولة');
 
   const items = page.getByRole('listitem').filter({ has: page.getByRole('heading', { level: 2 }) });
-  await expect(items).toHaveCount(2);
+  await expect(items).toHaveCount(5);
+  await expect(page.getByRole('link', { name: 'ومضة الذاكرة' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'شفرة الحروف' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'خدعة الألوان' })).toBeVisible();
 
   await page.getByRole('link', { name: 'العالم الموازي' }).click();
   await expect(page).toHaveURL(/\/games\/parallel-world\/?$/);
+});
+
+test('خدعة الألوان تبدأ فورًا وتحتسب الإجابة الصحيحة', async ({ page }) => {
+  await page.goto('/games/color-rush/');
+  await page.getByRole('button', { name: 'ابدأ التحدّي' }).click();
+  await page.getByRole('button', { name: 'أزرق' }).click();
+
+  await expect(page.getByLabel('حالة اللعبة')).toContainText('الرصيد ٧٥');
+  await expect(page.getByText('خاطف! +٧٥')).toBeVisible();
 });
 
 test('سطح الألعاب يحافظ على الاستجابة والاتجاه والتركيز في الثيمين', async ({ page }) => {

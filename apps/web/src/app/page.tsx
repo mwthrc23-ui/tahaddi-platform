@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  Brain,
   CheckCircle2,
   Cpu,
   Crown,
@@ -8,6 +9,7 @@ import {
   Landmark,
   ListOrdered,
   Medal,
+  Palette,
   Radio,
   Sparkles,
   Skull,
@@ -15,6 +17,7 @@ import {
   Trophy,
   Users,
   Zap,
+  WholeWord,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -56,6 +59,24 @@ const games = [
     href: '/games',
     icon: Gamepad2,
   },
+  {
+    title: 'ومضة الذاكرة',
+    description: 'احفظ تسلسل الرموز وارفع المستوى قبل انتهاء الدقيقة',
+    href: '/games/memory-flash',
+    icon: Brain,
+  },
+  {
+    title: 'شفرة الحروف',
+    description: 'فكّ الكلمات العربية المبعثرة واجمع مئة نقطة لكل حل',
+    href: '/games/word-code',
+    icon: WholeWord,
+  },
+  {
+    title: 'خدعة الألوان',
+    description: 'اختر لون الحبر وتجاهل معنى الكلمة في سباق تركيز سريع',
+    href: '/games/color-rush',
+    icon: Palette,
+  },
 ];
 
 const categories = [
@@ -74,9 +95,9 @@ const arenaFlow = [
 ];
 
 const identitySignals = [
-  { label: 'جاهز', value: 'غرف تفاعلية', icon: <Sparkles aria-hidden="true" /> },
-  { label: 'API', value: 'رمز حي', icon: <Zap aria-hidden="true" /> },
-  { label: 'LIVE', value: 'لوحة مباشرة', icon: <Radio aria-hidden="true" /> },
+  { label: 'اللعب', value: 'غرف تفاعلية', icon: <Sparkles aria-hidden="true" /> },
+  { label: 'الدعوة', value: 'رمز فوري', icon: <Zap aria-hidden="true" /> },
+  { label: 'النتائج', value: 'لوحة مباشرة', icon: <Radio aria-hidden="true" /> },
 ];
 
 const hostSignals = [
@@ -169,7 +190,7 @@ function HomePageContent({
             <div className="arena-scoreboard">
               <div className="scoreboard-topline">
                 <span>حالة الغرفة</span>
-                <strong>غير متصلة</strong>
+                <strong>بانتظار التشغيل</strong>
               </div>
               <div className="scoreboard-question">
                 <span>قبل بدء الجلسة</span>
@@ -203,8 +224,8 @@ function HomePageContent({
             </div>
             <div className="live-pulse-card">
               <Radio aria-hidden="true" />
-              <span>بث حي</span>
-              <strong>السؤال على الشاشة</strong>
+              <span>وضع الاستعداد</span>
+              <strong>ابدأ غرفة لعرض السؤال</strong>
             </div>
             <div className="answer-burst" aria-hidden="true">
               <span />
