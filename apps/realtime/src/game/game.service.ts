@@ -398,8 +398,9 @@ export class GameService {
   async submitAnswer(
     identity: LiveSocketIdentity,
     socketId: string,
-    input: { questionId: string; optionId: string },
+    input: { questionId: string; optionId: string; receivedAt?: number },
   ) {
+    const receivedAt = input.receivedAt ?? Date.now();
     const rejected = (reason: AnswerRejectionReason) => {
       this.io.to(socketId).emit('answer:rejected', {
         questionId: input.questionId,
@@ -422,7 +423,6 @@ export class GameService {
     const option = question.options.find((item) => item.id === input.optionId);
     if (!option) return rejected('INVALID_OPTION');
 
-    const receivedAt = Date.now();
     if (state.questionStartedAt && receivedAt < state.questionStartedAt) {
       return rejected('QUESTION_NOT_ACTIVE');
     }

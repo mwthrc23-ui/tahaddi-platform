@@ -24,6 +24,7 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ sessionId: string }> },
 ) {
+  const requestReceivedAt = new Date();
   const { sessionId } = await params;
   const body = (await request.json().catch(() => null)) as {
     operation?: unknown;
@@ -65,6 +66,7 @@ export async function POST(
     const result = await submitHttpLiveAnswer(identity, {
       questionId: body.questionId,
       optionId: body.optionId,
+      receivedAt: requestReceivedAt,
     });
     if (!result.ok) {
       return NextResponse.json({ ok: false, reason: result.reason }, { status: 409 });

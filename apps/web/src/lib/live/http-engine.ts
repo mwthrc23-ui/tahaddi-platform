@@ -327,8 +327,9 @@ function isUniqueConstraintError(error: unknown) {
 
 export async function submitHttpLiveAnswer(
   identity: HttpLiveIdentity,
-  input: { questionId: string; optionId: string },
+  input: { questionId: string; optionId: string; receivedAt?: Date },
 ): Promise<{ ok: true } | { ok: false; reason: AnswerRejectionReason }> {
+  const receivedAt = input.receivedAt ?? new Date();
   if (identity.role !== 'player') return { ok: false, reason: 'INVALID_PLAYER' };
   const session = await prepareLiveSession(identity.sessionId);
   if (!session) return { ok: false, reason: 'INVALID_SESSION' };
@@ -347,13 +348,12 @@ export async function submitHttpLiveAnswer(
     questionEndsAt,
     questionAdvanceAt: session.questionAdvanceAt?.getTime() ?? null,
     allAnswered: stats.participantCount > 0 && stats.answeredCount >= stats.participantCount,
-    now: Date.now(),
+    now: receivedAt.getTime(),
   });
   if (phase !== 'QUESTION') return { ok: false, reason: 'QUESTION_NOT_ACTIVE' };
 
   const option = question.options.find((item) => item.id === input.optionId);
   if (!option) return { ok: false, reason: 'INVALID_OPTION' };
-  const receivedAt = new Date();
   if (!questionStartedAt || receivedAt.getTime() < questionStartedAt) {
     return { ok: false, reason: 'QUESTION_NOT_ACTIVE' };
   }
