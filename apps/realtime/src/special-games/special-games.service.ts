@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import {
   PARALLEL_WORLD_BANK,
   REVERSE_TIME_BANK,
@@ -7,6 +8,10 @@ import {
 } from '@tahaddi/domain';
 import { Server } from 'socket.io';
 import { RedisService } from '../game/redis.service.js';
+import {
+  resolveInfiltratorRound,
+  selectInfiltratorId,
+} from './infiltrator.logic.js';
 import type {
   ClientToServerSpecialEvents,
   ServerToClientSpecialEvents,
@@ -44,6 +49,25 @@ export class SpecialGamesService {
     this.io = io;
   }
 
+  async executeWithRoomLock<T>(
+    pin: string,
+    action: () => Promise<T>,
+  ): Promise<{ acquired: true; value: T } | { acquired: false }> {
+    const normalizedPin = normalizePin(pin);
+    const token = randomUUID();
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      if (await this.redis.acquireSpecialRoomLock(normalizedPin, token)) {
+        try {
+          return { acquired: true, value: await action() };
+        } finally {
+          await this.redis.releaseSpecialRoomLock(normalizedPin, token);
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    return { acquired: false };
+  }
+
   private async load(pin: string) {
     return this.redis.loadSpecialRoom<SpecialGameRoom>(normalizePin(pin));
   }
@@ -56,7 +80,7 @@ export class SpecialGamesService {
       phase: room.phase,
       roundIndex: room.roundIndex,
       roundCount:
-        room.mode === 'parallel-world'
+        room.mode === 'parallel-world' || room.mode === 'infiltrator'
           ? PARALLEL_WORLD_BANK.length
           : REVERSE_TIME_BANK.length,
       players: rankedPlayers(room.players),
@@ -83,6 +107,11 @@ export class SpecialGamesService {
       parallelAnswers: {},
       reverseSubmissions: [],
       reverseVoterIds: [],
+      infiltratorId: null,
+      infiltratorAssignments: {},
+      infiltratorAnswers: {},
+      infiltratorVotes: {},
+      infiltratorMajorityGuess: null,
       createdAt: Date.now(),
     };
     await this.redis.saveSpecialRoom(pin, room);
@@ -198,7 +227,9 @@ export class SpecialGamesService {
       };
     }
     const validPhase =
-      room.phase === 'parallel-reveal' || room.phase === 'reverse-results';
+      room.phase === 'parallel-reveal' ||
+      room.phase === 'reverse-results' ||
+      room.phase === 'infiltrator-reveal';
     if (!validPhase) {
       return {
         ok: false,
@@ -223,7 +254,7 @@ export class SpecialGamesService {
 
     const nextIndex = room.roundIndex + 1;
     const roundCount =
-      room.mode === 'parallel-world'
+      room.mode === 'parallel-world' || room.mode === 'infiltrator'
         ? PARALLEL_WORLD_BANK.length
         : REVERSE_TIME_BANK.length;
     if (nextIndex >= roundCount) {
@@ -243,6 +274,11 @@ export class SpecialGamesService {
     room.parallelAnswers = {};
     room.reverseSubmissions = [];
     room.reverseVoterIds = [];
+    room.infiltratorId = null;
+    room.infiltratorAssignments = {};
+    room.infiltratorAnswers = {};
+    room.infiltratorVotes = {};
+    room.infiltratorMajorityGuess = null;
 
     if (room.mode === 'parallel-world') {
       room.phase = 'parallel-answering';
@@ -276,7 +312,7 @@ export class SpecialGamesService {
           timeLimit: SPECIAL_GAME_META[room.mode].roundSeconds,
         });
       }
-    } else {
+    } else if (room.mode === 'reverse-time') {
       room.phase = 'reverse-writing';
       const round = REVERSE_TIME_BANK[nextIndex];
       if (!round) {
@@ -298,6 +334,54 @@ export class SpecialGamesService {
         startsAt: Date.now() + 500,
         timeLimit: SPECIAL_GAME_META[room.mode].roundSeconds,
       });
+    } else {
+      room.phase = 'infiltrator-answering';
+      const majorityRound = PARALLEL_WORLD_BANK[nextIndex];
+      const infiltratorBankIndex = (nextIndex + 1) % PARALLEL_WORLD_BANK.length;
+      const infiltratorRound = PARALLEL_WORLD_BANK[infiltratorBankIndex];
+      if (!majorityRound || !infiltratorRound) {
+        return {
+          ok: false,
+          code: 'ROUND_MISSING',
+          message: 'تعذّر تحميل الجولة.',
+        };
+      }
+
+      room.infiltratorId = selectInfiltratorId(room.players);
+      const majorityVariantIndex = nextIndex % majorityRound.variants.length;
+      const infiltratorVariantIndex =
+        (nextIndex + 1) % infiltratorRound.variants.length;
+      for (const player of room.players) {
+        room.infiltratorAssignments[player.id] = {
+          bankIndex:
+            player.id === room.infiltratorId ? infiltratorBankIndex : nextIndex,
+          variantIndex:
+            player.id === room.infiltratorId
+              ? infiltratorVariantIndex
+              : majorityVariantIndex,
+        };
+      }
+      await this.redis.saveSpecialRoom(room.pin, room);
+      this.emitState(room);
+      const startsAt = Date.now() + 500;
+      for (const player of room.players) {
+        const assignment = room.infiltratorAssignments[player.id];
+        const assignedRound = assignment
+          ? PARALLEL_WORLD_BANK[assignment.bankIndex]
+          : undefined;
+        const variant = assignedRound?.variants[assignment?.variantIndex ?? 0];
+        if (!assignedRound || !variant) continue;
+        this.io.to(player.id).emit('infiltrator:round', {
+          roundId: majorityRound.id,
+          roundNumber: nextIndex + 1,
+          roundCount,
+          prompt: variant.prompt,
+          options: variant.options,
+          isInfiltrator: player.id === room.infiltratorId,
+          startsAt,
+          timeLimit: SPECIAL_GAME_META[room.mode].roundSeconds,
+        });
+      }
     }
 
     return { ok: true, room };
@@ -616,16 +700,386 @@ export class SpecialGamesService {
     return { ok: true, room };
   }
 
+  async submitInfiltratorAnswer(
+    socketId: string,
+    pin: string,
+    roundId: string,
+    answer: string,
+  ): Promise<ActionResult> {
+    const room = await this.load(pin);
+    const majorityRound = room
+      ? PARALLEL_WORLD_BANK[room.roundIndex]
+      : undefined;
+    if (!room || !majorityRound || room.mode !== 'infiltrator') {
+      return {
+        ok: false,
+        code: 'ROUND_NOT_FOUND',
+        message: 'الجولة غير متاحة.',
+      };
+    }
+    if (
+      room.phase !== 'infiltrator-answering' ||
+      majorityRound.id !== roundId
+    ) {
+      return {
+        ok: false,
+        code: 'ROUND_CLOSED',
+        message: 'أُغلقت الإجابات لهذه الجولة.',
+      };
+    }
+    const assignment = room.infiltratorAssignments[socketId];
+    const assignedRound = assignment
+      ? PARALLEL_WORLD_BANK[assignment.bankIndex]
+      : undefined;
+    const variant = assignedRound?.variants[assignment?.variantIndex ?? 0];
+    if (!assignment || !variant) {
+      return {
+        ok: false,
+        code: 'NOT_PLAYER',
+        message: 'انضم إلى الغرفة قبل الإجابة.',
+      };
+    }
+    if (room.infiltratorAnswers[socketId]) {
+      return {
+        ok: false,
+        code: 'ALREADY_ANSWERED',
+        message: 'سُجلت إجابتك بالفعل.',
+      };
+    }
+    if (!variant.options.includes(answer)) {
+      return {
+        ok: false,
+        code: 'INVALID_ANSWER',
+        message: 'اختر إجابة من الخيارات المعروضة.',
+      };
+    }
+
+    room.infiltratorAnswers[socketId] = answer;
+    await this.redis.saveSpecialRoom(room.pin, room);
+    this.io.to(socketId).emit('infiltrator:answer:ack', {
+      selectedAnswer: answer,
+    });
+    this.emitState(room);
+    if (Object.keys(room.infiltratorAnswers).length === room.players.length) {
+      await this.startInfiltratorVoting(room.pin, room.hostId);
+    }
+    return { ok: true, room };
+  }
+
+  async startInfiltratorVoting(
+    pin: string,
+    hostId: string,
+  ): Promise<ActionResult> {
+    const room = await this.load(pin);
+    const majorityRound = room
+      ? PARALLEL_WORLD_BANK[room.roundIndex]
+      : undefined;
+    if (!room || !majorityRound || room.mode !== 'infiltrator') {
+      return {
+        ok: false,
+        code: 'ROUND_NOT_FOUND',
+        message: 'الجولة غير متاحة.',
+      };
+    }
+    if (room.hostId !== hostId) {
+      return {
+        ok: false,
+        code: 'NOT_HOST',
+        message: 'المضيف وحده يبدأ التصويت.',
+      };
+    }
+    if (room.phase !== 'infiltrator-answering') {
+      return {
+        ok: false,
+        code: 'VOTING_STARTED',
+        message: 'بدأ التصويت بالفعل.',
+      };
+    }
+    if (Object.keys(room.infiltratorAnswers).length !== room.players.length) {
+      return {
+        ok: false,
+        code: 'ANSWERS_PENDING',
+        message: 'انتظر إجابة جميع اللاعبين قبل بدء التصويت.',
+      };
+    }
+
+    room.phase = 'infiltrator-voting';
+    await this.redis.saveSpecialRoom(room.pin, room);
+    this.emitState(room);
+    for (const player of room.players) {
+      this.io.to(player.id).emit('infiltrator:voting', {
+        answers: room.players
+          .filter((candidate) => room.infiltratorAnswers[candidate.id])
+          .map((candidate) => ({
+            playerId: candidate.id,
+            answer: room.infiltratorAnswers[candidate.id] ?? '',
+            isOwn: candidate.id === player.id,
+          })),
+        isInfiltrator: player.id === room.infiltratorId,
+        majorityOptions:
+          player.id === room.infiltratorId
+            ? majorityRound.variants.map((variant) => variant.prompt)
+            : [],
+      });
+    }
+    return { ok: true, room };
+  }
+
+  async voteInfiltrator(
+    socketId: string,
+    pin: string,
+    playerId: string,
+  ): Promise<ActionResult> {
+    const room = await this.load(pin);
+    if (
+      !room ||
+      room.mode !== 'infiltrator' ||
+      room.phase !== 'infiltrator-voting'
+    ) {
+      return {
+        ok: false,
+        code: 'VOTING_CLOSED',
+        message: 'التصويت غير مفتوح الآن.',
+      };
+    }
+    if (!room.players.some((player) => player.id === socketId)) {
+      return {
+        ok: false,
+        code: 'NOT_PLAYER',
+        message: 'انضم إلى الغرفة قبل التصويت.',
+      };
+    }
+    if (!room.players.some((player) => player.id === playerId)) {
+      return {
+        ok: false,
+        code: 'PLAYER_NOT_FOUND',
+        message: 'بطاقة الإجابة المختارة غير موجودة.',
+      };
+    }
+    if (socketId === playerId) {
+      return {
+        ok: false,
+        code: 'SELF_VOTE',
+        message: 'اختر إجابة لاعب آخر.',
+      };
+    }
+    if (room.infiltratorVotes[socketId]) {
+      return {
+        ok: false,
+        code: 'ALREADY_VOTED',
+        message: 'سُجل صوتك بالفعل.',
+      };
+    }
+
+    room.infiltratorVotes[socketId] = playerId;
+    await this.redis.saveSpecialRoom(room.pin, room);
+    this.io.to(socketId).emit('infiltrator:vote:ack', { playerId });
+    this.emitState(room);
+    await this.maybeRevealInfiltrator(room);
+    return { ok: true, room };
+  }
+
+  async guessInfiltratorMajority(
+    socketId: string,
+    pin: string,
+    question: string,
+  ): Promise<ActionResult> {
+    const room = await this.load(pin);
+    const majorityRound = room
+      ? PARALLEL_WORLD_BANK[room.roundIndex]
+      : undefined;
+    const majorityAssignment = room?.players
+      .filter((player) => player.id !== room.infiltratorId)
+      .map((player) => room.infiltratorAssignments[player.id])
+      .find(Boolean);
+    const majorityVariant =
+      majorityRound?.variants[majorityAssignment?.variantIndex ?? 0];
+    if (
+      !room ||
+      !majorityRound ||
+      room.mode !== 'infiltrator' ||
+      room.phase !== 'infiltrator-voting'
+    ) {
+      return {
+        ok: false,
+        code: 'GUESS_CLOSED',
+        message: 'تخمين سؤال الأغلبية غير متاح الآن.',
+      };
+    }
+    if (socketId !== room.infiltratorId) {
+      return {
+        ok: false,
+        code: 'NOT_INFILTRATOR',
+        message: 'هذا التخمين متاح للدخيل فقط.',
+      };
+    }
+    if (room.infiltratorMajorityGuess) {
+      return {
+        ok: false,
+        code: 'ALREADY_GUESSED',
+        message: 'سُجل تخمينك بالفعل.',
+      };
+    }
+    if (
+      !majorityVariant ||
+      !majorityRound.variants.some((variant) => variant.prompt === question)
+    ) {
+      return {
+        ok: false,
+        code: 'INVALID_GUESS',
+        message: 'اختر تخمينًا من الخيارات المعروضة.',
+      };
+    }
+
+    room.infiltratorMajorityGuess = question;
+    await this.redis.saveSpecialRoom(room.pin, room);
+    this.io.to(socketId).emit('infiltrator:majority:guess:ack', { question });
+    this.emitState(room);
+    await this.maybeRevealInfiltrator(room);
+    return { ok: true, room };
+  }
+
+  private async maybeRevealInfiltrator(room: SpecialGameRoom) {
+    if (
+      Object.keys(room.infiltratorVotes).length === room.players.length &&
+      room.infiltratorMajorityGuess
+    ) {
+      await this.revealInfiltrator(room.pin, room.hostId);
+    }
+  }
+
+  async revealInfiltrator(pin: string, hostId: string): Promise<ActionResult> {
+    const room = await this.load(pin);
+    const majorityRound = room
+      ? PARALLEL_WORLD_BANK[room.roundIndex]
+      : undefined;
+    if (
+      !room ||
+      !majorityRound ||
+      room.mode !== 'infiltrator' ||
+      !room.infiltratorId
+    ) {
+      return {
+        ok: false,
+        code: 'ROUND_NOT_FOUND',
+        message: 'الجولة غير متاحة.',
+      };
+    }
+    if (room.hostId !== hostId) {
+      return {
+        ok: false,
+        code: 'NOT_HOST',
+        message: 'المضيف وحده يكشف الدخيل.',
+      };
+    }
+    if (room.phase !== 'infiltrator-voting') {
+      return {
+        ok: false,
+        code: 'VOTING_CLOSED',
+        message: 'ابدأ التصويت قبل كشف النتيجة.',
+      };
+    }
+    if (Object.keys(room.infiltratorVotes).length !== room.players.length) {
+      return {
+        ok: false,
+        code: 'VOTES_PENDING',
+        message: 'انتظر تصويت جميع اللاعبين قبل كشف النتيجة.',
+      };
+    }
+
+    const majorityAssignment = room.players
+      .filter((player) => player.id !== room.infiltratorId)
+      .map((player) => room.infiltratorAssignments[player.id])
+      .find(Boolean);
+    const majorityVariant =
+      majorityRound.variants[majorityAssignment?.variantIndex ?? 0];
+    const outcome = resolveInfiltratorRound({
+      players: room.players,
+      infiltratorId: room.infiltratorId,
+      votes: room.infiltratorVotes,
+      majorityGuess: room.infiltratorMajorityGuess,
+      majorityQuestion: majorityVariant?.prompt ?? '',
+    });
+    for (const player of room.players) {
+      player.score += outcome.scoreDeltas[player.id] ?? 0;
+    }
+    const infiltrator = room.players.find(
+      (player) => player.id === room.infiltratorId,
+    );
+    room.phase = 'infiltrator-reveal';
+    await this.redis.saveSpecialRoom(room.pin, room);
+    this.emitState(room);
+    this.io.to(room.pin).emit('infiltrator:reveal', {
+      infiltratorId: room.infiltratorId,
+      infiltratorName: infiltrator?.name ?? 'الدخيل',
+      caught: outcome.caught,
+      survived: outcome.survived,
+      guessedMajority: outcome.guessedMajority,
+      infiltratorWon: outcome.infiltratorWon,
+      majorityQuestion: majorityVariant?.prompt ?? '',
+      answers: room.players.map((player) => ({
+        playerId: player.id,
+        playerName: player.name,
+        answer: room.infiltratorAnswers[player.id] ?? 'لم يجب',
+      })),
+      voteCounts: outcome.voteCounts,
+    });
+    return { ok: true, room };
+  }
+
   async playerLeft(socketId: string, pin: string) {
     const room = await this.load(pin);
     if (!room) return;
+    if (room.hostId === socketId) {
+      this.io.to(room.pin).emit('special:error', {
+        code: 'HOST_LEFT',
+        message: 'غادر المضيف وانتهت الغرفة. أنشئ غرفة جديدة للمتابعة.',
+      });
+      await this.redis.deleteSpecialRoom(room.pin);
+      await this.redis.removeActivePin(room.pin);
+      return;
+    }
+
+    const wasInfiltrator = room.infiltratorId === socketId;
     room.players = room.players.filter((player) => player.id !== socketId);
     room.reverseSubmissions = room.reverseSubmissions.filter(
       (submission) => submission.playerId !== socketId,
     );
+    for (const submission of room.reverseSubmissions) {
+      submission.voterIds = submission.voterIds.filter(
+        (voterId) => voterId !== socketId,
+      );
+    }
     room.reverseVoterIds = room.reverseVoterIds.filter((id) => id !== socketId);
     delete room.parallelAssignments[socketId];
     delete room.parallelAnswers[socketId];
+    delete room.infiltratorAssignments[socketId];
+    delete room.infiltratorAnswers[socketId];
+    delete room.infiltratorVotes[socketId];
+    for (const [voterId, targetId] of Object.entries(room.infiltratorVotes)) {
+      if (targetId === socketId) delete room.infiltratorVotes[voterId];
+    }
+
+    const activeRound = room.phase !== 'lobby' && room.phase !== 'finished';
+    const belowMinimum =
+      room.players.length < SPECIAL_GAME_META[room.mode].minimumPlayers;
+    if (activeRound && (belowMinimum || wasInfiltrator)) {
+      room.phase = 'lobby';
+      room.roundIndex = Math.max(-1, room.roundIndex - 1);
+      room.parallelAssignments = {};
+      room.parallelAnswers = {};
+      room.reverseSubmissions = [];
+      room.reverseVoterIds = [];
+      room.infiltratorId = null;
+      room.infiltratorAssignments = {};
+      room.infiltratorAnswers = {};
+      room.infiltratorVotes = {};
+      room.infiltratorMajorityGuess = null;
+      this.io.to(room.pin).emit('special:error', {
+        code: 'ROUND_RESET',
+        message: 'غادر لاعب أساسي، فأُعيدت الجولة إلى الانتظار لحماية النتيجة.',
+      });
+    }
     await this.redis.saveSpecialRoom(room.pin, room);
     this.emitState(room);
   }

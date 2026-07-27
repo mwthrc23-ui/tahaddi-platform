@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toArabicDigits } from './utils';
+import { formatArabicModeCount, toArabicDigits } from './utils';
 
 describe('toArabicDigits', () => {
   it('converts a single number', () => {
@@ -12,5 +12,16 @@ describe('toArabicDigits', () => {
 
   it('leaves non-numeric characters unchanged', () => {
     expect(toArabicDigits('room 25s')).toBe('room ٢٥s');
+  });
+});
+
+describe('formatArabicModeCount', () => {
+  it.each([
+    [1, 'وضع'],
+    [2, 'وضعان'],
+    [3, '٣ أوضاع'],
+    [11, '١١ أوضاع'],
+  ])('formats %s with the requested Arabic distinction', (count, expected) => {
+    expect(formatArabicModeCount(count)).toBe(expected);
   });
 });

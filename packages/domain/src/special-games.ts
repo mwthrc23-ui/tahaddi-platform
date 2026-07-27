@@ -1,4 +1,4 @@
-export type SpecialGameMode = 'parallel-world' | 'reverse-time';
+export type SpecialGameMode = 'parallel-world' | 'reverse-time' | 'infiltrator';
 
 export type SpecialGameMeta = {
   mode: SpecialGameMode;
@@ -7,6 +7,7 @@ export type SpecialGameMeta = {
   description: string;
   minimumPlayers: number;
   roundSeconds: number;
+  contentLabel: string;
 };
 
 export type UpcomingSpecialGame = {
@@ -15,6 +16,14 @@ export type UpcomingSpecialGame = {
   description: string;
   minimumPlayers: number;
   roundSeconds: number;
+  contentLabel: string;
+};
+
+export type SpectrumPair = {
+  id: string;
+  left: string;
+  right: string;
+  category: string;
 };
 
 export type ParallelWorldVariant = {
@@ -46,6 +55,7 @@ export const SPECIAL_GAME_META: Record<SpecialGameMode, SpecialGameMeta> = {
     description: 'أسئلة مختلفة لكل لاعب، لكن الإجابة التي تجمع العوالم واحدة.',
     minimumPlayers: 2,
     roundSeconds: 25,
+    contentLabel: 'بنك أسئلة',
   },
   'reverse-time': {
     mode: 'reverse-time',
@@ -54,26 +64,86 @@ export const SPECIAL_GAME_META: Record<SpecialGameMode, SpecialGameMeta> = {
     description: 'تظهر الإجابة أولًا، ثم يصنع اللاعبون السؤال الأذكى ويصوّتون له.',
     minimumPlayers: 3,
     roundSeconds: 35,
+    contentLabel: 'بنك أسئلة',
+  },
+  infiltrator: {
+    mode: 'infiltrator',
+    title: 'الدخيل',
+    shortTitle: 'الدخيل',
+    description: 'سؤال واحد للأغلبية وسؤال مختلف للدخيل؛ أجب ثم اكتشفه قبل أن يخدعكم.',
+    minimumPlayers: 4,
+    roundSeconds: 45,
+    contentLabel: 'بنك أسئلة',
   },
 };
 
-export const SPECIAL_GAME_ORDER: SpecialGameMode[] = ['parallel-world', 'reverse-time'];
+export const SPECIAL_GAME_ORDER: SpecialGameMode[] = [
+  'parallel-world',
+  'reverse-time',
+  'infiltrator',
+];
 
 export const UPCOMING_SPECIAL_GAMES: UpcomingSpecialGame[] = [
   {
-    slug: 'answer-trap',
-    title: 'فخّ الإجابات',
-    description: 'اكتب إجابة مزيّفة مقنعة، واكسب نقطة كلما وقع لاعب في فخّك.',
+    slug: 'spectrum',
+    title: 'الطيف',
+    description: 'ضع إجابتك بين طرفين متقابلين، ثم اكتشف أين تتقاطع تقديرات الفريق.',
     minimumPlayers: 3,
-    roundSeconds: 45,
+    roundSeconds: 40,
+    contentLabel: 'بنك أطياف',
+  },
+];
+
+export const SPECTRUM_BANK: SpectrumPair[] = [
+  { id: 'spectrum-quiet-loud', left: 'هادئ', right: 'صاخب', category: 'أجواء' },
+  { id: 'spectrum-easy-hard', left: 'سهل', right: 'صعب', category: 'تحديات' },
+  { id: 'spectrum-slow-fast', left: 'بطيء', right: 'سريع', category: 'إيقاع' },
+  { id: 'spectrum-old-new', left: 'قديم', right: 'حديث', category: 'زمن' },
+  { id: 'spectrum-serious-funny', left: 'جاد', right: 'مضحك', category: 'أسلوب' },
+  { id: 'spectrum-safe-risky', left: 'آمن', right: 'مغامر', category: 'قرارات' },
+  { id: 'spectrum-common-rare', left: 'شائع', right: 'نادر', category: 'انتشار' },
+  { id: 'spectrum-stingy-generous', left: 'بخيل', right: 'كريم', category: 'شخصية' },
+  { id: 'spectrum-simple-complex', left: 'بسيط', right: 'معقّد', category: 'أفكار' },
+  { id: 'spectrum-local-global', left: 'محلي', right: 'عالمي', category: 'نطاق' },
+  {
+    id: 'spectrum-practical-imaginative',
+    left: 'عملي',
+    right: 'خيالي',
+    category: 'تفكير',
   },
   {
-    slug: 'confidence-auction',
-    title: 'مزاد الثقة',
-    description: 'راهن بجزء من رصيدك قبل ظهور السؤال، والصحيح يضاعف والخطأ يحرق.',
-    minimumPlayers: 2,
-    roundSeconds: 30,
+    id: 'spectrum-traditional-modern',
+    left: 'تراثي',
+    right: 'حداثي',
+    category: 'ثقافة',
   },
+  { id: 'spectrum-calm-exciting', left: 'مريح', right: 'حماسي', category: 'تجربة' },
+  { id: 'spectrum-light-heavy', left: 'خفيف', right: 'ثقيل', category: 'إحساس' },
+  { id: 'spectrum-sweet-bitter', left: 'حلو', right: 'مُر', category: 'مذاق' },
+  { id: 'spectrum-warm-cold', left: 'دافئ', right: 'بارد', category: 'طقس' },
+  { id: 'spectrum-near-far', left: 'قريب', right: 'بعيد', category: 'مسافة' },
+  { id: 'spectrum-small-large', left: 'صغير', right: 'ضخم', category: 'حجم' },
+  {
+    id: 'spectrum-expected-surprising',
+    left: 'متوقّع',
+    right: 'مفاجئ',
+    category: 'انطباع',
+  },
+  {
+    id: 'spectrum-organized-chaotic',
+    left: 'منظّم',
+    right: 'فوضوي',
+    category: 'ترتيب',
+  },
+  { id: 'spectrum-real-fictional', left: 'واقعي', right: 'خيالي', category: 'حكايات' },
+  {
+    id: 'spectrum-acceptable-embarrassing',
+    left: 'مقبول',
+    right: 'محرج',
+    category: 'مواقف',
+  },
+  { id: 'spectrum-short-long', left: 'قصير', right: 'طويل', category: 'مدة' },
+  { id: 'spectrum-patient-hasty', left: 'صبور', right: 'متسرّع', category: 'شخصية' },
 ];
 
 export const PARALLEL_WORLD_BANK: ParallelWorldRound[] = [
@@ -312,5 +382,5 @@ export const REVERSE_TIME_BANK: ReverseTimeRound[] = [
 ];
 
 export function isSpecialGameMode(value: string): value is SpecialGameMode {
-  return value === 'parallel-world' || value === 'reverse-time';
+  return SPECIAL_GAME_ORDER.includes(value as SpecialGameMode);
 }

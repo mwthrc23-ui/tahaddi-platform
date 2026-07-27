@@ -11,6 +11,7 @@ import {
   isSpecialGameMode,
   PARALLEL_WORLD_BANK,
   REVERSE_TIME_BANK,
+  type SpecialGameMode,
 } from '@tahaddi/domain';
 import type { Server, Socket } from 'socket.io';
 import { SpecialGamesService } from './special-games.service.js';
@@ -28,8 +29,8 @@ type SpecialServer = Server<
   ServerToClientSpecialEvents
 >;
 
-const getRoundCount = (mode: 'parallel-world' | 'reverse-time') =>
-  mode === 'parallel-world'
+const getRoundCount = (mode: SpecialGameMode) =>
+  mode === 'parallel-world' || mode === 'infiltrator'
     ? PARALLEL_WORLD_BANK.length
     : REVERSE_TIME_BANK.length;
 
@@ -55,7 +56,9 @@ export class SpecialGamesGateway
     const pin = this.socketRooms.get(client.id);
     if (!pin) return;
     this.socketRooms.delete(client.id);
-    await this.games.playerLeft(client.id, pin);
+    await this.games.executeWithRoomLock(pin, () =>
+      this.games.playerLeft(client.id, pin),
+    );
   }
 
   private emitError(
@@ -66,6 +69,22 @@ export class SpecialGamesGateway
       code: result.code,
       message: result.message,
     });
+  }
+
+  private async runLocked<T>(
+    client: SpecialSocket,
+    pin: string,
+    action: () => Promise<T>,
+  ): Promise<T | null> {
+    const locked = await this.games.executeWithRoomLock(pin, action);
+    if (!locked.acquired) {
+      client.emit('special:error', {
+        code: 'ROOM_BUSY',
+        message: 'الغرفة تستقبل إجابات متزامنة. أعد المحاولة بعد لحظة.',
+      });
+      return null;
+    }
+    return locked.value;
   }
 
   @SubscribeMessage('special:room:create')
@@ -106,11 +125,10 @@ export class SpecialGamesGateway
       });
       return;
     }
-    const result = await this.games.joinRoom(
-      client.id,
-      payload.pin,
-      payload.playerName,
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.joinRoom(client.id, payload.pin!, payload.playerName!),
     );
+    if (!result) return;
     if (!result.ok) {
       this.emitError(client, result);
       return;
@@ -134,7 +152,10 @@ export class SpecialGamesGateway
     @MessageBody() payload: { pin?: string },
   ) {
     if (!payload?.pin) return;
-    const result = await this.games.startGame(payload.pin, client.id);
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.startGame(payload.pin!, client.id),
+    );
+    if (!result) return;
     if (!result.ok) this.emitError(client, result);
   }
 
@@ -144,7 +165,10 @@ export class SpecialGamesGateway
     @MessageBody() payload: { pin?: string },
   ) {
     if (!payload?.pin) return;
-    const result = await this.games.nextRound(payload.pin, client.id);
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.nextRound(payload.pin!, client.id),
+    );
+    if (!result) return;
     if (!result.ok) this.emitError(client, result);
   }
 
@@ -154,12 +178,15 @@ export class SpecialGamesGateway
     @MessageBody() payload: { pin?: string; roundId?: string; answer?: string },
   ) {
     if (!payload?.pin || !payload.roundId || !payload.answer) return;
-    const result = await this.games.submitParallelAnswer(
-      client.id,
-      payload.pin,
-      payload.roundId,
-      payload.answer,
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.submitParallelAnswer(
+        client.id,
+        payload.pin!,
+        payload.roundId!,
+        payload.answer!,
+      ),
     );
+    if (!result) return;
     if (!result.ok) this.emitError(client, result);
   }
 
@@ -169,7 +196,10 @@ export class SpecialGamesGateway
     @MessageBody() payload: { pin?: string },
   ) {
     if (!payload?.pin) return;
-    const result = await this.games.revealParallel(payload.pin, client.id);
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.revealParallel(payload.pin!, client.id),
+    );
+    if (!result) return;
     if (!result.ok) this.emitError(client, result);
   }
 
@@ -180,12 +210,15 @@ export class SpecialGamesGateway
     payload: { pin?: string; roundId?: string; question?: string },
   ) {
     if (!payload?.pin || !payload.roundId || !payload.question) return;
-    const result = await this.games.submitReverseQuestion(
-      client.id,
-      payload.pin,
-      payload.roundId,
-      payload.question,
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.submitReverseQuestion(
+        client.id,
+        payload.pin!,
+        payload.roundId!,
+        payload.question!,
+      ),
     );
+    if (!result) return;
     if (!result.ok) this.emitError(client, result);
   }
 
@@ -195,7 +228,10 @@ export class SpecialGamesGateway
     @MessageBody() payload: { pin?: string },
   ) {
     if (!payload?.pin) return;
-    const result = await this.games.startReverseVoting(payload.pin, client.id);
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.startReverseVoting(payload.pin!, client.id),
+    );
+    if (!result) return;
     if (!result.ok) this.emitError(client, result);
   }
 
@@ -205,11 +241,10 @@ export class SpecialGamesGateway
     @MessageBody() payload: { pin?: string; submissionId?: string },
   ) {
     if (!payload?.pin || !payload.submissionId) return;
-    const result = await this.games.voteReverse(
-      client.id,
-      payload.pin,
-      payload.submissionId,
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.voteReverse(client.id, payload.pin!, payload.submissionId!),
     );
+    if (!result) return;
     if (!result.ok) this.emitError(client, result);
   }
 
@@ -219,7 +254,84 @@ export class SpecialGamesGateway
     @MessageBody() payload: { pin?: string },
   ) {
     if (!payload?.pin) return;
-    const result = await this.games.revealReverse(payload.pin, client.id);
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.revealReverse(payload.pin!, client.id),
+    );
+    if (!result) return;
+    if (!result.ok) this.emitError(client, result);
+  }
+
+  @SubscribeMessage('infiltrator:answer:submit')
+  async submitInfiltratorAnswer(
+    @ConnectedSocket() client: SpecialSocket,
+    @MessageBody() payload: { pin?: string; roundId?: string; answer?: string },
+  ) {
+    if (!payload?.pin || !payload.roundId || !payload.answer) return;
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.submitInfiltratorAnswer(
+        client.id,
+        payload.pin!,
+        payload.roundId!,
+        payload.answer!,
+      ),
+    );
+    if (!result) return;
+    if (!result.ok) this.emitError(client, result);
+  }
+
+  @SubscribeMessage('infiltrator:voting:start')
+  async startInfiltratorVoting(
+    @ConnectedSocket() client: SpecialSocket,
+    @MessageBody() payload: { pin?: string },
+  ) {
+    if (!payload?.pin) return;
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.startInfiltratorVoting(payload.pin!, client.id),
+    );
+    if (!result) return;
+    if (!result.ok) this.emitError(client, result);
+  }
+
+  @SubscribeMessage('infiltrator:vote')
+  async voteInfiltrator(
+    @ConnectedSocket() client: SpecialSocket,
+    @MessageBody() payload: { pin?: string; playerId?: string },
+  ) {
+    if (!payload?.pin || !payload.playerId) return;
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.voteInfiltrator(client.id, payload.pin!, payload.playerId!),
+    );
+    if (!result) return;
+    if (!result.ok) this.emitError(client, result);
+  }
+
+  @SubscribeMessage('infiltrator:majority:guess')
+  async guessInfiltratorMajority(
+    @ConnectedSocket() client: SpecialSocket,
+    @MessageBody() payload: { pin?: string; question?: string },
+  ) {
+    if (!payload?.pin || !payload.question) return;
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.guessInfiltratorMajority(
+        client.id,
+        payload.pin!,
+        payload.question!,
+      ),
+    );
+    if (!result) return;
+    if (!result.ok) this.emitError(client, result);
+  }
+
+  @SubscribeMessage('infiltrator:reveal')
+  async revealInfiltrator(
+    @ConnectedSocket() client: SpecialSocket,
+    @MessageBody() payload: { pin?: string },
+  ) {
+    if (!payload?.pin) return;
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.revealInfiltrator(payload.pin!, client.id),
+    );
+    if (!result) return;
     if (!result.ok) this.emitError(client, result);
   }
 }

@@ -5,6 +5,7 @@ import type { LiveGameState } from './types.js';
 
 const GAME_TTL_SECONDS = 3 * 60 * 60;
 const TRANSITION_LOCK_SECONDS = 8;
+const SPECIAL_ROOM_LOCK_MILLISECONDS = 10_000;
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
@@ -34,6 +35,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
   private specialRoomKey(pin: string) {
     return `special-game:${pin}:room`;
+  }
+  private specialRoomLockKey(pin: string) {
+    return `special-game:${pin}:lock`;
   }
 
   private transitionKey(sessionId: string) {
@@ -94,6 +98,31 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async deleteSpecialRoom(pin: string): Promise<void> {
     await this.client.del(this.specialRoomKey(pin));
+  }
+
+  async acquireSpecialRoomLock(pin: string, token: string): Promise<boolean> {
+    const result = await this.client.set(
+      this.specialRoomLockKey(pin),
+      token,
+      'PX',
+      SPECIAL_ROOM_LOCK_MILLISECONDS,
+      'NX',
+    );
+    return result === 'OK';
+  }
+
+  async releaseSpecialRoomLock(pin: string, token: string): Promise<void> {
+    await this.client.eval(
+      `
+        if redis.call("GET", KEYS[1]) == ARGV[1] then
+          return redis.call("DEL", KEYS[1])
+        end
+        return 0
+      `,
+      1,
+      this.specialRoomLockKey(pin),
+      token,
+    );
   }
 
   async addActivePin(pin: string): Promise<void> {
