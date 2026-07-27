@@ -148,9 +148,9 @@ function HomePageContent({
               أنشئ مسابقة، شارك رمز الغرفة مع اللاعبين، وتابع الإجابات والنتائج مباشرة من لوحة
               واحدة.
             </p>
-            <div className="identity-signals" aria-label="ملامح الهوية البصرية">
+            <div className="identity-signals" aria-label="مزايا تجربة تحدّي" role="list">
               {identitySignals.map((item) => (
-                <div key={item.label}>
+                <div key={item.label} role="listitem">
                   <span aria-hidden="true">{item.icon}</span>
                   <strong>{item.value}</strong>
                   <small>{item.label}</small>
