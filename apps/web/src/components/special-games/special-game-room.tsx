@@ -5,6 +5,7 @@ import {
   Clipboard,
   Clock3,
   Crown,
+  Fingerprint,
   LoaderCircle,
   Orbit,
   Play,
@@ -36,6 +37,9 @@ type Room = {
     | 'reverse-writing'
     | 'reverse-voting'
     | 'reverse-results'
+    | 'infiltrator-answering'
+    | 'infiltrator-voting'
+    | 'infiltrator-reveal'
     | 'finished';
   roundIndex: number;
   roundCount: number;
@@ -82,6 +86,32 @@ type ReverseResults = {
   answer: string;
   results: Array<{ id: string; playerName: string; text: string; votes: number }>;
 };
+type InfiltratorRound = {
+  roundId: string;
+  roundNumber: number;
+  roundCount: number;
+  prompt: string;
+  options: string[];
+  isInfiltrator: boolean;
+  startsAt: number;
+  timeLimit: number;
+};
+type InfiltratorVoting = {
+  answers: Array<{ playerId: string; answer: string; isOwn: boolean }>;
+  isInfiltrator: boolean;
+  majorityOptions: string[];
+};
+type InfiltratorReveal = {
+  infiltratorId: string;
+  infiltratorName: string;
+  caught: boolean;
+  survived: boolean;
+  guessedMajority: boolean;
+  infiltratorWon: boolean;
+  majorityQuestion: string;
+  answers: Array<{ playerId: string; playerName: string; answer: string }>;
+  voteCounts: Record<string, number>;
+};
 type GameEnd = { players: Player[]; mode: SpecialGameMode };
 
 type ServerEvents = {
@@ -100,6 +130,12 @@ type ServerEvents = {
   'reverse:voting': (payload: ReverseVoting) => void;
   'reverse:vote:ack': (payload: { submissionId: string }) => void;
   'reverse:results': (payload: ReverseResults) => void;
+  'infiltrator:round': (payload: InfiltratorRound) => void;
+  'infiltrator:answer:ack': (payload: { selectedAnswer: string }) => void;
+  'infiltrator:voting': (payload: InfiltratorVoting) => void;
+  'infiltrator:vote:ack': (payload: { playerId: string }) => void;
+  'infiltrator:majority:guess:ack': (payload: { question: string }) => void;
+  'infiltrator:reveal': (payload: InfiltratorReveal) => void;
 };
 type ClientEvents = {
   'special:room:create': (payload: { mode: SpecialGameMode }) => void;
@@ -112,6 +148,11 @@ type ClientEvents = {
   'reverse:voting:start': (payload: { pin: string }) => void;
   'reverse:vote': (payload: { pin: string; submissionId: string }) => void;
   'reverse:reveal': (payload: { pin: string }) => void;
+  'infiltrator:answer:submit': (payload: { pin: string; roundId: string; answer: string }) => void;
+  'infiltrator:voting:start': (payload: { pin: string }) => void;
+  'infiltrator:vote': (payload: { pin: string; playerId: string }) => void;
+  'infiltrator:majority:guess': (payload: { pin: string; question: string }) => void;
+  'infiltrator:reveal': (payload: { pin: string }) => void;
 };
 type GameSocket = Socket<ServerEvents, ClientEvents>;
 
@@ -194,6 +235,12 @@ export function SpecialGameRoom({
   const [voting, setVoting] = useState<ReverseVoting | null>(null);
   const [selectedVote, setSelectedVote] = useState('');
   const [reverseResults, setReverseResults] = useState<ReverseResults | null>(null);
+  const [infiltratorRound, setInfiltratorRound] = useState<InfiltratorRound | null>(null);
+  const [infiltratorAnswer, setInfiltratorAnswer] = useState('');
+  const [infiltratorVoting, setInfiltratorVoting] = useState<InfiltratorVoting | null>(null);
+  const [infiltratorVote, setInfiltratorVote] = useState('');
+  const [infiltratorGuess, setInfiltratorGuess] = useState('');
+  const [infiltratorReveal, setInfiltratorReveal] = useState<InfiltratorReveal | null>(null);
   const [gameEnd, setGameEnd] = useState<GameEnd | null>(null);
 
   const resetRoundState = useCallback(() => {
@@ -207,6 +254,12 @@ export function SpecialGameRoom({
     setVoting(null);
     setSelectedVote('');
     setReverseResults(null);
+    setInfiltratorRound(null);
+    setInfiltratorAnswer('');
+    setInfiltratorVoting(null);
+    setInfiltratorVote('');
+    setInfiltratorGuess('');
+    setInfiltratorReveal(null);
   }, []);
 
   useEffect(() => {
@@ -270,6 +323,30 @@ export function SpecialGameRoom({
       setBusy(false);
       setReverseResults(payload);
     });
+    socket.on('infiltrator:round', (payload) => {
+      resetRoundState();
+      setInfiltratorRound(payload);
+    });
+    socket.on('infiltrator:answer:ack', ({ selectedAnswer }) => {
+      setBusy(false);
+      setInfiltratorAnswer(selectedAnswer);
+    });
+    socket.on('infiltrator:voting', (payload) => {
+      setBusy(false);
+      setInfiltratorVoting(payload);
+    });
+    socket.on('infiltrator:vote:ack', ({ playerId }) => {
+      setBusy(false);
+      setInfiltratorVote(playerId);
+    });
+    socket.on('infiltrator:majority:guess:ack', ({ question }) => {
+      setBusy(false);
+      setInfiltratorGuess(question);
+    });
+    socket.on('infiltrator:reveal', (payload) => {
+      setBusy(false);
+      setInfiltratorReveal(payload);
+    });
     socket.on('special:game:end', (payload) => {
       setBusy(false);
       setGameEnd(payload);
@@ -328,6 +405,9 @@ export function SpecialGameRoom({
     if (room.phase === 'reverse-writing') return 'اصنع السؤال';
     if (room.phase === 'reverse-voting') return 'صوّت للأذكى';
     if (room.phase === 'reverse-results') return 'نتيجة التصويت';
+    if (room.phase === 'infiltrator-answering') return 'من هو الدخيل؟';
+    if (room.phase === 'infiltrator-voting') return 'اكتشف الدخيل';
+    if (room.phase === 'infiltrator-reveal') return 'انكشف الدخيل';
     return 'النتيجة النهائية';
   }, [activeMeta.title, room]);
 
@@ -350,8 +430,10 @@ export function SpecialGameRoom({
             <div className="special-entry-copy">
               {mode === 'parallel-world' ? (
                 <Orbit className="special-entry-copy__mark" aria-hidden="true" />
-              ) : (
+              ) : mode === 'reverse-time' ? (
                 <Clock3 className="special-entry-copy__mark" aria-hidden="true" />
+              ) : (
+                <Fingerprint className="special-entry-copy__mark" aria-hidden="true" />
               )}
               <h1>{meta.title}</h1>
               <p>{meta.description}</p>
@@ -813,6 +895,209 @@ export function SpecialGameRoom({
                           <span>{result.playerName}</span>
                         </div>
                         <em>{result.votes.toLocaleString('ar-SA')} أصوات</em>
+                      </li>
+                    ))}
+                  </ol>
+                  {isHost && (
+                    <Button variant="gold" size="lg" onClick={nextRound} loading={busy}>
+                      الجولة التالية
+                    </Button>
+                  )}
+                </Card>
+              )}
+
+              {room.phase === 'infiltrator-answering' &&
+                (isHost ? (
+                  <Card className="special-host-monitor">
+                    <Fingerprint aria-hidden="true" />
+                    <h2>وُزّعت الأدوار سرًا</h2>
+                    <p>الأغلبية ترى سؤالًا واحدًا، والدخيل يرى سؤالًا مختلفًا. لا تكشف الأسئلة.</p>
+                    <Button
+                      variant="gold"
+                      size="lg"
+                      loading={busy}
+                      onClick={() => {
+                        setBusy(true);
+                        socketRef.current?.emit('infiltrator:voting:start', { pin: room.pin });
+                      }}
+                    >
+                      <Vote aria-hidden="true" />
+                      اعرض الإجابات المجهولة
+                    </Button>
+                  </Card>
+                ) : infiltratorRound ? (
+                  <Card className="special-question-panel">
+                    <div className="special-round-meta">
+                      <span data-role={infiltratorRound.isInfiltrator ? 'infiltrator' : 'majority'}>
+                        {infiltratorRound.isInfiltrator ? 'أنت الدخيل' : 'أنت من الأغلبية'}
+                      </span>
+                      <span>
+                        {infiltratorRound.roundNumber.toLocaleString('ar-SA')} /{' '}
+                        {infiltratorRound.roundCount.toLocaleString('ar-SA')}
+                      </span>
+                      <Timer
+                        startsAt={infiltratorRound.startsAt}
+                        timeLimit={infiltratorRound.timeLimit}
+                      />
+                    </div>
+                    <p className="special-role-hint">
+                      {infiltratorRound.isInfiltrator
+                        ? 'تظاهر أن سؤالك هو سؤال الجميع، ثم حاول النجاة من التصويت.'
+                        : 'أجب طبيعيًا، ثم راقب الإجابات لتكتشف صاحب السؤال المختلف.'}
+                    </p>
+                    <h2>{infiltratorRound.prompt}</h2>
+                    <div className="special-options">
+                      {infiltratorRound.options.map((option) => (
+                        <button
+                          type="button"
+                          className="special-option"
+                          data-state={
+                            infiltratorAnswer
+                              ? infiltratorAnswer === option
+                                ? 'success'
+                                : 'disabled'
+                              : busy
+                                ? 'loading'
+                                : 'default'
+                          }
+                          disabled={Boolean(infiltratorAnswer) || busy}
+                          key={option}
+                          onClick={() => {
+                            setBusy(true);
+                            socketRef.current?.emit('infiltrator:answer:submit', {
+                              pin: room.pin,
+                              roundId: infiltratorRound.roundId,
+                              answer: option,
+                            });
+                          }}
+                        >
+                          <span>{option}</span>
+                          {infiltratorAnswer === option && <Check aria-hidden="true" />}
+                        </button>
+                      ))}
+                    </div>
+                    {infiltratorAnswer && (
+                      <p className="special-success" role="status">
+                        سُجلت إجابتك. لا تشرح سؤالك الآن.
+                      </p>
+                    )}
+                  </Card>
+                ) : (
+                  <Card className="special-waiting">
+                    <LoaderCircle className="spin" aria-hidden="true" />
+                    جارٍ تسليم دورك السري…
+                  </Card>
+                ))}
+
+              {room.phase === 'infiltrator-voting' &&
+                (isHost ? (
+                  <Card className="special-host-monitor">
+                    <Vote aria-hidden="true" />
+                    <h2>التصويت سري ومفتوح</h2>
+                    <p>تظهر الإجابات بلا أسماء. يحاول الدخيل بالتوازي تخمين إجابة الأغلبية.</p>
+                    <Button
+                      variant="gold"
+                      size="lg"
+                      loading={busy}
+                      onClick={() => {
+                        setBusy(true);
+                        socketRef.current?.emit('infiltrator:reveal', { pin: room.pin });
+                      }}
+                    >
+                      <Fingerprint aria-hidden="true" />
+                      اكشف الدخيل
+                    </Button>
+                  </Card>
+                ) : infiltratorVoting ? (
+                  <Card className="special-voting-panel">
+                    <span>الإجابات مجهولة الهوية</span>
+                    <h2>أي إجابة جاءت من سؤال مختلف؟</h2>
+                    <div className="special-vote-list">
+                      {infiltratorVoting.answers.map((answer) => (
+                        <button
+                          type="button"
+                          key={answer.playerId}
+                          disabled={answer.isOwn || Boolean(infiltratorVote) || busy}
+                          data-selected={infiltratorVote === answer.playerId || undefined}
+                          onClick={() => {
+                            setBusy(true);
+                            socketRef.current?.emit('infiltrator:vote', {
+                              pin: room.pin,
+                              playerId: answer.playerId,
+                            });
+                          }}
+                        >
+                          <span>{answer.answer}</span>
+                          {answer.isOwn ? <small>إجابتك</small> : <Vote aria-hidden="true" />}
+                        </button>
+                      ))}
+                    </div>
+                    {infiltratorVoting.isInfiltrator && (
+                      <div className="special-majority-guess">
+                        <strong>فرصتك الثانية: أي سؤال ظهر للأغلبية؟</strong>
+                        <div className="special-options">
+                          {infiltratorVoting.majorityOptions.map((option) => (
+                            <button
+                              type="button"
+                              className="special-option"
+                              key={option}
+                              disabled={Boolean(infiltratorGuess) || busy}
+                              data-state={
+                                infiltratorGuess === option
+                                  ? 'success'
+                                  : infiltratorGuess
+                                    ? 'disabled'
+                                    : 'default'
+                              }
+                              onClick={() => {
+                                setBusy(true);
+                                socketRef.current?.emit('infiltrator:majority:guess', {
+                                  pin: room.pin,
+                                  question: option,
+                                });
+                              }}
+                            >
+                              <span>{option}</span>
+                              {infiltratorGuess === option && <Check aria-hidden="true" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                ) : (
+                  <Card className="special-waiting">
+                    <LoaderCircle className="spin" aria-hidden="true" />
+                    جارٍ إخفاء هويات الإجابات…
+                  </Card>
+                ))}
+
+              {room.phase === 'infiltrator-reveal' && infiltratorReveal && (
+                <Card className="special-results-panel">
+                  <Fingerprint aria-hidden="true" />
+                  <span>{infiltratorReveal.infiltratorWon ? 'فاز الدخيل' : 'أمسكتم بالدخيل'}</span>
+                  <h2>الدخيل هو {infiltratorReveal.infiltratorName}</h2>
+                  <p>
+                    {infiltratorReveal.guessedMajority
+                      ? `وخمّن سؤال الأغلبية: ${infiltratorReveal.majorityQuestion}`
+                      : `لم يخمّن سؤال الأغلبية: ${infiltratorReveal.majorityQuestion}`}
+                  </p>
+                  <ol>
+                    {infiltratorReveal.answers.map((answer) => (
+                      <li key={answer.playerId}>
+                        <b>
+                          {(infiltratorReveal.voteCounts[answer.playerId] ?? 0).toLocaleString(
+                            'ar-SA',
+                          )}
+                        </b>
+                        <div>
+                          <strong>{answer.answer}</strong>
+                          <span>
+                            {answer.playerName}
+                            {answer.playerId === infiltratorReveal.infiltratorId ? ' — الدخيل' : ''}
+                          </span>
+                        </div>
+                        <em>أصوات</em>
                       </li>
                     ))}
                   </ol>

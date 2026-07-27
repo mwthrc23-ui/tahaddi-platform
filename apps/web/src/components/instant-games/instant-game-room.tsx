@@ -5,36 +5,13 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Card } from '@/components/ui';
 import { toArabicDigits } from '@/lib/utils';
-import { INSTANT_GAME_META, type InstantGameMode } from './game-data';
-
-const memorySymbols = [
-  { value: '⚡', label: 'برق' },
-  { value: '★', label: 'نجمة' },
-  { value: '◆', label: 'ماسة' },
-  { value: '●', label: 'دائرة' },
-] as const;
-
-const wordBank = [
-  { word: 'السعودية', scrambled: 'دوعسلاية', hint: 'وطننا الغالي' },
-  { word: 'منافسة', scrambled: 'سفانةم', hint: 'تحدٍّ بين لاعبين' },
-  { word: 'صحراء', scrambled: 'ءارحص', hint: 'رمال واسعة' },
-  { word: 'تاريخ', scrambled: 'خيرات', hint: 'حكاية ما مضى' },
-  { word: 'سرعة', scrambled: 'عرةس', hint: 'عكس البطء' },
-  { word: 'نجمة', scrambled: 'جمةن', hint: 'تلمع في السماء' },
-  { word: 'بطولة', scrambled: 'لوطبة', hint: 'منافسة تنتهي بكأس' },
-  { word: 'مغامرة', scrambled: 'رمةغام', hint: 'رحلة مليئة بالمفاجآت' },
-  { word: 'فريق', scrambled: 'قفير', hint: 'لاعبون في جهة واحدة' },
-  { word: 'صدارة', scrambled: 'رادصة', hint: 'المركز الأول' },
-  { word: 'إجابة', scrambled: 'بةإجا', hint: 'حل السؤال' },
-  { word: 'حماس', scrambled: 'سامح', hint: 'شعور يشعل التحدّي' },
-] as const;
-
-const colorBank = [
-  { label: 'أحمر', value: '#ff5252' },
-  { label: 'أزرق', value: '#00d4ff' },
-  { label: 'ذهبي', value: '#ffb000' },
-  { label: 'أخضر', value: '#10b981' },
-] as const;
+import {
+  COLOR_RUSH_BANK,
+  INSTANT_GAME_META,
+  MEMORY_SYMBOL_BANK,
+  type InstantGameMode,
+  WORD_CODE_BANK,
+} from './game-data';
 
 function ScoreBar({ score, seconds }: { score: number; seconds: number }) {
   return (
@@ -61,7 +38,7 @@ function MemoryFlash() {
   const [started, setStarted] = useState(false);
 
   const addLevel = useCallback(() => {
-    setSequence((current) => [...current, Math.floor(Math.random() * memorySymbols.length)]);
+    setSequence((current) => [...current, Math.floor(Math.random() * MEMORY_SYMBOL_BANK.length)]);
     setInputIndex(0);
     setPreview(true);
   }, []);
@@ -138,12 +115,12 @@ function MemoryFlash() {
             <div className="memory-preview" aria-live="polite">
               {preview
                 ? sequence.map((item, index) => (
-                    <strong key={`${item}-${index}`}>{memorySymbols[item]?.value}</strong>
+                    <strong key={`${item}-${index}`}>{MEMORY_SYMBOL_BANK[item]?.value}</strong>
                   ))
                 : `أعد التسلسل — بقي ${toArabicDigits(sequence.length - inputIndex)}`}
             </div>
             <div className="memory-pad">
-              {memorySymbols.map((symbol, index) => (
+              {MEMORY_SYMBOL_BANK.map((symbol, index) => (
                 <button
                   type="button"
                   key={symbol.label}
@@ -169,7 +146,7 @@ function WordCode() {
   const [seconds, setSeconds] = useState(60);
   const [started, setStarted] = useState(false);
   const [message, setMessage] = useState('');
-  const puzzle = wordBank[index % wordBank.length]!;
+  const puzzle = WORD_CODE_BANK[index % WORD_CODE_BANK.length]!;
 
   const reset = () => {
     setIndex(0);
@@ -279,8 +256,8 @@ function ColorRush() {
   const [seconds, setSeconds] = useState(45);
   const [started, setStarted] = useState(false);
   const [message, setMessage] = useState('');
-  const wordIndex = round % colorBank.length;
-  const inkIndex = (round * 3 + 1) % colorBank.length;
+  const wordIndex = round % COLOR_RUSH_BANK.length;
+  const inkIndex = (round * 3 + 1) % COLOR_RUSH_BANK.length;
 
   const start = () => {
     setRound(0);
@@ -335,12 +312,12 @@ function ColorRush() {
         ) : (
           <div className="color-rush">
             <span>ما لون الحبر؟</span>
-            <strong style={{ color: colorBank[inkIndex]?.value }}>
-              {colorBank[wordIndex]?.label}
+            <strong style={{ color: COLOR_RUSH_BANK[inkIndex]?.value }}>
+              {COLOR_RUSH_BANK[wordIndex]?.label}
             </strong>
             <p aria-live="polite">{message}</p>
             <div>
-              {colorBank.map((color, index) => (
+              {COLOR_RUSH_BANK.map((color, index) => (
                 <button
                   type="button"
                   key={color.label}

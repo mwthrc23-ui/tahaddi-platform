@@ -5441,6 +5441,22 @@ tr:last-child td {
   white-space: nowrap;
 }
 
+.special-round-meta > span[data-role='infiltrator'] {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.special-round-meta > span[data-role='majority'] {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.special-role-hint {
+  max-inline-size: 58ch;
+  margin-block: calc(var(--space-3) * -1) var(--space-5);
+  color: var(--muted-foreground);
+}
+
 .special-timer {
   min-block-size: 2.75rem;
   display: inline-flex;
@@ -5707,6 +5723,23 @@ tr:last-child td {
 .special-vote-list small {
   color: var(--muted-foreground);
   white-space: nowrap;
+}
+
+.special-majority-guess {
+  display: grid;
+  gap: var(--space-4);
+  margin-block-start: var(--space-6);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--surface-stage-line);
+}
+
+.special-majority-guess > strong {
+  max-inline-size: 52ch;
+}
+
+.special-results-panel > p {
+  max-inline-size: 65ch;
+  color: var(--muted-foreground);
 }
 
 .special-results-panel > svg,

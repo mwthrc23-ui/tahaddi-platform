@@ -7,6 +7,9 @@ export type SpecialGamePhase =
   | 'reverse-writing'
   | 'reverse-voting'
   | 'reverse-results'
+  | 'infiltrator-answering'
+  | 'infiltrator-voting'
+  | 'infiltrator-reveal'
   | 'finished';
 
 export type SpecialGamePlayer = {
@@ -23,6 +26,11 @@ export type ReverseSubmission = {
   voterIds: string[];
 };
 
+export type InfiltratorAssignment = {
+  bankIndex: number;
+  variantIndex: number;
+};
+
 export type SpecialGameRoom = {
   pin: string;
   hostId: string;
@@ -34,6 +42,11 @@ export type SpecialGameRoom = {
   parallelAnswers: Record<string, string>;
   reverseSubmissions: ReverseSubmission[];
   reverseVoterIds: string[];
+  infiltratorId: string | null;
+  infiltratorAssignments: Record<string, InfiltratorAssignment>;
+  infiltratorAnswers: Record<string, string>;
+  infiltratorVotes: Record<string, string>;
+  infiltratorMajorityGuess: string | null;
   createdAt: number;
 };
 
@@ -52,6 +65,17 @@ export type ParallelRoundPayload = {
   faceLabel: string;
   prompt: string;
   options: string[];
+  startsAt: number;
+  timeLimit: number;
+};
+
+export type InfiltratorRoundPayload = {
+  roundId: string;
+  roundNumber: number;
+  roundCount: number;
+  prompt: string;
+  options: string[];
+  isInfiltrator: boolean;
   startsAt: number;
   timeLimit: number;
 };
@@ -75,6 +99,18 @@ export type ClientToServerSpecialEvents = {
   'reverse:voting:start': (payload: { pin: string }) => void;
   'reverse:vote': (payload: { pin: string; submissionId: string }) => void;
   'reverse:reveal': (payload: { pin: string }) => void;
+  'infiltrator:answer:submit': (payload: {
+    pin: string;
+    roundId: string;
+    answer: string;
+  }) => void;
+  'infiltrator:voting:start': (payload: { pin: string }) => void;
+  'infiltrator:vote': (payload: { pin: string; playerId: string }) => void;
+  'infiltrator:majority:guess': (payload: {
+    pin: string;
+    question: string;
+  }) => void;
+  'infiltrator:reveal': (payload: { pin: string }) => void;
 };
 
 export type ServerToClientSpecialEvents = {
@@ -126,5 +162,25 @@ export type ServerToClientSpecialEvents = {
       text: string;
       votes: number;
     }>;
+  }) => void;
+  'infiltrator:round': (payload: InfiltratorRoundPayload) => void;
+  'infiltrator:answer:ack': (payload: { selectedAnswer: string }) => void;
+  'infiltrator:voting': (payload: {
+    answers: Array<{ playerId: string; answer: string; isOwn: boolean }>;
+    isInfiltrator: boolean;
+    majorityOptions: string[];
+  }) => void;
+  'infiltrator:vote:ack': (payload: { playerId: string }) => void;
+  'infiltrator:majority:guess:ack': (payload: { question: string }) => void;
+  'infiltrator:reveal': (payload: {
+    infiltratorId: string;
+    infiltratorName: string;
+    caught: boolean;
+    survived: boolean;
+    guessedMajority: boolean;
+    infiltratorWon: boolean;
+    majorityQuestion: string;
+    answers: Array<{ playerId: string; playerName: string; answer: string }>;
+    voteCounts: Record<string, number>;
   }) => void;
 };

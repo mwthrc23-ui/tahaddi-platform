@@ -5,12 +5,12 @@ import { CcButton, CcFlag, CcPrompt, CcRule } from '@/components/claude-code';
 import { INSTANT_GAME_META, INSTANT_GAME_ORDER } from '@/components/instant-games';
 import { SiteLayout } from '@/components/layout';
 import { getCurrentSession } from '@/lib/auth/session';
-import { toArabicDigits } from '@/lib/utils';
+import { formatArabicModeCount, toArabicDigits } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'الألعاب الخاصة | تحدّي',
   description:
-    'أوضاع لعب جماعية بقوانين مقلوبة وبنك أسئلة جاهز. أنشئ الغرفة، شارك الرمز، وابدأ الجولة.',
+    'أوضاع لعب جماعية وفردية بقوانين مبتكرة ومحتوى جاهز. أنشئ غرفة أو ابدأ تحديًا فوريًا.',
   alternates: { canonical: '/games' },
 };
 
@@ -20,7 +20,6 @@ export default async function GamesPage() {
     ...SPECIAL_GAME_ORDER.map((mode) => ({
       ...SPECIAL_GAME_META[mode],
       kind: 'room' as const,
-      contentLabel: 'بنك أسئلة',
     })),
     ...INSTANT_GAME_ORDER.map((mode) => ({ ...INSTANT_GAME_META[mode], kind: 'instant' as const })),
   ];
@@ -42,9 +41,9 @@ export default async function GamesPage() {
           <div className="cc-status" aria-label="حالة أوضاع اللعب">
             <span>
               <span className="cc-dot" aria-hidden="true" />
-              {toArabicDigits(games.length)} جاهزة للعب
+              {formatArabicModeCount(games.length)} جاهزة للعب
             </span>
-            <span>{toArabicDigits(UPCOMING_SPECIAL_GAMES.length)} قيد التطوير</span>
+            <span>{formatArabicModeCount(UPCOMING_SPECIAL_GAMES.length)} قيد التطوير</span>
             <span>الدخول للضيوف بلا حساب</span>
           </div>
 
