@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
+import { getMafiaAccessToken } from '@/lib/mafia/access-cookie';
 import { advanceMafiaGame } from '@/lib/mafia/engine';
 import { buildMafiaRoles, resolveMafiaChatChannel, shuffled } from '@/lib/mafia/rules';
 import { generateUniqueActivityRoomCode } from '@/lib/quiz/room-code';
@@ -53,28 +54,36 @@ export async function startMafiaGame(formData: FormData) {
   const gameId = String(formData.get('gameId') ?? '');
   const user = await requireActiveUser(`/mafia/${gameId}`);
   const prisma = getPrismaClient();
-  const game = await prisma.mafiaGame.findFirst({
-    where: { id: gameId, hostId: user.id, status: 'LOBBY' },
-    select: {
-      id: true,
-      killerCount: true,
-      nightSeconds: true,
-      participants: { orderBy: { joinedAt: 'asc' }, select: { id: true } },
-    },
-  });
-  if (!game) redirect(`/mafia/${gameId}?error=not-found`);
-  if (game.participants.length < 5) redirect(`/mafia/${gameId}?error=players`);
+  const result = await prisma.$transaction(async (tx) => {
+    const [game] = await tx.$queryRaw<
+      Array<{
+        id: string;
+        status: string;
+        killerCount: number;
+        nightSeconds: number;
+      }>
+    >`SELECT "id", "status"::text, "killerCount", "nightSeconds"
+      FROM "MafiaGame"
+      WHERE "id" = ${gameId} AND "hostId" = ${user.id}
+      FOR UPDATE`;
+    if (!game || game.status !== 'LOBBY') return 'not-found' as const;
 
-  const roles = shuffled(buildMafiaRoles(game.participants.length, game.killerCount));
-  const now = new Date();
-  await prisma.$transaction([
-    ...game.participants.map((participant, index) =>
-      prisma.mafiaParticipant.update({
+    const participants = await tx.mafiaParticipant.findMany({
+      where: { gameId },
+      orderBy: { joinedAt: 'asc' },
+      select: { id: true },
+    });
+    if (participants.length < 5) return 'players' as const;
+
+    const roles = shuffled(buildMafiaRoles(participants.length, game.killerCount));
+    const now = new Date();
+    for (const [index, participant] of participants.entries()) {
+      await tx.mafiaParticipant.update({
         where: { id: participant.id },
         data: { role: roles[index], status: 'ALIVE', privateNote: null, eliminatedAt: null },
-      }),
-    ),
-    prisma.mafiaGame.update({
+      });
+    }
+    await tx.mafiaGame.update({
       where: { id: game.id },
       data: {
         status: 'NIGHT',
@@ -82,17 +91,21 @@ export async function startMafiaGame(formData: FormData) {
         startedAt: now,
         phaseEndsAt: new Date(now.getTime() + game.nightSeconds * 1000),
       },
-    }),
-    prisma.mafiaMessage.create({
+    });
+    await tx.mafiaMessage.create({
       data: {
         gameId: game.id,
         channel: 'SYSTEM',
         body: 'بدأت اللعبة. افتح بطاقة دورك سرًا، فالليل قد حل.',
       },
-    }),
-  ]);
-  refreshMafia(game.id);
-  redirect(`/mafia/${game.id}`);
+    });
+    return 'started' as const;
+  });
+
+  if (result === 'not-found') redirect(`/mafia/${gameId}?error=not-found`);
+  if (result === 'players') redirect(`/mafia/${gameId}?error=players`);
+  refreshMafia(gameId);
+  redirect(`/mafia/${gameId}`);
 }
 
 export async function advanceMafiaPhase(formData: FormData) {
@@ -111,7 +124,7 @@ export async function submitMafiaAction(formData: FormData) {
   requireMafiaDatabase();
   const gameId = String(formData.get('gameId') ?? '');
   const actorId = String(formData.get('participantId') ?? '');
-  const participantToken = String(formData.get('participantToken') ?? '');
+  const participantToken = await getMafiaAccessToken(gameId);
   const targetId = String(formData.get('targetId') ?? '');
   const prisma = getPrismaClient();
   const game = await prisma.mafiaGame.findUnique({
@@ -183,7 +196,7 @@ export async function submitMafiaVote(formData: FormData) {
   requireMafiaDatabase();
   const gameId = String(formData.get('gameId') ?? '');
   const voterId = String(formData.get('participantId') ?? '');
-  const participantToken = String(formData.get('participantToken') ?? '');
+  const participantToken = await getMafiaAccessToken(gameId);
   const targetId = String(formData.get('targetId') ?? '');
   const prisma = getPrismaClient();
   const game = await prisma.mafiaGame.findUnique({
@@ -215,7 +228,7 @@ export async function sendMafiaMessage(formData: FormData) {
   requireMafiaDatabase();
   const gameId = String(formData.get('gameId') ?? '');
   const participantId = String(formData.get('participantId') ?? '');
-  const participantToken = String(formData.get('participantToken') ?? '');
+  const participantToken = await getMafiaAccessToken(gameId);
   const body = String(formData.get('body') ?? '')
     .trim()
     .replace(/\s+/g, ' ')

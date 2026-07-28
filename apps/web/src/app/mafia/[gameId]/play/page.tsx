@@ -16,6 +16,7 @@ import { RoomPoller } from '@/components/live';
 import { MafiaPhaseTimer } from '@/components/mafia/mafia-phase-timer';
 import { Badge, Button, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
+import { getMafiaAccessToken } from '@/lib/mafia/access-cookie';
 import {
   getMafiaMission,
   mafiaPhaseGuides,
@@ -29,12 +30,12 @@ export default async function MafiaPlayerPage({
   searchParams,
 }: {
   params: Promise<{ gameId: string }>;
-  searchParams: Promise<{ participantId?: string; token?: string }>;
+  searchParams: Promise<{ participantId?: string }>;
 }) {
   if (!hasDatabaseUrl()) redirect('/join?error=unavailable');
   const [{ gameId }, query] = await Promise.all([params, searchParams]);
   const participantId = query.participantId ?? '';
-  const participantToken = query.token ?? '';
+  const participantToken = await getMafiaAccessToken(gameId);
   const prisma = getPrismaClient();
   const game = await prisma.mafiaGame.findUnique({
     where: { id: gameId },
@@ -127,11 +128,7 @@ export default async function MafiaPlayerPage({
       <main className={`section mafia-page mafia-phase-${game.status.toLowerCase()}`}>
         <div className="container mafia-player-shell">
           {game.status !== 'FINISHED' && (
-            <RoomPoller
-              endpoint={`/api/mafia/${game.id}/tick`}
-              participantId={player.id}
-              participantToken={participantToken}
-            />
+            <RoomPoller endpoint={`/api/mafia/${game.id}/tick`} participantId={player.id} />
           )}
           <div className="page-header">
             <div>
@@ -157,7 +154,6 @@ export default async function MafiaPlayerPage({
               autoMode={game.autoMode}
               tickEndpoint={`/api/mafia/${game.id}/tick`}
               participantId={player.id}
-              participantToken={participantToken}
             />
           )}
 
@@ -247,7 +243,6 @@ export default async function MafiaPlayerPage({
                   <form action={submitMafiaAction} className="stack-form">
                     <input type="hidden" name="gameId" value={game.id} />
                     <input type="hidden" name="participantId" value={player.id} />
-                    <input type="hidden" name="participantToken" value={participantToken} />
                     <label>
                       {role === 'KILLER'
                         ? 'اختر الضحية'
@@ -279,7 +274,6 @@ export default async function MafiaPlayerPage({
                   <form action={submitMafiaVote} className="stack-form">
                     <input type="hidden" name="gameId" value={game.id} />
                     <input type="hidden" name="participantId" value={player.id} />
-                    <input type="hidden" name="participantToken" value={participantToken} />
                     <label>
                       صوّت ضد
                       <select name="targetId" required>
@@ -340,7 +334,6 @@ export default async function MafiaPlayerPage({
               <form action={sendMafiaMessage} className="mafia-chat-form">
                 <input type="hidden" name="gameId" value={game.id} />
                 <input type="hidden" name="participantId" value={player.id} />
-                <input type="hidden" name="participantToken" value={participantToken} />
                 <label className="sr-only" htmlFor="mafia-message">
                   الرسالة
                 </label>

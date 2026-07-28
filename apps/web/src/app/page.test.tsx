@@ -1,20 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ThemeProvider } from '@/components/theme-provider';
 import HomePage from './page';
-
-const push = vi.hoisted(() => vi.fn());
-const joinLiveSessionByCode = vi.hoisted(() => vi.fn());
-
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push }),
-}));
-
-vi.mock('@/app/live/actions', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/app/live/actions')>();
-  return { ...actual, joinLiveSessionByCode };
-});
 
 vi.mock('@/components/motion/reveal', () => ({
   Reveal: ({ children, className }: { children: React.ReactNode; className?: string }) => (
@@ -22,7 +10,7 @@ vi.mock('@/components/motion/reveal', () => ({
   ),
 }));
 
-describe('HomePage actions', () => {
+describe('HomePage', () => {
   const renderHomePage = () =>
     render(
       <ThemeProvider>
@@ -30,78 +18,45 @@ describe('HomePage actions', () => {
       </ThemeProvider>,
     );
 
-  beforeEach(() => {
-    push.mockReset();
-    joinLiveSessionByCode.mockReset();
-    localStorage.clear();
-  });
-
-  it('navigates to the live quiz room after server validation succeeds', async () => {
-    joinLiveSessionByCode.mockResolvedValue({
-      status: 'success',
-      gameType: 'quiz',
-      sessionId: 'session-123',
-      participantId: 'participant-123',
-      participantToken: 'signed-player-token',
-      roomCode: 'A7K9PQ',
-    });
+  it('يعرض الواجهة المعتمدة ومسارَي الإنشاء والانضمام دون نموذج داخل البطل', () => {
     renderHomePage();
-    const playerName = screen.getByRole('textbox', { name: 'اسم اللاعب' });
-    const roomCode = screen.getByRole('textbox', { name: 'رمز الغرفة' });
 
-    fireEvent.change(playerName, { target: { value: 'نورة' } });
-    fireEvent.change(roomCode, { target: { value: 'a7k 9pq' } });
-    await userEvent.click(screen.getByRole('button', { name: 'انضم الآن' }));
-    expect(joinLiveSessionByCode).toHaveBeenCalledWith('A7K9PQ', 'نورة');
-    expect(push).toHaveBeenCalledWith(
-      '/live/session-123/play?participantId=participant-123&code=A7K9PQ&token=signed-player-token',
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'الجولة تبدأ من رمز واحد.' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('الغرف المباشرة جاهزة')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /أنشئ أول تحد/ })).toHaveAttribute(
+      'href',
+      '/quizzes/new',
     );
+    expect(screen.getByRole('link', { name: 'لديّ رمز غرفة' })).toHaveAttribute('href', '/join');
+    expect(screen.queryByRole('textbox', { name: 'اسم اللاعب' })).not.toBeInTheDocument();
+
+    const roomPreview = screen.getByRole('region', { name: 'معاينة غرفة تحدّي مباشرة' });
+    expect(within(roomPreview).getByText('معاينة')).toBeInTheDocument();
+    expect(within(roomPreview).getByText('PQQDJK')).toBeInTheDocument();
+    expect(within(roomPreview).getByText('١٢ لاعبًا')).toBeInTheDocument();
   });
 
-  it('routes a room code to the independent killer game when detected', async () => {
-    joinLiveSessionByCode.mockResolvedValue({
-      status: 'success',
-      gameType: 'mafia',
-      sessionId: 'mafia-123',
-      participantId: 'player-123',
-      participantToken: 'secret-token',
-      roomCode: 'A7K9PQ',
-    });
+  it('يشرح خطوات الجولة ويحتفظ بمزايا المنصة الحقيقية', () => {
     renderHomePage();
-    fireEvent.change(screen.getByRole('textbox', { name: 'اسم اللاعب' }), {
-      target: { value: 'نورة' },
-    });
-    fireEvent.change(screen.getByRole('textbox', { name: 'رمز الغرفة' }), {
-      target: { value: 'A7K9PQ' },
-    });
-    await userEvent.click(screen.getByRole('button', { name: 'انضم الآن' }));
-    expect(push).toHaveBeenCalledWith(
-      '/mafia/mafia-123/play?participantId=player-123&code=A7K9PQ&token=secret-token',
-    );
+
+    expect(
+      screen.getByRole('heading', {
+        level: 2,
+        name: 'كل شيء أمامك، من الدعوة إلى التتويج.',
+      }),
+    ).toBeInTheDocument();
+    const benefits = screen.getByRole('list', { name: 'مزايا المنصة' });
+    expect(within(benefits).getAllByRole('listitem')).toHaveLength(3);
+    const steps = screen.getByRole('list', { name: 'خطوات تشغيل المسابقة' });
+    expect(within(steps).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(steps).getByText('جهّز الجولة')).toBeInTheDocument();
+    expect(within(steps).getByText('شارك الرمز')).toBeInTheDocument();
+    expect(within(steps).getByText('تابع النتيجة')).toBeInTheDocument();
   });
 
-  it('shows the server error and describes the room-code field when joining fails', async () => {
-    joinLiveSessionByCode.mockResolvedValue({
-      status: 'error',
-      message: 'لم نجد مسابقة نشطة بهذا الرمز.',
-    });
-    renderHomePage();
-    const roomCode = screen.getByRole('textbox', { name: 'رمز الغرفة' });
-
-    fireEvent.change(screen.getByRole('textbox', { name: 'اسم اللاعب' }), {
-      target: { value: 'نورة' },
-    });
-    fireEvent.change(roomCode, { target: { value: 'A7K9PQ' } });
-    await userEvent.click(screen.getByRole('button', { name: 'انضم الآن' }));
-
-    expect(joinLiveSessionByCode).toHaveBeenCalledWith('A7K9PQ', 'نورة');
-    expect(screen.getByText('لم نجد مسابقة نشطة بهذا الرمز.')).toBeInTheDocument();
-    expect(roomCode).toHaveAccessibleDescription('لم نجد مسابقة نشطة بهذا الرمز.');
-    expect(roomCode).toHaveAttribute('aria-describedby', 'room-code-message');
-    expect(push).not.toHaveBeenCalled();
-  });
-
-  it('exposes working destinations for creation, listing, cards, and the user menu', async () => {
+  it('يبقي روابط الألعاب الحديثة والقائمة العامة عاملة', async () => {
     renderHomePage();
 
     for (const link of screen.getAllByRole('link', { name: 'أنشئ مسابقة' })) {
@@ -123,11 +78,9 @@ describe('HomePage actions', () => {
       '/games',
     );
     expect(document.querySelector('a[href^="/demo/"]')).not.toBeInTheDocument();
-    expect(screen.queryByText('A7K9PQ')).not.toBeInTheDocument();
     expect(screen.getByText('صاحب الموقع: عبدالعزيز بن سلطان العتيبي')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'قائمة المستخدم' }));
-    expect(screen.getByRole('menu')).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'تسجيل الدخول' })).toHaveAttribute(
       'href',
       '/auth/sign-in',
@@ -136,7 +89,5 @@ describe('HomePage actions', () => {
       'href',
       '/auth/sign-up',
     );
-    expect(screen.queryByRole('menuitem', { name: 'الملف الشخصي' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('menuitem', { name: 'لوحة التحكم' })).not.toBeInTheDocument();
   });
 });

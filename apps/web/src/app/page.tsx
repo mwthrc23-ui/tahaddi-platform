@@ -3,26 +3,18 @@ import {
   Brain,
   CheckCircle2,
   Cpu,
-  Crown,
   FlaskConical,
   Gamepad2,
   Landmark,
   ListOrdered,
   Medal,
   Palette,
-  Radio,
-  Sparkles,
   Skull,
   Timer,
-  Trophy,
-  Users,
-  Zap,
   WholeWord,
 } from 'lucide-react';
-import Link from 'next/link';
 import { Suspense } from 'react';
 import { getPublicQuizzes, type PublicQuiz, type PublicQuizzesResult } from '@/app/quizzes/actions';
-import { JoinQuizForm } from '@/components/home/join-quiz-form';
 import { SiteLayout } from '@/components/layout';
 import { Reveal } from '@/components/motion/reveal';
 import { ButtonLink, CategoryCard, CompetitionCard, EmptyState, GameCard } from '@/components/ui';
@@ -96,24 +88,6 @@ const categories = [
 
 const emptyPublicQuizzes: PublicQuizzesResult = { status: 'success', quizzes: [] };
 
-const arenaFlow = [
-  { label: 'المضيف يطلق الغرفة', value: 'رمز مباشر' },
-  { label: 'الزوار يدخلون بالاسم', value: 'بدون حساب' },
-  { label: 'السؤال يظهر للجميع', value: 'ترتيب فوري' },
-];
-
-const identitySignals = [
-  { label: 'اللعب', value: 'غرف تفاعلية', icon: <Sparkles aria-hidden="true" /> },
-  { label: 'الدعوة', value: 'رمز فوري', icon: <Zap aria-hidden="true" /> },
-  { label: 'النتائج', value: 'لوحة مباشرة', icon: <Radio aria-hidden="true" /> },
-];
-
-const hostSignals = [
-  { label: 'بنك أسئلة', value: 'جاهز' },
-  { label: 'دعوة', value: 'رابط واحد' },
-  { label: 'نتيجة', value: 'على الشاشة' },
-];
-
 export default function HomePage() {
   return (
     <Suspense fallback={<HomePageContent publicQuizResult={emptyPublicQuizzes} user={null} />}>
@@ -143,106 +117,93 @@ function HomePageContent({
   const publicQuizzes = publicQuizResult.quizzes;
 
   return (
-    <SiteLayout user={user}>
-      <section className="hero">
-        <Reveal className="container hero-arena" eager>
-          <div className="hero-copy">
-            <span className="eyebrow hero-kicker">
-              <span className="live-dot" aria-hidden="true" />
-              منصة تحدّي المباشرة
-            </span>
+    <SiteLayout user={user} variant="home">
+      <section className="home-preview-hero" id="top">
+        <Reveal className="container home-preview-layout" eager>
+          <div className="home-preview-copy">
+            <div className="home-preview-status">
+              <span aria-hidden="true" />
+              الغرف المباشرة جاهزة
+            </div>
             <h1>
-              ادخل الغرفة
-              <br />
-              عبر لوحة <span className="hero-accent">تحدّي.</span>
+              الجولة تبدأ من <span>رمز واحد.</span>
             </h1>
             <p>
-              أنشئ مسابقة، شارك رمز الغرفة مع اللاعبين، وتابع الإجابات والنتائج مباشرة من لوحة
-              واحدة.
+              أنشئ مسابقة عربية تفاعلية، شارك رمز الغرفة، وتابع الإجابات والصدارة لحظة بلحظة من لوحة
+              مضيف واحدة.
             </p>
-            <div className="identity-signals" aria-label="مزايا تجربة تحدّي" role="list">
-              {identitySignals.map((item) => (
-                <div key={item.label} role="listitem">
-                  <span aria-hidden="true">{item.icon}</span>
-                  <strong>{item.value}</strong>
-                  <small>{item.label}</small>
-                </div>
-              ))}
-            </div>
-            <div className="hero-command" aria-label="دخول سريع إلى غرفة تحدّي">
-              <div className="hero-command-header">
-                <span>دخول الزائر</span>
-                <strong>رمز من المضيف</strong>
-              </div>
-              <JoinQuizForm />
-            </div>
-            <div className="hero-actions">
+            <div className="home-preview-actions">
               <ButtonLink href="/quizzes/new" variant="gold">
-                <Trophy />
-                أنشئ مسابقة
+                أنشئ أول تحدٍّ
+                <span aria-hidden="true">←</span>
               </ButtonLink>
-              <Link className="text-link" href="/questions">
-                <Zap />
-                استعرض بنك الأسئلة
-              </Link>
+              <ButtonLink href="/join" variant="outline">
+                لديّ رمز غرفة
+              </ButtonLink>
             </div>
-            <div className="hero-flow" aria-label="كيف تعمل التجربة">
-              {arenaFlow.map((item) => (
-                <div key={item.label}>
-                  <strong>{item.value}</strong>
-                  <span>{item.label}</span>
-                </div>
-              ))}
+            <div className="home-preview-trust" role="list" aria-label="مزايا المنصة">
+              <span role="listitem">لا يحتاج اللاعب إلى حساب</span>
+              <span role="listitem">نتائج مباشرة</span>
+              <span role="listitem">مصمم للعربية</span>
             </div>
           </div>
 
-          <div className="hero-stage arena-stage" aria-label="لوحة مسابقة مباشرة">
-            <div className="arena-glow glow-one" aria-hidden="true" />
-            <div className="arena-glow glow-two" aria-hidden="true" />
-            <div className="arena-scoreboard">
-              <div className="scoreboard-topline">
-                <span>حالة الغرفة</span>
-                <strong>بانتظار التشغيل</strong>
+          <div className="home-preview-arena" role="region" aria-label="معاينة غرفة تحدّي مباشرة">
+            <div className="home-preview-rings" aria-hidden="true" />
+            <div className="home-room-card">
+              <div className="home-room-top">
+                <span>غرفة الثقافة العامة</span>
+                <strong>معاينة</strong>
               </div>
-              <div className="scoreboard-question">
-                <span>قبل بدء الجلسة</span>
-                <h2>تظهر بيانات الغرفة الحقيقية هنا بعد تشغيلها.</h2>
-              </div>
-              <div className="scoreboard-empty" role="status">
-                <Radio aria-hidden="true" />
-                <div>
-                  <strong>لا توجد جلسة نشطة</strong>
-                  <span>افتح مسابقة محفوظة لإنشاء رمز دعوة وبدء استقبال اللاعبين.</span>
+              <div className="home-room-body">
+                <div className="home-room-code" dir="ltr">
+                  PQQDJK
                 </div>
-              </div>
-              <div className="scoreboard-footer">
-                <div>
-                  <Users aria-hidden="true" />
-                  <span>لا يوجد لاعبون قبل فتح الغرفة</span>
+                <p>شارك الرمز مع اللاعبين</p>
+                <div className="home-room-players" aria-label="نماذج صور اللاعبين">
+                  <span>س</span>
+                  <span>ن</span>
+                  <span>م</span>
+                  <span>ع</span>
+                  <span>+4</span>
+                </div>
+                <div className="home-room-feed">
+                  <div>
+                    <small>المتصلون</small>
+                    <strong>١٢ لاعبًا</strong>
+                  </div>
+                  <div>
+                    <small>حالة الجولة</small>
+                    <strong>بانتظار البدء</strong>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="host-console">
-              <div className="host-console-title">
-                <Crown aria-hidden="true" />
-                <strong>لوحة المضيف</strong>
-              </div>
-              {hostSignals.map((item) => (
-                <div key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
+          </div>
+        </Reveal>
+      </section>
+
+      <section className="section home-how-section" id="how">
+        <Reveal className="container">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">لوحة المضيف</span>
+              <h2>كل شيء أمامك، من الدعوة إلى التتويج.</h2>
+              <p>جهّز الجولة، شارك رمزها، ثم راقب انضمام اللاعبين وأطلق السؤال في الوقت المناسب.</p>
             </div>
-            <div className="live-pulse-card">
-              <Radio aria-hidden="true" />
-              <span>وضع الاستعداد</span>
-              <strong>ابدأ غرفة لعرض السؤال</strong>
+          </div>
+          <div className="home-how-grid" role="list" aria-label="خطوات تشغيل المسابقة">
+            <div role="listitem">
+              <strong>جهّز الجولة</strong>
+              <span>اختر الأسئلة واضبط الوقت قبل فتح الغرفة.</span>
             </div>
-            <div className="answer-burst" aria-hidden="true">
-              <span />
-              <span />
-              <span />
+            <div role="listitem">
+              <strong>شارك الرمز</strong>
+              <span>يدخل اللاعبون بالاسم فقط، دون إنشاء حساب.</span>
+            </div>
+            <div role="listitem">
+              <strong>تابع النتيجة</strong>
+              <span>راقب الإجابات والصدارة مباشرة من لوحة واحدة.</span>
             </div>
           </div>
         </Reveal>
@@ -338,7 +299,7 @@ function HomePageContent({
         </Reveal>
       </section>
 
-      <section className="section leaderboard-section">
+      <section className="section leaderboard-section" id="leaderboard">
         <Reveal className="container split-section">
           <div>
             <span className="eyebrow">لوحة الشرف</span>

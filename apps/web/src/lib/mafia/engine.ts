@@ -192,8 +192,9 @@ export async function markMafiaParticipantSeen(
   participantId: string,
   accessToken: string,
 ) {
-  await getPrismaClient().mafiaParticipant.updateMany({
+  const result = await getPrismaClient().mafiaParticipant.updateMany({
     where: { id: participantId, gameId, accessToken },
     data: { lastSeenAt: new Date() },
   });
+  return result.count === 1;
 }
