@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Header, SiteLayout } from './site-shell';
@@ -77,5 +77,40 @@ describe('Header user menu', () => {
     for (const link of screen.getAllByRole('link', { name: 'انضم إلى مسابقة' })) {
       expect(link).toHaveAttribute('href', '/join');
     }
+  });
+
+  it('يعرض تنقل الصفحة الرئيسية وإجراءاتها في نسختَي سطح المكتب والجوال', async () => {
+    const user = userEvent.setup();
+    render(
+      <SiteLayout variant="home">
+        <p>المحتوى</p>
+      </SiteLayout>,
+    );
+
+    const desktopNavigation = screen.getByRole('navigation', { name: 'التنقل الرئيسي' });
+    expect(within(desktopNavigation).getByRole('link', { name: 'كيف تعمل؟' })).toHaveAttribute(
+      'href',
+      '/#how',
+    );
+    expect(within(desktopNavigation).getByRole('link', { name: 'أنماط اللعب' })).toHaveAttribute(
+      'href',
+      '/#games',
+    );
+    expect(screen.getByRole('link', { name: 'انضم برمز' })).toHaveAttribute('href', '/join');
+    for (const link of screen.getAllByRole('link', { name: 'أنشئ مسابقة' })) {
+      expect(link).toHaveAttribute('href', '/quizzes/new');
+    }
+    expect(screen.queryByRole('button', { name: 'المظهر' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'فتح القائمة' }));
+    const mobileNavigation = screen.getByRole('navigation', { name: 'قائمة الجوال' });
+    expect(within(mobileNavigation).getByRole('link', { name: 'انضم برمز' })).toHaveAttribute(
+      'href',
+      '/join',
+    );
+    expect(within(mobileNavigation).getByRole('link', { name: 'أنشئ مسابقة' })).toHaveAttribute(
+      'href',
+      '/quizzes/new',
+    );
   });
 });

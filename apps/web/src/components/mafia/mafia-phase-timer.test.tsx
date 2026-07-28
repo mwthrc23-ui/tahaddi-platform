@@ -39,7 +39,6 @@ describe('MafiaPhaseTimer', () => {
         autoMode
         tickEndpoint="/api/mafia/game-1/tick"
         participantId="player-1"
-        participantToken="signed-token"
       />,
     );
 
@@ -56,7 +55,6 @@ describe('MafiaPhaseTimer', () => {
         method: 'POST',
         body: JSON.stringify({
           participantId: 'player-1',
-          participantToken: 'signed-token',
         }),
       }),
     );

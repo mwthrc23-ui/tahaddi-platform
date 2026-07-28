@@ -26,7 +26,6 @@ export function MafiaPhaseTimer({
   autoMode,
   tickEndpoint,
   participantId,
-  participantToken,
 }: {
   phase: MafiaPhaseName;
   phaseEndsAt: string | null;
@@ -34,7 +33,6 @@ export function MafiaPhaseTimer({
   autoMode: boolean;
   tickEndpoint: string;
   participantId?: string;
-  participantToken?: string;
 }) {
   const router = useRouter();
   const deadline = phaseEndsAt ? Date.parse(phaseEndsAt) : null;
@@ -88,7 +86,7 @@ export function MafiaPhaseTimer({
     void fetch(tickEndpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ participantId, participantToken }),
+      body: JSON.stringify({ participantId }),
       cache: 'no-store',
       signal: controller.signal,
     })
@@ -97,15 +95,7 @@ export function MafiaPhaseTimer({
       })
       .catch(() => null);
     return () => controller.abort();
-  }, [
-    autoMode,
-    participantId,
-    participantToken,
-    phaseEndsAt,
-    remainingSeconds,
-    router,
-    tickEndpoint,
-  ]);
+  }, [autoMode, participantId, phaseEndsAt, remainingSeconds, router, tickEndpoint]);
 
   if (!autoMode || !deadline || !durationSeconds) {
     return (

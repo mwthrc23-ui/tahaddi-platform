@@ -11,6 +11,7 @@ import {
   scheduleAutoAdvanceIfComplete,
 } from '@/lib/live/engine';
 import { createPlayerLiveAccessToken } from '@/lib/live/access-token';
+import { setMafiaAccessToken } from '@/lib/mafia/access-cookie';
 
 const ROOM_CODE_RE = /^[34679ACDEFGHJKMNPQRTUVWXY]{6,8}$/;
 const MAX_PLAYER_NAME_LENGTH = 40;
@@ -29,7 +30,6 @@ export type JoinLiveSessionResult =
       gameType: 'mafia';
       sessionId: string;
       participantId: string;
-      participantToken: string;
       roomCode: string;
     }
   | { status: 'error'; message: string };
@@ -213,38 +213,52 @@ export async function joinLiveSessionByCode(
       };
     }
 
-    const mafiaGame = await prisma.mafiaGame.findUnique({
-      where: { roomCode },
-      select: {
-        id: true,
-        roomCode: true,
-        status: true,
-        maxPlayers: true,
-        _count: { select: { participants: true } },
-      },
+    const mafiaJoin = await prisma.$transaction(async (tx) => {
+      const [mafiaGame] = await tx.$queryRaw<
+        Array<{ id: string; roomCode: string; status: string; maxPlayers: number }>
+      >`SELECT "id", "roomCode", "status"::text, "maxPlayers"
+        FROM "MafiaGame"
+        WHERE "roomCode" = ${roomCode}
+        FOR UPDATE`;
+
+      if (!mafiaGame || mafiaGame.status !== 'LOBBY') {
+        return { status: 'closed' } as const;
+      }
+
+      const participantCount = await tx.mafiaParticipant.count({
+        where: { gameId: mafiaGame.id },
+      });
+      if (participantCount >= mafiaGame.maxPlayers) {
+        return { status: 'full' } as const;
+      }
+
+      const participant = await tx.mafiaParticipant.create({
+        data: {
+          gameId: mafiaGame.id,
+          displayName,
+          accessToken: randomBytes(24).toString('hex'),
+        },
+        select: { id: true, accessToken: true },
+      });
+
+      return { status: 'success', mafiaGame, participant } as const;
     });
-    if (!mafiaGame || mafiaGame.status !== 'LOBBY') {
+
+    if (mafiaJoin.status === 'closed') {
       return { status: 'error', message: 'لم نجد غرفة مفتوحة بهذا الرمز.' };
     }
-    if (mafiaGame._count.participants >= mafiaGame.maxPlayers) {
+    if (mafiaJoin.status === 'full') {
       return { status: 'error', message: 'اكتمل عدد اللاعبين المسموح به في هذه الغرفة.' };
     }
-    const participant = await prisma.mafiaParticipant.create({
-      data: {
-        gameId: mafiaGame.id,
-        displayName,
-        accessToken: randomBytes(24).toString('hex'),
-      },
-      select: { id: true, accessToken: true },
-    });
-    revalidatePath(`/mafia/${mafiaGame.id}`);
+
+    await setMafiaAccessToken(mafiaJoin.mafiaGame.id, mafiaJoin.participant.accessToken);
+    revalidatePath(`/mafia/${mafiaJoin.mafiaGame.id}`);
     return {
       status: 'success',
       gameType: 'mafia',
-      sessionId: mafiaGame.id,
-      participantId: participant.id,
-      participantToken: participant.accessToken,
-      roomCode: mafiaGame.roomCode,
+      sessionId: mafiaJoin.mafiaGame.id,
+      participantId: mafiaJoin.participant.id,
+      roomCode: mafiaJoin.mafiaGame.roomCode,
     };
   } catch (error) {
     if (isUniqueConstraintError(error)) {

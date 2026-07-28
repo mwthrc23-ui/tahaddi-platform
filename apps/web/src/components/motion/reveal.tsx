@@ -18,7 +18,7 @@ export function Reveal({
   return (
     <motion.div
       className={className}
-      initial={reduceMotion ? visible : { opacity: 0, y: 28 }}
+      initial={eager || reduceMotion ? visible : { opacity: 0, y: 28 }}
       animate={eager ? visible : undefined}
       whileInView={eager ? undefined : visible}
       viewport={{ once: true, amount: 0.15 }}
