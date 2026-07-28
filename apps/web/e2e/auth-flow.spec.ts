@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.describe.configure({ timeout: 60_000 });
+
 test('redirects anonymous users from protected pages', async ({ page }) => {
   await page.goto('/dashboard/');
   await expect(page).toHaveURL(/\/auth\/sign-in\/\?next=%2Fdashboard/);
@@ -9,6 +11,12 @@ test('redirects anonymous users from protected pages', async ({ page }) => {
 
   await page.goto('/quizzes/new/');
   await expect(page).toHaveURL(/\/auth\/sign-in\/\?next=%2Fquizzes%2Fnew/);
+
+  await page.goto('/admin/');
+  await expect(page).toHaveURL(/\/admin\/login\/\?next=%2Fadmin/);
+
+  await page.goto('/admin/content/');
+  await expect(page).toHaveURL(/\/admin\/login\/\?next=%2Fadmin%2Fcontent/);
 });
 
 test('renders auth entry points', async ({ page }) => {
@@ -23,6 +31,9 @@ test('renders auth entry points', async ({ page }) => {
 
   await page.goto('/auth/reset-password/example-token/');
   await expect(page.getByRole('heading', { name: 'إعادة تعيين كلمة المرور' })).toBeVisible();
+
+  await page.goto('/admin/login/');
+  await expect(page.getByRole('heading', { name: 'دخول الإدارة' })).toBeVisible();
 });
 
 test('keeps the public quizzes list available without a session', async ({ page }) => {
@@ -55,6 +66,10 @@ test.describe('database-backed auth flow', () => {
     await page.getByRole('button', { name: 'دخول بالبريد' }).click();
     await expect(page).toHaveURL(/\/dashboard/);
 
+    await page.goto('/admin/');
+    await expect(page).toHaveURL(/\/forbidden/);
+    await expect(page.getByRole('heading', { name: 'لا تملك هذه الصلاحية' })).toBeVisible();
+
     await page.setViewportSize({ width: 1200, height: 800 });
     await page.goto('/quizzes/new/');
     await expect(page.getByRole('heading', { name: 'منشئ المسابقة', level: 1 })).toBeVisible();
@@ -82,5 +97,26 @@ test.describe('database-backed auth flow', () => {
 
     await page.goto('/dashboard/');
     await expect(page).toHaveURL(/\/auth\/sign-in/);
+  });
+});
+
+test.describe('administrator console', () => {
+  test.skip(
+    process.env.RUN_ADMIN_E2E !== 'true' ||
+      !process.env.ADMIN_E2E_EMAIL ||
+      !process.env.ADMIN_E2E_PASSWORD,
+    'Requires a disposable administrator account and RUN_ADMIN_E2E=true.',
+  );
+
+  test('opens the real admin console for an administrator', async ({ page }) => {
+    await page.goto('/admin/login/');
+    await page.getByLabel('البريد الإلكتروني').fill(process.env.ADMIN_E2E_EMAIL!);
+    await page.locator('input[name="password"]').fill(process.env.ADMIN_E2E_PASSWORD!);
+    await page.getByRole('button', { name: 'دخول بالبريد' }).click();
+
+    await expect(page).toHaveURL(/\/admin\/?$/);
+    await expect(page.getByRole('heading', { name: 'إدارة تحدّي' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'الصلاحيات' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'سجل النشاط' })).toBeVisible();
   });
 });

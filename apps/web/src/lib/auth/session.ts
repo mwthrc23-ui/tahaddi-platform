@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { getPrismaClient, hasDatabaseUrl } from './prisma';
 import { authOptions } from './options';
+import { canAccessAdmin, hasPermission, type AdminPermission, type AppRole } from './authorization';
 import { sanitizeCallbackPath } from './redirects';
 
 type SessionIdentity = {
@@ -31,13 +32,13 @@ export async function getCurrentSession() {
   return getServerSession(authOptions);
 }
 
-export async function requireActiveUser(next = '/dashboard') {
+export async function requireActiveUser(next = '/dashboard', signInPath = '/auth/sign-in') {
   const session = await getCurrentSession();
   const user = session?.user;
   const safeNext = sanitizeCallbackPath(next);
 
   if (!user?.id) {
-    redirect(`/auth/sign-in?next=${encodeURIComponent(safeNext)}`);
+    redirect(`${signInPath}?next=${encodeURIComponent(safeNext)}`);
   }
 
   if (!hasDatabaseUrl()) {
@@ -59,4 +60,41 @@ export async function requireActiveUser(next = '/dashboard') {
     status: storedUser.status,
     tokenVersion: storedUser.tokenVersion,
   };
+}
+
+export async function requireAdminConsole(next = '/admin') {
+  const user = await requireActiveUser(next, '/admin/login');
+  if (!canAccessAdmin(user.role)) {
+    redirect('/forbidden');
+  }
+  return { ...user, role: user.role as AppRole };
+}
+
+export async function getOptionalAdminConsoleUser() {
+  const session = await getCurrentSession();
+  const user = session?.user;
+  if (!user?.id || !hasDatabaseUrl()) return null;
+
+  const storedUser = await getPrismaClient().user.findUnique({
+    where: { id: user.id },
+    select: { id: true, role: true, status: true, tokenVersion: true },
+  });
+  if (!isSessionUserCurrent(user, storedUser) || !canAccessAdmin(storedUser.role)) {
+    return null;
+  }
+
+  return {
+    ...user,
+    role: storedUser.role as AppRole,
+    status: storedUser.status,
+    tokenVersion: storedUser.tokenVersion,
+  };
+}
+
+export async function requirePermission(permission: AdminPermission, next = '/admin') {
+  const user = await requireActiveUser(next, '/admin/login');
+  if (!hasPermission(user.role, permission)) {
+    redirect('/forbidden');
+  }
+  return { ...user, role: user.role as AppRole };
 }

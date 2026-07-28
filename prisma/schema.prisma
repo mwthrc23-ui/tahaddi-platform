@@ -9,6 +9,7 @@ datasource db {
 
 enum UserRole {
   USER
+  CONTENT_EDITOR
   MODERATOR
   ADMIN
 }
@@ -117,10 +118,35 @@ model User {
   quizzes            Quiz[]
   hostedLiveSessions LiveSession[] @relation("LiveSessionHost")
   hostedMafiaGames   MafiaGame[]   @relation("MafiaGameHost")
+  auditActions       AuditLog[]    @relation("AuditActor")
+  auditTargets       AuditLog[]    @relation("AuditTarget")
 
   @@index([role])
   @@index([status])
   @@index([createdAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  actorId      String?
+  actorRole    UserRole
+  action       String   @db.VarChar(120)
+  resourceType String   @db.VarChar(80)
+  resourceId   String?  @db.VarChar(191)
+  targetUserId String?
+  result       String   @db.VarChar(32)
+  reasonCode   String?  @db.VarChar(80)
+  requestId    String?  @db.VarChar(191)
+  before       Json?
+  after        Json?
+  createdAt    DateTime @default(now())
+  actor        User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetUser   User?    @relation("AuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([resourceType, resourceId])
 }
 
 model Question {
