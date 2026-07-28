@@ -10,10 +10,16 @@ import { signInSchema } from '@/lib/auth/validation';
 
 const genericMessage = 'تعذّر تسجيل الدخول. تحقق من البيانات وحاول مرة أخرى.';
 
-export function SignInForm({ googleEnabled = false }: { googleEnabled?: boolean }) {
+export function SignInForm({
+  googleEnabled = false,
+  defaultNext = '/dashboard',
+}: {
+  googleEnabled?: boolean;
+  defaultNext?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = sanitizeCallbackPath(searchParams.get('next'));
+  const next = sanitizeCallbackPath(searchParams.get('next') || defaultNext);
   const accountError = searchParams.get('error') === 'account';
   const [error, setError] = useState(accountError ? 'الحساب غير متاح حاليًا.' : '');
   const [pending, setPending] = useState(false);

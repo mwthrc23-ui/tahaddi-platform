@@ -3,6 +3,7 @@ import { DashboardLayout } from '@/components/layout';
 import { Badge, ButtonLink, Card, EmptyState, StatisticCard } from '@/components/ui';
 import { getPrismaClient } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
+import { canAccessAdmin } from '@/lib/auth/authorization';
 
 export default async function Page() {
   const user = await requireActiveUser('/dashboard');
@@ -42,6 +43,11 @@ export default async function Page() {
   return (
     <DashboardLayout>
       <div className="dashboard-actions">
+        {canAccessAdmin(user.role) && (
+          <ButtonLink href="/admin" variant="gold">
+            إدارة المنصة
+          </ButtonLink>
+        )}
         <ButtonLink href="/quizzes/new">
           <Plus />
           مسابقة جديدة
