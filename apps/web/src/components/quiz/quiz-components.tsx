@@ -386,27 +386,46 @@ export function WinnerPodium({
   winners: { name: string; initials: string; score: number }[];
   confetti?: boolean;
 }) {
-  const order = [winners[1], winners[0], winners[2]];
+  const finalists = winners.slice(0, 3);
+
+  if (finalists.length === 0) {
+    return (
+      <div className="podium-empty" role="status">
+        <Trophy aria-hidden="true" />
+        <strong>بانتظار النتائج النهائية</strong>
+        <span>تظهر منصة التتويج بعد اعتماد ترتيب الجولة.</span>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn('podium-wrap', confetti && 'with-confetti')} aria-label="منصة الفائزين">
-      {order.map(
-        (winner, index) =>
-          winner && (
-            <div
-              className={cn('podium-player', `podium-${index === 1 ? 1 : index === 0 ? 2 : 3}`)}
-              key={winner.name}
-            >
-              <Avatar initials={winner.initials} />
-              <strong>{winner.name}</strong>
-              <span dir="ltr">{winner.score.toLocaleString('ar-SA')}</span>
-              <div>
-                <Crown />
-                {index === 1 ? 1 : index === 0 ? 2 : 3}
+    <section className={cn('podium-stage', confetti && 'with-confetti')}>
+      <div className="podium-holo-field" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <ol className="podium-wrap" aria-label="منصة الفائزين">
+        {finalists.map((winner, index) => {
+          const rank = index + 1;
+          return (
+            <li className={cn('podium-player', `podium-${rank}`)} key={`${rank}-${winner.name}`}>
+              <div className="podium-profile">
+                <Avatar initials={winner.initials} />
+                <strong>{winner.name}</strong>
+                <span dir="ltr">{winner.score.toLocaleString('ar-SA')} نقطة</span>
               </div>
-            </div>
-          ),
-      )}
-    </div>
+              <div className="podium-block">
+                <Crown aria-hidden="true" />
+                <span className="sr-only">{`المركز ${rank === 1 ? 'الأول' : rank === 2 ? 'الثاني' : 'الثالث'}`}</span>
+                <strong aria-hidden="true">{rank}</strong>
+                <small aria-hidden="true">المركز</small>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 

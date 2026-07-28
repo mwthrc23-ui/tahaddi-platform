@@ -28,6 +28,14 @@ import { Reveal } from '@/components/motion/reveal';
 import { ButtonLink, CategoryCard, CompetitionCard, EmptyState, GameCard } from '@/components/ui';
 import { getCurrentSession } from '@/lib/auth/session';
 
+/*
+ * THESIS: ادخل الغرفة عبر لوحة تحدّي؛ نرفض واجهة SaaS العامة ونبني استوديو مسابقات عربيًا حيًا.
+ * OWN-WORLD: أسود عميق، ذهب مادي، سماوي للحالة، لوحات بث بخطوط دقيقة وظلال صلبة.
+ * STORY: يفهم الزائر المنتج، ينضم أو ينشئ، ثم يرى كيف تتحول الغرفة إلى جولة وتتويج.
+ * FIRST VIEWPORT: رسالة كبيرة يمينًا، غرفة مباشرة صادقة يسارًا، والفعل الأساسي ظاهر دون تمرير.
+ * FORM: Prestige Split المعتمد من معاينة v18، مع Control Deck وLive Stage لبقية المسارات.
+ */
+
 const games = [
   {
     title: 'دقيقة ذكاء',
@@ -140,10 +148,14 @@ function HomePageContent({
         <Reveal className="container hero-arena" eager>
           <div className="hero-copy">
             <span className="eyebrow hero-kicker">
-              <Sparkles />
+              <span className="live-dot" aria-hidden="true" />
               منصة تحدّي المباشرة
             </span>
-            <h1>ادخل الغرفة عبر لوحة تحدّي.</h1>
+            <h1>
+              ادخل الغرفة
+              <br />
+              عبر لوحة <span className="hero-accent">تحدّي.</span>
+            </h1>
             <p>
               أنشئ مسابقة، شارك رمز الغرفة مع اللاعبين، وتابع الإجابات والنتائج مباشرة من لوحة
               واحدة.
