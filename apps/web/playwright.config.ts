@@ -14,11 +14,15 @@ export default defineConfig({
       timeout: 180_000,
       env: {
         ...process.env,
+        DATABASE_URL: process.env.DATABASE_URL ?? 'postgresql://tahaddi:tahaddi@localhost:5432/tahaddi',
+        AUTH_SECRET: process.env.AUTH_SECRET ?? 'replace-with-a-random-value-for-testing',
+        WEB_ORIGIN: process.env.WEB_ORIGIN ?? 'http://localhost:3000',
+        NODE_ENV: process.env.NODE_ENV ?? 'test',
         REDIS_URL: process.env.REDIS_URL ?? 'redis://127.0.0.1:6379',
       },
     },
     {
-      command: 'pnpm --filter @tahaddi/web exec next dev',
+      command: 'pnpm --filter @tahaddi/web dev -- --hostname 127.0.0.1',
       url: 'http://127.0.0.1:3000',
       reuseExistingServer: false,
       timeout: 180_000,
