@@ -1,4 +1,4 @@
-import { Radio } from 'lucide-react';
+import { Radio, Users, Zap, Trophy } from 'lucide-react';
 import { startLiveSession } from '@/app/live/actions';
 import { HostLayout } from '@/components/layout';
 import { HostQuestionViewer, LiveHostExperience } from '@/components/live';
@@ -6,6 +6,7 @@ import { Badge, Button, ButtonLink, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
 import { createHostLiveAccessToken } from '@/lib/live/access-token';
+import { toArabicDigits } from '@/lib/utils';
 
 export default async function Page({
   searchParams,
@@ -92,103 +93,197 @@ export default async function Page({
     ? createHostLiveAccessToken(selectedSession.id, user.id)
     : '';
 
+  const liveSessionCount = selectedSession?._count.participants ?? 0;
+  const quizCount = quizzes.length;
+  const activeSessionCount = sessions.length;
+
   return (
-    <HostLayout players={selectedSession?._count.participants ?? 0}>
+    <HostLayout players={liveSessionCount}>
       <div className="host-stage">
-        <section>
-          <div className="section-heading">
+        <div className="host-main">
+          <header className="host-main-header">
             <div>
               <span className="eyebrow">
                 <Radio />
                 تشغيل مباشر
               </span>
               <h1>لوحة المضيف</h1>
-              <p>حالة موحدة من الخادم، وتوقيت متزامن لجميع اللاعبين.</p>
+              <p>تحكم كامل بالجولة، ومراقبة مباشرة للاعبين والأجوبة.</p>
             </div>
             <ButtonLink href="/quizzes/new" variant="gold">
+              <Trophy aria-hidden="true" />
               مسابقة جديدة
             </ButtonLink>
-          </div>
+          </header>
 
           {liveError && (
-            <p className="text-danger" role="alert">
-              تعذّر تشغيل المسابقة. تأكد أنها تحتوي على سؤال واحد على الأقل.
-            </p>
-          )}
-
-          {selectedSession ? (
-            <>
-              <LiveHostExperience
-                sessionId={selectedSession.id}
-                hostId={user.id}
-                accessToken={hostAccessToken}
-                roomCode={selectedSession.roomCode}
-                joinUrl={`${siteUrl.replace(/\/$/, '')}/join/${selectedSession.roomCode}`}
-                initialAutoAdvance={selectedSession.quiz.autoAdvance}
-              />
-              <HostQuestionViewer
-                questions={selectedSession.quiz.questions}
-                currentPosition={selectedSession.currentQuestionPosition}
-                answeredCount={selectedSession._count.answers}
-                activeCount={selectedSession._count.participants}
-              />
-            </>
-          ) : (
-            <EmptyState
-              title="اختر مسابقة لتشغيلها"
-              description="المسابقات المحفوظة في حسابك تظهر أدناه ويمكن فتح غرفة مباشرة منها."
-            />
-          )}
-
-          {sessions.length > 0 && (
-            <div className="card-grid three">
-              {sessions.map((session) => (
-                <Card key={session.id}>
-                  <Badge className="badge-live">{session.roomCode}</Badge>
-                  <h2>{session.quiz.title}</h2>
-                  <p className="muted">
-                    {session._count.participants.toLocaleString('ar-SA')} لاعب
-                  </p>
-                  <ButtonLink href={`/host?sessionId=${session.id}`} variant="outline">
-                    فتح اللوحة
-                  </ButtonLink>
-                </Card>
-              ))}
+            <div className="host-alert host-alert--danger" role="alert">
+              <Zap aria-hidden="true" />
+              <div>
+                <strong>تعذّر تشغيل المسابقة</strong>
+                <span>تأكد بأنها تحتوي على سؤال واحد على الأقل.</span>
+              </div>
             </div>
           )}
 
-          <div className="card-grid three">
-            {quizzes.map((quiz) => (
-              <Card key={quiz.id}>
-                <div className="inline-between">
-                  <Badge>{quiz.status === 'ACTIVE' ? 'منشورة' : 'مسودة'}</Badge>
-                  <span dir="ltr">{quiz.roomCode}</span>
-                </div>
-                <h2>{quiz.title}</h2>
-                <p>{quiz.description || 'بدون وصف.'}</p>
-                <p className="muted">
-                  {quiz._count.questions.toLocaleString('ar-SA')} سؤال جاهز للجلسة
-                </p>
-                {quiz.questions.length > 0 && (
-                  <details className="host-quiz-preview">
-                    <summary>مشاهدة الأسئلة</summary>
-                    <ol>
-                      {quiz.questions.map(({ question }) => (
-                        <li key={question.id}>{question.prompt}</li>
-                      ))}
-                    </ol>
-                  </details>
-                )}
-                <form action={startLiveSession}>
-                  <input type="hidden" name="quizId" value={quiz.id} />
-                  <Button type="submit" fullWidth disabled={quiz._count.questions === 0}>
-                    تشغيل مباشر
-                  </Button>
-                </form>
-              </Card>
-            ))}
+          <div className="host-stats">
+            <div className="host-stat">
+              <Users aria-hidden="true" />
+              <div>
+                <strong>{toArabicDigits(liveSessionCount)}</strong>
+                <span>لاعب متصل</span>
+              </div>
+            </div>
+            <div className="host-stat">
+              <Trophy aria-hidden="true" />
+              <div>
+                <strong>{toArabicDigits(quizCount)}</strong>
+                <span>مسابقة جاهزة</span>
+              </div>
+            </div>
+            <div className="host-stat">
+              <Zap aria-hidden="true" />
+              <div>
+                <strong>{toArabicDigits(activeSessionCount)}</strong>
+                <span>جلسة نشطة</span>
+              </div>
+            </div>
           </div>
-        </section>
+
+          <div className="host-main-content">
+            {selectedSession ? (
+              <>
+                <div className="host-live-wrapper">
+                  <LiveHostExperience
+                    sessionId={selectedSession.id}
+                    hostId={user.id}
+                    accessToken={hostAccessToken}
+                    roomCode={selectedSession.roomCode}
+                    joinUrl={`${siteUrl.replace(/\/$/, '')}/join/${selectedSession.roomCode}`}
+                    initialAutoAdvance={selectedSession.quiz.autoAdvance}
+                  />
+                </div>
+                <div className="host-question-viewer-wrapper">
+                  <div className="host-question-viewer-header">
+                    <Users aria-hidden="true" />
+                    <strong>الأسئلة</strong>
+                    <span className="host-panel__badge host-panel__badge--success">
+                      {toArabicDigits(selectedSession._count.answers)} إجابة
+                    </span>
+                  </div>
+                  <div className="host-question-viewer-body">
+                    <HostQuestionViewer
+                      questions={selectedSession.quiz.questions}
+                      currentPosition={selectedSession.currentQuestionPosition}
+                      answeredCount={selectedSession._count.answers}
+                      activeCount={selectedSession._count.participants}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <EmptyState
+                title="اختر مسابقة لتشغيلها"
+                description="المسابعات المحفوظة في حسابك تظهر أدناه ويمكن فتح غرفة مباشرة منها."
+              />
+            )}
+          </div>
+        </div>
+
+        <aside className="host-sidebar">
+          {sessions.length > 0 && (
+            <div className="host-panel">
+              <div className="host-panel__header">
+                <span className="host-panel__title">
+                  <Radio aria-hidden="true" />
+                  جلسات نشطة
+                </span>
+                <span className="host-panel__badge host-panel__badge--live">
+                  {toArabicDigits(activeSessionCount)}
+                </span>
+              </div>
+              <div className="host-quiz-grid">
+                {sessions.map((session) => (
+                  <div key={session.id} className="host-quiz-row">
+                    <span className="host-quiz-row__number" dir="ltr">
+                      {session.roomCode.slice(0, 2)}
+                    </span>
+                    <div className="host-quiz-row__content">
+                      <h4>{session.quiz.title}</h4>
+                      <p>
+                        {toArabicDigits(session._count.participants)} لاعب · {' '}
+                        <span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {session.status}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="host-quiz-row__actions">
+                      <ButtonLink
+                        href={`/host?sessionId=${session.id}`}
+                        variant="outline"
+                        size="sm"
+                        fullWidth
+                      >
+                        فتح
+                      </ButtonLink>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="host-panel">
+            <div className="host-panel__header">
+              <span className="host-panel__title">
+                <Trophy aria-hidden="true" />
+                مسابعاتك
+              </span>
+              <span className="host-panel__badge">{toArabicDigits(quizCount)}</span>
+            </div>
+            <div className="host-quiz-grid">
+              {quizzes.map((quiz) => (
+                <div key={quiz.id} className="host-quiz-row">
+                  <span className="host-quiz-row__number" dir="ltr">
+                    {quiz.roomCode?.slice(0, 2) ?? '--'}
+                  </span>
+                  <div className="host-quiz-row__content">
+                    <h4>{quiz.title}</h4>
+                    <p>
+                      {toArabicDigits(quiz._count.questions)} سؤال · {quiz.status === 'ACTIVE' ? 'منشورة' : 'مسودة'}
+                    </p>
+                  </div>
+                  <form action={startLiveSession} className="host-quiz-row__actions">
+                    <input type="hidden" name="quizId" value={quiz.id} />
+                    <Button
+                      type="submit"
+                      variant="gold"
+                      size="sm"
+                      disabled={quiz._count.questions === 0}
+                    >
+                      تشغيل
+                    </Button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="host-panel host-panel--cta">
+            <div className="host-panel__header">
+              <span className="host-panel__title">
+                <Users aria-hidden="true" />
+                انضم بالرمز
+              </span>
+            </div>
+            <p style={{ margin: 0, color: 'var(--muted-foreground)', fontSize: '0.88rem', lineHeight: 1.6 }}>
+              شارك رابط الجلسة مع اللاعبين. يدخلون بالاسم فقط، بلا حساب.
+            </p>
+            <ButtonLink href="/join" variant="outline" fullWidth>
+              فتح صفحة الانضمام
+            </ButtonLink>
+          </div>
+        </aside>
       </div>
     </HostLayout>
   );
