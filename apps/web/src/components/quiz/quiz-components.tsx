@@ -17,6 +17,7 @@ import {
   TrendingDown,
   TrendingUp,
   UserRoundCog,
+  Users,
   Wifi,
   WifiOff,
   X,
@@ -270,6 +271,85 @@ export function PlayerJoinCard({
   );
 }
 
+export function WaitingList({
+  players,
+  minimumPlayers,
+  hostView = false,
+}: {
+  players: { name: string; initials: string; joinedAt: string; ready: boolean }[];
+  minimumPlayers?: number;
+  hostView?: boolean;
+}) {
+  const waitingCount = players.filter((player) => !player.ready).length;
+  const readyCount = players.filter((player) => player.ready).length;
+  const remaining = minimumPlayers ? Math.max(0, minimumPlayers - players.length) : 0;
+  const canStart = remaining === 0;
+
+  return (
+    <Card className="waiting-list">
+      <div className="waiting-list__header">
+        <div>
+          <h3>قائمة الانتظار</h3>
+          <p>
+            {canStart
+              ? `اكتمل العدد المطلوب من اللاعبين (${players.length})`
+              : remaining === 1
+                ? 'ينقص لاعب واحد لبدء اللعبة'
+                : `ينقص ${remaining.toLocaleString('ar-SA')} لاعبين لبدء اللعبة`}
+          </p>
+        </div>
+        <div className="waiting-list__counts">
+          <span className="waiting-badge waiting-badge--ready">
+            <Signal aria-hidden="true" />
+            {readyCount.toLocaleString('ar-SA')} مستعد
+          </span>
+          {waitingCount > 0 && (
+            <span className="waiting-badge waiting-badge--waiting">
+              <Clock3 aria-hidden="true" />
+              {waitingCount.toLocaleString('ar-SA')} ينتظر
+            </span>
+          )}
+        </div>
+      </div>
+
+      <ol className="waiting-list__players">
+        {players.map((player, index) => (
+          <li className="waiting-list__player" key={`${player.name}-${index}`}>
+            <span className="waiting-list__rank">{index + 1}</span>
+            <Avatar initials={player.initials} className="waiting-list__avatar" />
+            <div className="waiting-list__info">
+              <strong>{player.name}</strong>
+              <small>{player.joinedAt}</small>
+            </div>
+            {hostView && (
+              <Badge className={player.ready ? 'badge-success' : ''}>
+                {player.ready ? 'مستعد' : 'ينتظر'}
+              </Badge>
+            )}
+            {!player.ready && <span className="waiting-list__dot waiting-dot" aria-hidden="true" />}
+            {player.ready && <span className="waiting-list__dot ready-dot" aria-hidden="true" />}
+          </li>
+        ))}
+        {players.length === 0 && (
+          <li className="waiting-list__empty">
+            <Users aria-hidden="true" />
+            <span>بانتظار أول لاعب...</span>
+          </li>
+        )}
+      </ol>
+
+      {canStart && hostView && (
+        <div className="waiting-list__actions">
+          <Button type="button" variant="gold">
+            <Play aria-hidden="true" />
+            بدء اللعبة
+          </Button>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export function RoomCode({ code, url = '/join' }: { code: string; url?: string }) {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -383,10 +463,15 @@ export function WinnerPodium({
   winners,
   confetti = true,
 }: {
-  winners: { name: string; initials: string; score: number }[];
+  winners: { name: string; initials: string; score: number; correctAnswers?: number }[];
   confetti?: boolean;
 }) {
   const finalists = winners.slice(0, 3);
+  const rankMeta = {
+    1: { label: 'الأول', CrownIcon: Crown, accent: 'var(--gold)' },
+    2: { label: 'الثاني', CrownIcon: Medal, accent: 'var(--neutral-silver)' },
+    3: { label: 'الثالث', CrownIcon: Medal, accent: 'var(--neutral-bronze)' },
+  } as const;
 
   if (finalists.length === 0) {
     return (
@@ -408,18 +493,29 @@ export function WinnerPodium({
       <ol className="podium-wrap" aria-label="منصة الفائزين">
         {finalists.map((winner, index) => {
           const rank = index + 1;
+          const meta = rankMeta[rank as keyof typeof rankMeta];
+          const CrownIcon = meta.CrownIcon;
+          const correctAnswers = winner.correctAnswers ?? 0;
           return (
             <li className={cn('podium-player', `podium-${rank}`)} key={`${rank}-${winner.name}`}>
+              <div className="podium-rank-badge" style={{ '--rank-accent': meta.accent } as React.CSSProperties}>
+                <CrownIcon aria-hidden="true" />
+                <span className="sr-only">{`المركز ${meta.label}`}</span>
+              </div>
               <div className="podium-profile">
                 <Avatar initials={winner.initials} />
-                <strong>{winner.name}</strong>
-                <span dir="ltr">{winner.score.toLocaleString('ar-SA')} نقطة</span>
+                <strong className="podium-name">{winner.name}</strong>
+                <span className="podium-score" dir="ltr">
+                  {winner.score.toLocaleString('ar-SA')} نقطة
+                </span>
+                <span className="podium-correct" dir="ltr" aria-label={`${correctAnswers} إجابة صحيحة`}>
+                  <Check aria-hidden="true" />
+                  {correctAnswers.toLocaleString('ar-SA')}
+                </span>
               </div>
               <div className="podium-block">
-                <Crown aria-hidden="true" />
-                <span className="sr-only">{`المركز ${rank === 1 ? 'الأول' : rank === 2 ? 'الثاني' : 'الثالث'}`}</span>
                 <strong aria-hidden="true">{rank}</strong>
-                <small aria-hidden="true">المركز</small>
+                <small>المركز</small>
               </div>
             </li>
           );

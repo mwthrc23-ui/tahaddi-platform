@@ -45,8 +45,19 @@ export function LivePlayerExperience({
 
       {!snapshot || snapshot.phase === 'LOBBY' ? (
         <Card className="live-lobby">
+          <span className="eyebrow">في الانتظار</span>
           <h1>بانتظار المضيف</h1>
-          <p>ستظهر خيارات السؤال هنا فور بدء الجولة.</p>
+          <p>
+            {(snapshot?.participantCount ?? 0).toLocaleString('ar-SA')} لاعب متصل
+            {(snapshot?.participantCount ?? 0) > 0
+              ? ' — سيبدأ السؤال عند بدء المضيف للجولة.'
+              : ' — ستظهر خيارات السؤال هنا فور بدء الجولة.'}
+          </p>
+          <div className="live-lobby-indicator" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
         </Card>
       ) : snapshot.phase === 'FINISHED' ? (
         <LiveFinaleExperience players={snapshot.leaderboard} participantId={participantId} />

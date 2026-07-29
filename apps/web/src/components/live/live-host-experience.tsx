@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Settings, SkipForward, Square, Volume2, VolumeX, Wifi, WifiOff } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { Button, Card } from '@/components/ui';
+import { WaitingList } from '@/components/quiz';
 import { LiveFinaleExperience } from './live-finale-experience';
 import { LiveQuestionStage } from './live-question-stage';
 import { useLiveGame } from './use-live-game';
@@ -15,6 +16,7 @@ export function LiveHostExperience({
   roomCode,
   joinUrl,
   initialAutoAdvance,
+  minimumPlayers = 2,
 }: {
   sessionId: string;
   hostId: string;
@@ -22,6 +24,7 @@ export function LiveHostExperience({
   roomCode: string;
   joinUrl: string;
   initialAutoAdvance: boolean;
+  minimumPlayers?: number;
 }) {
   const game = useLiveGame({
     sessionId,
@@ -143,6 +146,33 @@ export function LiveHostExperience({
           <span className="eyebrow">الغرفة جاهزة</span>
           <h2>شارك الرمز، ثم ابدأ السؤال الأول</h2>
           <p>سيصل السؤال إلى جميع الأجهزة مع وقت نهاية واحد صادر من الخادم.</p>
+          <div className="live-lobby-meta">
+            <div className="live-pin">
+              <span>رمز الغرفة</span>
+              <strong dir="ltr">{roomCode}</strong>
+            </div>
+            <div className="live-qr">
+              <QRCode value={joinUrl} size={74} bgColor="var(--qr-paper)" fgColor="var(--qr-ink)" />
+            </div>
+          </div>
+          <WaitingList
+            players={
+              snapshot?.leaderboard?.map((player) => ({
+                name: player.name,
+                initials: player.name
+                  .trim()
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join(''),
+                joinedAt: 'الآن',
+                ready: false,
+              })) ?? []
+            }
+            minimumPlayers={minimumPlayers}
+            hostView
+          />
           <Button type="button" size="lg" onClick={game.startQuestion} disabled={game.busy}>
             بدء السؤال الأول
           </Button>

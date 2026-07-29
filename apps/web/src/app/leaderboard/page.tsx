@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Crown, Medal, Trophy, Users } from 'lucide-react';
+import { Crown, Medal, Trophy, Users, Check } from 'lucide-react';
 import { WinnerPodium } from '@/components/quiz';
 import { Button } from '@/components/ui';
 
@@ -11,19 +11,20 @@ type LeaderboardPlayer = {
   score: number;
   rank: number;
   streak?: number;
+  correctAnswers?: number;
 };
 
 const DEMO_PLAYERS: LeaderboardPlayer[] = [
-  { id: '1', name: 'أحمد المنصوري', score: 2450, rank: 1, streak: 5 },
-  { id: '2', name: 'سارة العتيبي', score: 2180, rank: 2, streak: 3 },
-  { id: '3', name: 'محمد الراشد', score: 1950, rank: 3, streak: 2 },
-  { id: '4', name: 'نورة القحطاني', score: 1820, rank: 4 },
-  { id: '5', name: 'خالد السعيد', score: 1640, rank: 5 },
-  { id: '6', name: 'ريم الشهري', score: 1580, rank: 6 },
-  { id: '7', name: 'عبدالله الفهد', score: 1420, rank: 7 },
-  { id: '8', name: 'ليان المطيري', score: 1350, rank: 8 },
-  { id: '9', name: 'يوسف الدوسري', score: 1210, rank: 9 },
-  { id: '10', name: 'جنى البقمي', score: 1100, rank: 10 },
+  { id: '1', name: 'أحمد المنصوري', score: 2450, rank: 1, streak: 5, correctAnswers: 18 },
+  { id: '2', name: 'سارة العتيبي', score: 2180, rank: 2, streak: 3, correctAnswers: 16 },
+  { id: '3', name: 'محمد الراشد', score: 1950, rank: 3, streak: 2, correctAnswers: 14 },
+  { id: '4', name: 'نورة القحطاني', score: 1820, rank: 4, correctAnswers: 13 },
+  { id: '5', name: 'خالد السعيد', score: 1640, rank: 5, correctAnswers: 12 },
+  { id: '6', name: 'ريم الشهري', score: 1580, rank: 6, correctAnswers: 11 },
+  { id: '7', name: 'عبدالله الفهد', score: 1420, rank: 7, correctAnswers: 10 },
+  { id: '8', name: 'ليان المطيري', score: 1350, rank: 8, correctAnswers: 9 },
+  { id: '9', name: 'يوسف الدوسري', score: 1210, rank: 9, correctAnswers: 8 },
+  { id: '10', name: 'جنى البقمي', score: 1100, rank: 10, correctAnswers: 7 },
 ];
 
 function getInitials(name: string) {
@@ -44,6 +45,7 @@ export default function LeaderboardPage() {
     name: player.name,
     initials: getInitials(player.name),
     score: player.score,
+    correctAnswers: player.correctAnswers,
   }));
 
   const topStats = [
@@ -107,6 +109,10 @@ export default function LeaderboardPage() {
                   <span className="leaderboard-name">{player.name}</span>
                   <span className="leaderboard-streak">
                     {player.streak ? `${player.streak} فوز متتالي` : '—'}
+                  </span>
+                  <span className="leaderboard-correct" dir="ltr">
+                    <Check aria-hidden="true" />
+                    {player.correctAnswers?.toLocaleString('ar-SA') ?? '0'}
                   </span>
                   <span className="leaderboard-score">
                     {player.score.toLocaleString('ar-SA')} نقطة

@@ -13,6 +13,7 @@ export type FinalePlayer = {
   name: string;
   score: number;
   rank: number;
+  correctAnswers?: number;
 };
 
 function getInitials(name: string) {
@@ -86,6 +87,7 @@ export function LiveFinaleExperience({
     name: player.name,
     initials: getInitials(player.name),
     score: player.score,
+    correctAnswers: player.correctAnswers,
   }));
 
   useEffect(() => {
