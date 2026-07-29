@@ -8,7 +8,7 @@ export default defineConfig({
   use: { baseURL: 'http://127.0.0.1:3000', trace: 'on-first-retry' },
   webServer: [
     {
-      command: 'pnpm --filter @tahaddi/realtime dev',
+      command: 'pnpm --filter @tahaddi/realtime exec nest start --watch',
       url: 'http://127.0.0.1:3001/realtime/health',
       reuseExistingServer: false,
       timeout: 180_000,
@@ -18,7 +18,7 @@ export default defineConfig({
       },
     },
     {
-      command: 'pnpm --filter @tahaddi/web dev -- --hostname 127.0.0.1 --webpack',
+      command: 'pnpm --filter @tahaddi/web exec next dev',
       url: 'http://127.0.0.1:3000',
       reuseExistingServer: false,
       timeout: 180_000,
