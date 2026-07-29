@@ -33,7 +33,7 @@ describe('HomePage', () => {
     expect(screen.queryByRole('textbox', { name: 'اسم اللاعب' })).not.toBeInTheDocument();
 
     const roomPreview = screen.getByRole('region', { name: 'معاينة غرفة تحدّي مباشرة' });
-    expect(within(roomPreview).getByText('معاينة')).toBeInTheDocument();
+    expect(within(roomPreview).getByText('مباشرة')).toBeInTheDocument();
     expect(within(roomPreview).getByText('PQQDJK')).toBeInTheDocument();
     expect(within(roomPreview).getByText('١٢ لاعبًا')).toBeInTheDocument();
   });
