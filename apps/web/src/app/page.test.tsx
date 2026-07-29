@@ -24,7 +24,7 @@ describe('HomePage', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'الجولة تبدأ من رمز واحد.' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('الغرف المباشرة جاهزة')).toBeInTheDocument();
+    expect(screen.getByText('✨ تجربة مسابقات عربية فاخرة')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /أنشئ أول تحد/ })).toHaveAttribute(
       'href',
       '/quizzes/new',
