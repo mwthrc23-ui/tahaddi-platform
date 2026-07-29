@@ -39,11 +39,90 @@ export const INSTANT_GAME_META: Record<InstantGameMode, InstantGameMeta> = {
 export const INSTANT_GAME_ORDER: InstantGameMode[] = ['memory-flash', 'word-code', 'color-rush'];
 
 export const MEMORY_SYMBOL_BANK = [
-  { value: '⚡', label: 'برق' },
-  { value: '★', label: 'نجمة' },
-  { value: '◆', label: 'ماسة' },
-  { value: '●', label: 'دائرة' },
+  { value: '⚡', label: 'برق', color: '#facc15' },
+  { value: '★', label: 'نجمة', color: '#fbbf24' },
+  { value: '◆', label: 'ماسة', color: '#a78bfa' },
+  { value: '●', label: 'دائرة', color: '#34d399' },
+  { value: '🔥', label: 'لهب', color: '#f97316' },
+  { value: '💎', label: 'جوهرة', color: '#22d3ee' },
+  { value: '🌸', label: 'زهرة', color: '#fb7185' },
+  { value: '🌙', label: 'قمر', color: '#c4b5fd' },
+  { value: '🎯', label: 'هدف', color: '#f87171' },
+  { value: '🏆', label: 'كأس', color: '#fcd34d' },
+  { value: '🌈', label: 'قوس قزح', color: '#f472b6' },
+  { value: '⚓', label: 'مرساة', color: '#94a3b8' },
 ] as const;
+
+export type MemoryDifficulty = 'easy' | 'medium' | 'hard' | 'expert' | 'legendary';
+
+export type MemorySettings = {
+  difficulty: MemoryDifficulty;
+  mode: 'solo' | 'versus';
+  previewBaseMs: number;
+  previewStepMs: number;
+  startingLives: number;
+  totalSeconds: number;
+  pointsPerSymbol: number;
+};
+
+export const MEMORY_DIFFICULTIES: Record<MemoryDifficulty, MemorySettings> = {
+  easy: {
+    difficulty: 'easy',
+    mode: 'solo',
+    previewBaseMs: 1000,
+    previewStepMs: 180,
+    startingLives: 5,
+    totalSeconds: 90,
+    pointsPerSymbol: 20,
+  },
+  medium: {
+    difficulty: 'medium',
+    mode: 'solo',
+    previewBaseMs: 850,
+    previewStepMs: 160,
+    startingLives: 4,
+    totalSeconds: 75,
+    pointsPerSymbol: 25,
+  },
+  hard: {
+    difficulty: 'hard',
+    mode: 'solo',
+    previewBaseMs: 700,
+    previewStepMs: 140,
+    startingLives: 3,
+    totalSeconds: 60,
+    pointsPerSymbol: 30,
+  },
+  expert: {
+    difficulty: 'expert',
+    mode: 'solo',
+    previewBaseMs: 550,
+    previewStepMs: 120,
+    startingLives: 2,
+    totalSeconds: 50,
+    pointsPerSymbol: 35,
+  },
+  legendary: {
+    difficulty: 'legendary',
+    mode: 'solo',
+    previewBaseMs: 400,
+    previewStepMs: 100,
+    startingLives: 1,
+    totalSeconds: 40,
+    pointsPerSymbol: 40,
+  },
+};
+
+export const MEMORY_MODE_META: Record<MemorySettings['mode'], { label: string; description: string }> = {
+  solo: {
+    label: 'لاعب منفرد',
+    description: 'تحدَّ ذاكرتك وحطّم الرقم القياسي.',
+  },
+  versus: {
+    label: 'ضد صديق',
+    description: 'تنافس مع صديق على نفس الجهاز: من يصل لمرحلة أعلى؟',
+  },
+};
 
 export const WORD_CODE_BANK = [
   { word: 'السعودية', scrambled: 'دوعسلاية', hint: 'وطننا الغالي' },

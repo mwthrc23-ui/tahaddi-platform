@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { SPECIAL_GAME_META, SPECIAL_GAME_ORDER, UPCOMING_SPECIAL_GAMES } from '@tahaddi/domain';
-import { Fragment } from 'react';
-import { CcButton, CcFlag, CcPrompt, CcRule } from '@/components/claude-code';
+import { CcButton } from '@/components/claude-code';
 import { INSTANT_GAME_META, INSTANT_GAME_ORDER } from '@/components/instant-games';
 import { SiteLayout } from '@/components/layout';
 import { getCurrentSession } from '@/lib/auth/session';

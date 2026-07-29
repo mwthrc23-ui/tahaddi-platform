@@ -102,10 +102,8 @@ export const authOptions: NextAuthOptions = {
       return storedUser?.status !== 'SUSPENDED' && storedUser?.status !== 'DELETED';
     },
     async jwt({ token, user }) {
-      if (user) {
+      if (user?.id) {
         token.id = user.id;
-        token.role = (user as { role?: string }).role ?? 'USER';
-        token.status = (user as { status?: string }).status ?? 'ACTIVE';
         const issuedTokenVersion = (user as { tokenVersion?: number }).tokenVersion;
         token.tokenVersion =
           issuedTokenVersion ??
@@ -123,8 +121,6 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = String(token.id ?? '');
-        session.user.role = String(token.role ?? 'USER');
-        session.user.status = String(token.status ?? 'ACTIVE');
         session.user.tokenVersion =
           typeof token.tokenVersion === 'number' ? token.tokenVersion : -1;
       }

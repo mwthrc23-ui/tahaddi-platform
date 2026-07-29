@@ -2,7 +2,7 @@ import { Radio, Users, Zap, Trophy } from 'lucide-react';
 import { startLiveSession } from '@/app/live/actions';
 import { HostLayout } from '@/components/layout';
 import { HostQuestionViewer, LiveHostExperience } from '@/components/live';
-import { Badge, Button, ButtonLink, Card, EmptyState } from '@/components/ui';
+import { Button, ButtonLink, EmptyState } from '@/components/ui';
 import { getPrismaClient } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
 import { createHostLiveAccessToken } from '@/lib/live/access-token';
