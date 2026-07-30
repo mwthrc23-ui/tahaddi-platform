@@ -8,6 +8,7 @@ import {
   GripVertical,
   ListPlus,
   Save,
+  Search,
   Settings2,
   Trash2,
 } from 'lucide-react';
@@ -99,6 +100,7 @@ export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: 
   const [saveFailed, setSaveFailed] = useState(false);
   const [savingQuiz, setSavingQuiz] = useState(false);
   const [savedRoomCode, setSavedRoomCode] = useState('');
+  const [questionQuery, setQuestionQuery] = useState('');
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -210,6 +212,17 @@ export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: 
   };
 
   const selected = new Set(draft.questions.map((question) => question.id));
+  const filteredAvailableQuestions = useMemo(() => {
+    const query = questionQuery.trim().toLocaleLowerCase('ar');
+    if (!query) return availableQuestions;
+    return availableQuestions.filter((question) =>
+      `${question.prompt} ${question.category}`.toLocaleLowerCase('ar').includes(query),
+    );
+  }, [availableQuestions, questionQuery]);
+  const availableQuestionCount =
+    filteredAvailableQuestions.length === 1
+      ? 'سؤال واحد'
+      : `${filteredAvailableQuestions.length.toLocaleString('ar-SA')} سؤال`;
 
   return (
     <div className="quiz-builder" dir="rtl">
@@ -425,11 +438,32 @@ export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: 
           <h2>
             <CheckCircle2 /> أسئلة متاحة من بنك الأسئلة
           </h2>
+          {availableQuestions.length > 0 && (
+            <div className="quiz-builder-bank-tools">
+              <Input
+                type="search"
+                label="ابحث في بنك الأسئلة"
+                placeholder="ابحث بالعنوان أو الفئة"
+                value={questionQuery}
+                onChange={(event) => setQuestionQuery(event.target.value)}
+              />
+              <p
+                className="muted quiz-builder-results"
+                role="status"
+                aria-label="نتائج بنك الأسئلة"
+              >
+                <Search aria-hidden="true" />
+                {availableQuestionCount}
+              </p>
+            </div>
+          )}
           {availableQuestions.length === 0 ? (
             <p className="muted">لا توجد أسئلة منشورة أو مسودات في بنك الأسئلة بعد.</p>
+          ) : filteredAvailableQuestions.length === 0 ? (
+            <p className="muted">لا توجد أسئلة مطابقة لعبارة البحث.</p>
           ) : (
             <div className="quiz-builder-list">
-              {availableQuestions.map((question) => (
+              {filteredAvailableQuestions.map((question) => (
                 <article key={question.id} className="list-item">
                   <div>
                     <strong>{question.prompt}</strong>

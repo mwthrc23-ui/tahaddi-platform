@@ -65,6 +65,7 @@ export function JoinQuizForm({
       )}
       <Input
         id="player-name"
+        name="playerName"
         label="اسم اللاعب"
         className="join-field"
         placeholder="الاسم الذي سيظهر في الغرفة"
@@ -75,9 +76,11 @@ export function JoinQuizForm({
         }}
         autoComplete="nickname"
         maxLength={40}
+        required
       />
       <Input
         id="room-code"
+        name="roomCode"
         label="رمز الغرفة"
         className="join-field"
         placeholder="الرمز المرسل من المضيف"
@@ -92,6 +95,7 @@ export function JoinQuizForm({
         spellCheck={false}
         maxLength={9}
         error={error || undefined}
+        required
       />
       <Button size="lg" type="submit" loading={joining} disabled={joining}>
         انضم الآن
