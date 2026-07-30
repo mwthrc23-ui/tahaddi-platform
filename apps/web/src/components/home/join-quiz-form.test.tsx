@@ -29,6 +29,15 @@ describe('JoinQuizForm', () => {
     mockedJoin.mockReset();
   });
 
+  it('يعرّف حقول الانضمام المطلوبة بأسماء مناسبة للنماذج', () => {
+    render(<JoinQuizForm />);
+
+    expect(screen.getByLabelText('اسم اللاعب')).toHaveAttribute('name', 'playerName');
+    expect(screen.getByLabelText('اسم اللاعب')).toBeRequired();
+    expect(screen.getByLabelText('رمز الغرفة')).toHaveAttribute('name', 'roomCode');
+    expect(screen.getByLabelText('رمز الغرفة')).toBeRequired();
+  });
+
   it('لا يضع رمز وصول لاعب القاتل في عنوان الصفحة', async () => {
     mockedJoin.mockResolvedValue({
       status: 'success',
