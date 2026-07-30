@@ -136,6 +136,52 @@ describe('GameService live safety', () => {
     expect(snapshot?.leaderboard).toEqual([]);
   });
 
+  it('includes the real correct-answer count in the host leaderboard', async () => {
+    const session = makeSession();
+    session.participants[0].correctCount = 7;
+    const { service } = setup(session);
+
+    const snapshot = await service.getSnapshot({
+      sessionId: 'session-1',
+      subjectId: 'host-1',
+      role: 'host',
+    });
+
+    expect(snapshot?.leaderboard[0]).toMatchObject({
+      id: 'player-1',
+      correctAnswers: 7,
+    });
+  });
+
+  it('restores the finished leaderboard for a reconnecting player', async () => {
+    const session = makeSession();
+    session.participants[0].correctCount = 7;
+    session.participants[0].score = 7_250;
+    const { service, redis } = setup(session);
+    redis.loadGameState.mockResolvedValue({
+      sessionId: 'session-1',
+      roomCode: 'ABC123',
+      phase: 'FINISHED',
+      currentQuestionPosition: 0,
+      questionStartedAt: null,
+      questionEndsAt: null,
+    });
+
+    const snapshot = await service.getSnapshot({
+      sessionId: 'session-1',
+      subjectId: 'player-1',
+      role: 'player',
+    });
+
+    expect(snapshot?.leaderboard).toEqual([
+      expect.objectContaining({
+        id: 'player-1',
+        score: 7_250,
+        correctAnswers: 7,
+      }),
+    ]);
+  });
+
   it('rejects a late answer using server time', async () => {
     const { service, redis, io, database } = setup();
     redis.loadGameState.mockResolvedValue({

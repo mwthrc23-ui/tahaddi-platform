@@ -71,6 +71,7 @@ const liveSessionSelect = {
       id: true,
       displayName: true,
       score: true,
+      correctCount: true,
       status: true,
       joinedAt: true,
       lastSeenAt: true,
@@ -112,6 +113,7 @@ function toLeaderboard(
     score: participant.score,
     streak: 0,
     rank: index + 1,
+    correctAnswers: participant.correctCount,
   }));
 }
 

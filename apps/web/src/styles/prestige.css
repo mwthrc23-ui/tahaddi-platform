@@ -246,8 +246,7 @@ body::before {
   border-block-start: 1px solid var(--border);
   padding-block: 3.5rem;
   background:
-    linear-gradient(90deg, rgb(255 183 77 / 0.04), transparent 46%, rgb(255 111 0 / 0.04)),
-    #06020a;
+    linear-gradient(90deg, rgb(255 183 77 / 0.04), transparent 46%, rgb(255 111 0 / 0.04)), #06020a;
   isolation: isolate;
 }
 
@@ -427,8 +426,7 @@ body::before {
   border: 1px solid var(--border-glass);
   border-radius: calc(var(--radius-xl) + 0.3rem);
   background:
-    linear-gradient(135deg, rgb(255 183 77 / 0.08), transparent 50%),
-    var(--surface-glass-strong);
+    linear-gradient(135deg, rgb(255 183 77 / 0.08), transparent 50%), var(--surface-glass-strong);
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(10px) saturate(112%);
   position: relative;
@@ -485,8 +483,7 @@ body::before {
   border-radius: var(--radius-lg);
   background:
     repeating-linear-gradient(135deg, transparent 0 12px, rgb(255 183 77 / 0.035) 12px 13px),
-    linear-gradient(180deg, rgb(255 183 77 / 0.06), transparent),
-    rgb(16 8 26 / 0.62);
+    linear-gradient(180deg, rgb(255 183 77 / 0.06), transparent), rgb(16 8 26 / 0.62);
   backdrop-filter: blur(8px);
 }
 
@@ -576,8 +573,7 @@ body::before {
   background:
     repeating-linear-gradient(135deg, transparent 0 18px, rgb(255 183 77 / 0.045) 18px 19px),
     linear-gradient(90deg, transparent 0 14%, rgb(255 183 77 / 0.22) 14% 15%, transparent 15% 100%),
-    linear-gradient(180deg, rgb(255 183 77 / 0.14), transparent 44%),
-    var(--surface-glass-strong);
+    linear-gradient(180deg, rgb(255 183 77 / 0.14), transparent 44%), var(--surface-glass-strong);
   backdrop-filter: blur(14px) saturate(112%);
   box-shadow:
     var(--shadow-lg),
@@ -768,7 +764,8 @@ body::before {
 }
 
 @keyframes answer-sweep {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0) scaleX(0.72);
     opacity: 0.28;
   }
@@ -903,8 +900,7 @@ body::before {
   border-block: 1px solid rgb(255 183 77 / 0.16);
   background:
     radial-gradient(circle at 60% 42%, rgb(255 143 0 / 0.09), transparent 24rem),
-    repeating-linear-gradient(45deg, transparent 0 18px, rgb(255 183 77 / 0.025) 18px 20px),
-    #06020a;
+    repeating-linear-gradient(45deg, transparent 0 18px, rgb(255 183 77 / 0.025) 18px 20px), #06020a;
 }
 
 .leaderboard-preview {
@@ -915,8 +911,7 @@ body::before {
   border-radius: var(--radius-xl);
   background:
     repeating-linear-gradient(135deg, transparent 0 13px, rgb(255 183 77 / 0.04) 13px 14px),
-    linear-gradient(145deg, rgb(255 183 77 / 0.1), transparent 52%),
-    var(--surface-glass-strong);
+    linear-gradient(145deg, rgb(255 183 77 / 0.1), transparent 52%), var(--surface-glass-strong);
   box-shadow:
     var(--shadow-lg),
     inset 0 0 0 1px rgb(255 255 255 / 0.12),
@@ -1088,8 +1083,7 @@ body::before {
   overflow: hidden;
   background:
     radial-gradient(circle at 18% 22%, rgb(255 143 0 / 0.1), transparent 24rem),
-    radial-gradient(circle at 84% 78%, rgb(255 183 77 / 0.08), transparent 22rem),
-    var(--background);
+    radial-gradient(circle at 84% 78%, rgb(255 183 77 / 0.08), transparent 22rem), var(--background);
 }
 
 .auth-page::before {
@@ -1186,9 +1180,7 @@ table {
 .live-stage,
 .live-player-shell,
 .host-stage {
-  background:
-    radial-gradient(circle at 50% 20%, rgb(255 143 0 / 0.08), transparent 30rem),
-    #06020a;
+  background: radial-gradient(circle at 50% 20%, rgb(255 143 0 / 0.08), transparent 30rem), #06020a;
 }
 
 .live-question-card,
@@ -1216,8 +1208,7 @@ table {
   border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
   border-block-end: 0;
   border-radius: 1.25rem 1.25rem 0 0;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent) 14%, #06020a), #06020a);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 14%, #06020a), #06020a);
   box-shadow:
     inset 0 1px color-mix(in srgb, var(--accent) 46%, transparent),
     0 -1rem 3.5rem color-mix(in srgb, var(--accent) 12%, transparent);
@@ -1464,7 +1455,8 @@ table {
 }
 
 @keyframes prestige-breathe {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.68;
     transform: scale(0.92);
   }
@@ -1656,5 +1648,531 @@ table {
 
   .glow-two {
     animation: none;
+  }
+}
+
+/* Live finale owns a wider cinematic podium than the reusable leaderboard card. */
+.finale-summary {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.finale-stage.is-final .finale-header h1 {
+  font-size: clamp(2.4rem, 6vw, 5.25rem);
+  line-height: 1.08;
+}
+
+.finale-podium-panel .podium-stage {
+  min-block-size: clamp(31rem, 55vw, 42rem);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.finale-podium-panel .podium-wrap {
+  position: static;
+  inset: auto;
+  display: grid;
+  grid-template-areas: 'second first third';
+  grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.12fr) minmax(0, 0.94fr);
+  inline-size: 100%;
+  min-block-size: 29rem;
+  align-items: end;
+  gap: clamp(0.65rem, 2vw, 1.5rem);
+  padding: 2.5rem 0 0;
+}
+
+.finale-podium-panel .podium-player {
+  inline-size: 100%;
+}
+
+.finale-podium-panel .podium-1 {
+  --podium-color: #f5b94c;
+  grid-area: first;
+}
+
+.finale-podium-panel .podium-2 {
+  --podium-color: #d7dce5;
+  grid-area: second;
+}
+
+.finale-podium-panel .podium-3 {
+  --podium-color: #c87544;
+  grid-area: third;
+}
+
+.finale-podium-panel .podium-profile {
+  inline-size: 100%;
+  min-block-size: auto;
+  margin-block-end: 1rem;
+  padding: 0;
+  background: transparent;
+}
+
+.finale-podium-panel .podium-player > .podium-rank-badge {
+  inline-size: 3rem;
+  min-block-size: 3rem;
+  block-size: 3rem;
+  margin-block-end: 0.75rem;
+  padding: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--podium-color) 14%, #10081a);
+}
+
+.finale-podium-panel .podium-rank-badge > strong {
+  color: var(--podium-color);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.finale-podium-panel .podium-2 > .podium-rank-badge,
+.finale-podium-panel .podium-3 > .podium-rank-badge {
+  position: absolute;
+  z-index: 3;
+  inset-block-start: 2.8rem;
+  inset-inline-end: calc(50% - 2.9rem);
+  inline-size: 2rem;
+  min-block-size: 2rem;
+  block-size: 2rem;
+  margin: 0;
+  border-width: 1px;
+  box-shadow: 0 0 1.25rem color-mix(in srgb, var(--podium-color) 32%, transparent);
+}
+
+.finale-podium-panel .podium-profile > .podium-score {
+  color: color-mix(in srgb, var(--podium-color) 84%, white);
+  font-size: clamp(0.78rem, 1.6vw, 0.98rem);
+  font-weight: 800;
+}
+
+.finale-podium-panel .podium-profile > .podium-correct {
+  display: inline-flex;
+  margin-block-start: 0.35rem;
+  border: 1px solid rgb(126 231 135 / 0.28);
+  border-radius: var(--radius-full);
+  background: rgb(38 103 52 / 0.3);
+  padding: 0.3rem 0.65rem;
+  color: #a8f2ae;
+  font-size: clamp(0.72rem, 1.3vw, 0.85rem);
+}
+
+.finale-podium-panel .podium-1 .podium-block {
+  min-block-size: clamp(15rem, 31vw, 21rem);
+}
+
+.finale-podium-panel .podium-2 .podium-block {
+  min-block-size: clamp(11.5rem, 23vw, 16rem);
+}
+
+.finale-podium-panel .podium-3 .podium-block {
+  min-block-size: clamp(9.5rem, 19vw, 13rem);
+}
+
+@media (min-width: 48rem) {
+  .finale-header {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .finale-header > div:first-child {
+    max-inline-size: min(100%, 42rem);
+  }
+
+  .finale-actions {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+  }
+}
+
+@media (max-width: 40rem) {
+  .finale-podium-panel .podium-stage {
+    min-block-size: 25rem;
+  }
+
+  .finale-podium-panel .podium-wrap {
+    min-block-size: 23rem;
+    gap: 0.3rem;
+    padding-block-start: 1.5rem;
+  }
+
+  .finale-podium-panel .podium-profile {
+    margin-block-end: 0.55rem;
+  }
+
+  .finale-podium-panel .podium-profile > .podium-correct {
+    padding: 0.2rem 0.45rem;
+  }
+
+  .finale-podium-panel .podium-1 .podium-block {
+    min-block-size: 10.5rem;
+  }
+
+  .finale-podium-panel .podium-2 .podium-block {
+    min-block-size: 8rem;
+  }
+
+  .finale-podium-panel .podium-3 .podium-block {
+    min-block-size: 6.75rem;
+  }
+}
+
+.finale-stage.is-final {
+  gap: 0;
+  min-block-size: 100svh;
+  padding-block-start: clamp(1rem, 2.5vw, 2rem);
+  background:
+    linear-gradient(180deg, transparent 0 58rem, #08040d 70rem),
+    url('/results-stage-bg.webp') top center / auto 65rem no-repeat,
+    #050208;
+}
+
+.finale-header.finale-header-final {
+  position: relative;
+  display: block;
+  min-block-size: clamp(14.5rem, 23vw, 18rem);
+  text-align: center;
+}
+
+.finale-brand {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #fff5dc;
+  font-size: 1.2rem;
+}
+
+.finale-brand > span {
+  display: grid;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  place-items: center;
+  border: 1px solid rgb(245 185 76 / 0.36);
+  border-radius: 0.85rem;
+  background: rgb(245 185 76 / 0.08);
+  color: #f5b94c;
+}
+
+.finale-brand svg {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+}
+
+.finale-round-meta {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-align: start;
+}
+
+.finale-round-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgb(102 220 141 / 0.3);
+  border-radius: var(--radius-full);
+  background: rgb(32 93 54 / 0.22);
+  padding: 0.48rem 0.8rem;
+  color: #c4f3d0;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.finale-round-meta svg {
+  inline-size: 0.95rem;
+  block-size: 0.95rem;
+}
+
+.finale-round-meta p {
+  max-inline-size: 26ch;
+  color: #d9a94c;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.finale-hero-copy {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  inline-size: min(100%, 58rem);
+  margin-inline: auto;
+  padding-block-start: clamp(2.2rem, 3vw, 3.5rem);
+}
+
+.finale-overline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  color: #e8b44b;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.finale-overline > i {
+  inline-size: clamp(2.25rem, 5vw, 4.25rem);
+  block-size: 1px;
+  background: linear-gradient(90deg, transparent, #f5b94c);
+}
+
+.finale-overline > i:last-child {
+  background: linear-gradient(90deg, #f5b94c, transparent);
+}
+
+.finale-stage.is-final .finale-hero-copy h1 {
+  max-inline-size: 10ch;
+  margin: 0;
+  color: #fff7e2;
+  font-size: clamp(3rem, 7.3vw, 7rem);
+  line-height: 0.98;
+  text-wrap: balance;
+  text-shadow:
+    0 0 1.4rem rgb(245 185 76 / 0.22),
+    0 0 3.5rem rgb(245 185 76 / 0.12);
+}
+
+.finale-hero-copy > p {
+  max-inline-size: 60ch;
+  margin: 0;
+  color: #d7ad68;
+  font-size: clamp(0.86rem, 1.7vw, 1.05rem);
+}
+
+.finale-header-final > .finale-actions {
+  position: absolute;
+  inset-block-start: 3.7rem;
+  inset-inline-end: 0;
+}
+
+.finale-header-final > .finale-actions .button {
+  min-block-size: 2.35rem;
+  border-color: rgb(245 185 76 / 0.18);
+  padding-inline: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.finale-stage.is-final .finale-podium-panel {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.finale-stage.is-final .finale-podium-panel::before {
+  display: none;
+}
+
+.finale-stage.is-final .podium-holo-field {
+  display: none;
+}
+
+.finale-stage.is-final .finale-podium-panel .podium-stage {
+  min-block-size: clamp(34rem, 58vw, 44rem);
+}
+
+.finale-stage.is-final .finale-podium-panel .podium-wrap {
+  min-block-size: clamp(32rem, 54vw, 41rem);
+  padding-block-start: 0;
+}
+
+.finale-stage.is-final .finale-podium-panel .podium-player > .podium-block {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--podium-color) 58%, white);
+  background:
+    linear-gradient(110deg, transparent 26%, rgb(255 255 255 / 0.13) 48%, transparent 68%),
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--podium-color) 34%, #2a1437),
+      #16091f 54%,
+      #09040e
+    );
+  color: color-mix(in srgb, var(--podium-color) 84%, white);
+  box-shadow:
+    0 -0.45rem 2.5rem color-mix(in srgb, var(--podium-color) 20%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    inset 0 -2rem 3rem rgb(0 0 0 / 0.32);
+}
+
+.finale-stage.is-final .podium-3 {
+  animation: finale-podium-rise 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.finale-stage.is-final .podium-2 {
+  animation: finale-podium-rise 680ms 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.finale-stage.is-final .podium-1 {
+  animation: finale-winner-rise 900ms 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.finale-reveal-correct {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-block-start: var(--space-3);
+  border: 1px solid rgb(126 231 135 / 0.28);
+  border-radius: var(--radius-full);
+  background: rgb(38 103 52 / 0.26);
+  padding: 0.45rem 0.8rem;
+  color: #a8f2ae;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.finale-reveal-correct svg {
+  inline-size: 1rem;
+  block-size: 1rem;
+}
+
+.finale-personal-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
+
+.finale-ranking-result {
+  display: grid;
+  justify-items: end;
+  gap: 0.15rem;
+  white-space: nowrap;
+}
+
+.finale-ranking-result small {
+  color: #9de3a4;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.finale-ranking-result b {
+  color: var(--gold);
+}
+
+.finale-celebration i {
+  background: #f5b94c;
+  box-shadow: 0 0 0.8rem rgb(245 185 76 / 0.5);
+}
+
+.finale-celebration i:nth-child(3n + 2) {
+  background: #e4e8f0;
+}
+
+.finale-celebration i:nth-child(3n) {
+  background: #b86f43;
+}
+
+@keyframes finale-podium-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8rem) scale(0.88);
+    filter: blur(0.4rem);
+  }
+  70% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes finale-winner-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10rem) scale(0.82);
+    filter: blur(0.5rem);
+  }
+  68% {
+    opacity: 1;
+    transform: translateY(-0.7rem) scale(1.035);
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@media (max-width: 40rem) {
+  .finale-stage.is-final {
+    background-size:
+      auto,
+      auto 52rem;
+  }
+
+  .finale-header.finale-header-final {
+    min-block-size: 17rem;
+  }
+
+  .finale-brand {
+    font-size: 1rem;
+  }
+
+  .finale-brand > span {
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+  }
+
+  .finale-round-meta {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .finale-round-meta p {
+    max-inline-size: 15ch;
+    font-size: 0.7rem;
+  }
+
+  .finale-hero-copy {
+    padding-block-start: 4.25rem;
+  }
+
+  .finale-stage.is-final .finale-hero-copy h1 {
+    font-size: clamp(2.65rem, 14vw, 4.25rem);
+  }
+
+  .finale-hero-copy > p {
+    max-inline-size: 34ch;
+  }
+
+  .finale-header-final > .finale-actions {
+    inset-block-start: 2.75rem;
+  }
+
+  .finale-stage.is-final .finale-podium-panel .podium-stage {
+    min-block-size: 27rem;
+  }
+
+  .finale-stage.is-final .finale-podium-panel .podium-wrap {
+    min-block-size: 25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finale-stage .finale-summary,
+  .finale-stage .finale-intro,
+  .finale-stage .finale-reveal {
+    animation: none;
+  }
+
+  .finale-stage .finale-celebration {
+    display: none;
+  }
+
+  .finale-stage.is-final .podium-player {
+    animation: none;
+    filter: none;
+    transform: none;
   }
 }

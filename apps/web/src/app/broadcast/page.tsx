@@ -70,6 +70,7 @@ export default async function Page({
             name: participant.displayName,
             score: participant.score,
             rank: index + 1,
+            correctAnswers: participant.correctCount,
           }))}
           roomCode={session.roomCode}
           quizTitle={session.quiz.title}
