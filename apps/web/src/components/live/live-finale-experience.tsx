@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Medal, RotateCcw, SkipForward, Sparkles, Trophy } from 'lucide-react';
+import { Check, Medal, RotateCcw, SkipForward, Trophy } from 'lucide-react';
 import { WinnerPodium } from '@/components/quiz';
 import { Button } from '@/components/ui';
 
@@ -129,26 +129,58 @@ export function LiveFinaleExperience({
   };
 
   return (
-    <section className="finale-stage" aria-labelledby="finale-title">
-      <header className="finale-header">
-        <div>
-          <span className="eyebrow">{roomCode ? `غرفة ${roomCode}` : 'لحظة الحسم'}</span>
-          <h1 id="finale-title">{isFinal ? 'النتيجة النهائية' : 'إعلان الفائزين'}</h1>
-          {quizTitle && <p>{quizTitle}</p>}
-        </div>
-        <div className="finale-actions">
-          {!isFinal ? (
-            <Button type="button" variant="secondary" onClick={skipToResult}>
-              <SkipForward />
-              عرض النتيجة الآن
-            </Button>
-          ) : (
-            <Button type="button" variant="secondary" onClick={replay}>
-              <RotateCcw />
-              إعادة التتويج
-            </Button>
-          )}
-        </div>
+    <section className={`finale-stage${isFinal ? ' is-final' : ''}`} aria-labelledby="finale-title">
+      <header className={`finale-header${isFinal ? ' finale-header-final' : ''}`}>
+        {isFinal ? (
+          <>
+            <div className="finale-brand" aria-label="تحدّي">
+              <span>
+                <Trophy aria-hidden="true" />
+              </span>
+              <strong>تحدّي</strong>
+            </div>
+            <div className="finale-round-meta">
+              <span>
+                <Check aria-hidden="true" />
+                نتيجة الجولة
+              </span>
+              <p>{quizTitle ?? (roomCode ? `غرفة ${roomCode}` : 'الجولة النهائية')}</p>
+            </div>
+            <div className="finale-hero-copy">
+              <span className="finale-overline">
+                <i aria-hidden="true" />
+                النتيجة النهائية
+                <i aria-hidden="true" />
+              </span>
+              <h1 id="finale-title" aria-label="والصدارة تكتب اسمها">
+                والصدارة
+                <br />
+                تكتب اسمها
+              </h1>
+              <p>اكتملت الجولة، وحان وقت تتويج الأبطال وعرض الترتيب النهائي بوضوح.</p>
+            </div>
+            <div className="finale-actions">
+              <Button type="button" variant="secondary" onClick={replay}>
+                <RotateCcw />
+                إعادة التتويج
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <span className="eyebrow">{roomCode ? `غرفة ${roomCode}` : 'لحظة الحسم'}</span>
+              <h1 id="finale-title">إعلان الفائزين</h1>
+              {quizTitle && <p>{quizTitle}</p>}
+            </div>
+            <div className="finale-actions">
+              <Button type="button" variant="secondary" onClick={skipToResult}>
+                <SkipForward />
+                عرض النتيجة الآن
+              </Button>
+            </div>
+          </>
+        )}
       </header>
 
       {rankedPlayers.length === 0 ? (
@@ -165,13 +197,7 @@ export function LiveFinaleExperience({
             ))}
           </div>
           <div className="finale-podium-panel">
-            <div className="finale-section-title">
-              <Sparkles aria-hidden="true" />
-              <div>
-                <span>اكتمل التتويج</span>
-                <h2>منصة الأبطال</h2>
-              </div>
-            </div>
+            <h2 className="sr-only">منصة الأبطال</h2>
             <WinnerPodium winners={winners} />
           </div>
 
@@ -188,6 +214,12 @@ export function LiveFinaleExperience({
                   <span>النقاط</span>
                   <b>{personalResult.score.toLocaleString('ar-SA')}</b>
                 </div>
+                {personalResult.correctAnswers !== undefined && (
+                  <div>
+                    <span>إجابات صحيحة</span>
+                    <b>{personalResult.correctAnswers.toLocaleString('ar-SA')}</b>
+                  </div>
+                )}
                 <div>
                   <span>المتسابقون</span>
                   <b>{rankedPlayers.length.toLocaleString('ar-SA')}</b>
@@ -206,7 +238,12 @@ export function LiveFinaleExperience({
                 >
                   <span>{player.rank.toLocaleString('ar-SA')}</span>
                   <strong>{player.name}</strong>
-                  <b>{player.score.toLocaleString('ar-SA')}</b>
+                  <div className="finale-ranking-result">
+                    {player.correctAnswers !== undefined && (
+                      <small>{player.correctAnswers.toLocaleString('ar-SA')} صحيحة</small>
+                    )}
+                    <b>{player.score.toLocaleString('ar-SA')} نقطة</b>
+                  </div>
                 </li>
               ))}
             </ol>
@@ -227,6 +264,15 @@ export function LiveFinaleExperience({
             <span className="finale-avatar">{getInitials(revealedPlayer.name)}</span>
             <h2>{revealedPlayer.name}</h2>
             <p>{revealedPlayer.score.toLocaleString('ar-SA')} نقطة</p>
+            {revealedPlayer.correctAnswers !== undefined && (
+              <span
+                className="finale-reveal-correct"
+                aria-label={`${revealedPlayer.correctAnswers} إجابة صحيحة`}
+              >
+                <Check aria-hidden="true" />
+                {revealedPlayer.correctAnswers.toLocaleString('ar-SA')} إجابة صحيحة
+              </span>
+            )}
           </div>
         </div>
       ) : (

@@ -495,11 +495,17 @@ export function WinnerPodium({
           const rank = index + 1;
           const meta = rankMeta[rank as keyof typeof rankMeta];
           const CrownIcon = meta.CrownIcon;
-          const correctAnswers = winner.correctAnswers ?? 0;
           return (
             <li className={cn('podium-player', `podium-${rank}`)} key={`${rank}-${winner.name}`}>
-              <div className="podium-rank-badge" style={{ '--rank-accent': meta.accent } as React.CSSProperties}>
-                <CrownIcon aria-hidden="true" />
+              <div
+                className="podium-rank-badge"
+                style={{ '--rank-accent': meta.accent } as React.CSSProperties}
+              >
+                {rank === 1 ? (
+                  <CrownIcon aria-hidden="true" />
+                ) : (
+                  <strong aria-hidden="true">{rank}</strong>
+                )}
                 <span className="sr-only">{`المركز ${meta.label}`}</span>
               </div>
               <div className="podium-profile">
@@ -508,10 +514,16 @@ export function WinnerPodium({
                 <span className="podium-score" dir="ltr">
                   {winner.score.toLocaleString('ar-SA')} نقطة
                 </span>
-                <span className="podium-correct" dir="ltr" aria-label={`${correctAnswers} إجابة صحيحة`}>
-                  <Check aria-hidden="true" />
-                  {correctAnswers.toLocaleString('ar-SA')}
-                </span>
+                {winner.correctAnswers !== undefined && (
+                  <span
+                    className="podium-correct"
+                    dir="ltr"
+                    aria-label={`${winner.correctAnswers} إجابة صحيحة`}
+                  >
+                    <Check aria-hidden="true" />
+                    {winner.correctAnswers.toLocaleString('ar-SA')}
+                  </span>
+                )}
               </div>
               <div className="podium-block">
                 <strong aria-hidden="true">{rank}</strong>

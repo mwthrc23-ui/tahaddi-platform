@@ -54,7 +54,7 @@ describe('LivePlayerExperience final results', () => {
     );
     act(() => vi.runAllTimers());
 
-    expect(screen.getByRole('heading', { name: 'النتيجة النهائية' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'والصدارة تكتب اسمها' })).toBeInTheDocument();
     expect(screen.getByLabelText('منصة الفائزين')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'ترتيب المتسابقين' })).toBeInTheDocument();
     expect(screen.getAllByText('سارة العتيبي')).toHaveLength(2);
@@ -76,7 +76,7 @@ describe('LivePlayerExperience final results', () => {
     );
     act(() => vi.runAllTimers());
 
-    expect(screen.getByRole('heading', { name: 'النتيجة النهائية' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'والصدارة تكتب اسمها' })).toBeInTheDocument();
     expect(screen.getByLabelText('منصة الفائزين')).toBeInTheDocument();
     expect(screen.getAllByText('سارة العتيبي')).toHaveLength(2);
     expect(screen.getAllByText('محمد القحطاني')).toHaveLength(2);

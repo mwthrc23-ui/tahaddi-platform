@@ -23,6 +23,7 @@ export type PlayerInfo = {
   score: number;
   streak: number;
   rank: number;
+  correctAnswers?: number;
 };
 
 export type QuestionOptionPayload = {

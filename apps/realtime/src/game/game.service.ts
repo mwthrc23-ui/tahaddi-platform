@@ -153,6 +153,7 @@ export class GameService {
         score: participant.score,
         streak: participant.correctCount,
         rank: index + 1,
+        correctAnswers: participant.correctCount,
       }));
   }
 
@@ -320,7 +321,10 @@ export class GameService {
           ? this.toQuestionPayload(session, state, current)
           : null,
       reveal,
-      leaderboard: identity.role === 'host' ? leaderboard : [],
+      leaderboard:
+        identity.role === 'host' || state.phase === 'FINISHED'
+          ? leaderboard
+          : [],
       participantCount: session.participants.filter(
         (participant) => participant.status === 'CONNECTED',
       ).length,
