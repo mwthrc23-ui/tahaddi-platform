@@ -201,6 +201,7 @@ export class GameService {
       questionStartedAt: startedAt,
       questionEndsAt:
         startedAt && question ? startedAt + question.timeLimit * 1_000 : null,
+      transitionDueAt: null,
     };
     await this.redis.saveGameState(state);
     if (phase === 'QUESTION' && state.questionEndsAt) {
@@ -287,6 +288,16 @@ export class GameService {
       session = await this.loadSession(identity.sessionId);
       if (!session) return null;
       state = (await this.redis.loadGameState(session.id)) ?? state;
+    } else if (state.phase === 'QUESTION' && question && state.questionEndsAt) {
+      this.scheduleReveal(session.id, question.id, state.questionEndsAt);
+    }
+
+    if (state.phase === 'LEADERBOARD') {
+      this.scheduleLeaderboardAdvance(
+        session.id,
+        session.hostId,
+        state.transitionDueAt ?? Date.now(),
+      );
     }
 
     const current = this.currentQuestion(
@@ -370,6 +381,7 @@ export class GameService {
         currentQuestionPosition: targetPosition,
         questionStartedAt,
         questionEndsAt,
+        transitionDueAt: null,
       };
       await Promise.all([
         this.database.client.liveSession.update({
@@ -580,6 +592,7 @@ export class GameService {
       }
 
       state.phase = 'REVEAL';
+      state.transitionDueAt = null;
       await this.redis.saveGameState(state);
       this.clearRevealTimer(sessionId);
       const freshSession = await this.loadSession(sessionId);
@@ -623,6 +636,7 @@ export class GameService {
         return false;
       }
       state.phase = 'LEADERBOARD';
+      state.transitionDueAt = Date.now() + LEADERBOARD_DURATION_MS;
       await this.redis.saveGameState(state);
       const leaderboard = this.toLeaderboard(session);
       this.io
@@ -632,15 +646,7 @@ export class GameService {
         .to(hostRoom(sessionId))
         .emit('leaderboard:shown', { leaderboard });
 
-      const oldTimer = this.leaderboardTimers.get(sessionId);
-      if (oldTimer) clearTimeout(oldTimer);
-      this.leaderboardTimers.set(
-        sessionId,
-        setTimeout(() => {
-          this.leaderboardTimers.delete(sessionId);
-          void this.startQuestion(sessionId, hostId);
-        }, LEADERBOARD_DURATION_MS),
-      );
+      this.scheduleLeaderboardAdvance(sessionId, hostId, state.transitionDueAt);
       return true;
     } finally {
       await this.redis.releaseTransition(sessionId);
@@ -660,6 +666,7 @@ export class GameService {
     const state = await this.ensureState(session);
     state.phase = 'FINISHED';
     state.questionEndsAt = null;
+    state.transitionDueAt = null;
     await Promise.all([
       this.database.client.liveSession.update({
         where: { id: sessionId },
@@ -698,6 +705,23 @@ export class GameService {
       setTimeout(() => {
         this.revealTimers.delete(sessionId);
         void this.revealQuestion(sessionId, questionId);
+      }, delay),
+    );
+  }
+
+  private scheduleLeaderboardAdvance(
+    sessionId: string,
+    hostId: string,
+    transitionDueAt: number,
+  ) {
+    const oldTimer = this.leaderboardTimers.get(sessionId);
+    if (oldTimer) clearTimeout(oldTimer);
+    const delay = Math.max(0, transitionDueAt - Date.now());
+    this.leaderboardTimers.set(
+      sessionId,
+      setTimeout(() => {
+        this.leaderboardTimers.delete(sessionId);
+        void this.startQuestion(sessionId, hostId);
       }, delay),
     );
   }
