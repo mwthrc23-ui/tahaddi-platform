@@ -1,6 +1,5 @@
 @import '../../tokens.css';
 @import 'tailwindcss';
-@import '../styles/claude-code.css';
 
 /* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 */
 /* Hallmark · genre: competitive modern-minimal · macrostructure: Workbench · theme: design.md · enrichment: Tier-A product board · nav: existing SiteLayout · footer: existing SiteLayout */
@@ -1148,11 +1147,11 @@ summary:focus-visible {
   background: rgb(255 255 255 / 0.08);
 }
 .button-danger {
-  background: var(--danger);
+  background: color-mix(in srgb, var(--danger) 78%, black);
   color: var(--danger-foreground);
 }
 .button-danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--danger) 88%, white);
+  background: color-mix(in srgb, var(--danger) 82%, black);
   box-shadow:
     0 0 20px color-mix(in srgb, var(--danger) 35%, transparent),
     var(--shadow-sm);
@@ -4559,94 +4558,18 @@ tr:last-child td {
   padding-block: clamp(2rem, 6vw, 5rem);
   min-block-size: 80vh;
 }
-.question-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-block-end: 2rem;
-}
-.design-header h1,
-.centered-heading h1 {
+.design-header h1 {
   font-size: clamp(2.2rem, 5vw, 4rem);
   margin: 0.5rem 0;
 }
-.design-header p,
-.centered-heading p {
+.design-header p {
   color: var(--muted-foreground);
 }
-.waiting-grid {
-  display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
-  gap: 1rem;
-  margin-block-end: 1rem;
-}
-.players-panel h2,
 .host-stage h2,
 .results-screen h2 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-.players-grid {
-  display: grid;
-  gap: 0.5rem;
-}
-.question-top {
-  align-items: center;
-}
-.question-screen .question-card {
-  margin-block-end: 1rem;
-}
-.question-screen .inline-between > .score-display {
-  inline-size: 16rem;
-}
-.narrow {
-  max-inline-size: 58rem;
-}
-.result-hero {
-  text-align: center;
-  padding-block: 2rem;
-}
-.result-hero > span {
-  color: var(--success);
-  font-weight: 800;
-}
-.result-hero h1 {
-  font-size: clamp(3rem, 8vw, 6rem);
-  color: var(--success);
-  margin: 0.3rem;
-}
-.result-bars {
-  display: grid;
-  gap: 1rem;
-}
-.result-bars small {
-  color: var(--success);
-}
-.result-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-block: 1rem;
-}
-.rank-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.rank-card strong {
-  font-size: 2.5rem;
-}
-.centered-heading {
-  text-align: center;
-}
-.full-ranking {
-  max-inline-size: 46rem;
-  margin: 1rem auto;
-}
-.winners-screen .center-actions {
-  margin-block: 2rem;
 }
 .design-header {
   display: flex;
@@ -4952,7 +4875,6 @@ tr:last-child td {
   .card-grid.four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .waiting-grid,
   .split-section {
     grid-template-columns: 1fr;
   }
@@ -5067,12 +4989,6 @@ tr:last-child td {
   .room-actions {
     grid-column: 1/-1;
     flex-direction: row;
-  }
-  .question-top {
-    flex-direction: column;
-  }
-  .result-stats {
-    grid-template-columns: 1fr;
   }
   .leaderboard-item {
     grid-template-columns: 2rem 2.6rem minmax(0, 1fr) auto;
@@ -5237,13 +5153,6 @@ tr:last-child td {
   }
   .component-row .button {
     flex: 1 1 100%;
-  }
-  .question-screen > .container > .inline-between {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .question-screen .inline-between > .score-display {
-    inline-size: 100%;
   }
   .quiz-builder > .dashboard-actions {
     display: grid;
