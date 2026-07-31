@@ -26,6 +26,7 @@ export type LiveGameState = {
   currentQuestionPosition: number;
   questionStartedAt: number | null;
   questionEndsAt: number | null;
+  transitionDueAt: number | null;
 };
 
 export type StoredAnswer = {

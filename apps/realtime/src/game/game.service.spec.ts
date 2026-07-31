@@ -50,6 +50,15 @@ function makeSession() {
 }
 
 describe('GameService live safety', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
   function setup(session = makeSession()) {
     const redis = {
       loadGameState: jest.fn().mockResolvedValue({
@@ -263,5 +272,144 @@ describe('GameService live safety', () => {
     });
     expect(snapshot?.playerAnswer?.optionId).toBe('option-2');
     expect(snapshot?.leaderboard).toEqual([]);
+  });
+
+  it('recreates the question reveal timer after a service restart', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-07-31T00:00:00.000Z'));
+    const { redis, database, io } = setup();
+    redis.loadGameState.mockResolvedValue({
+      sessionId: 'session-1',
+      roomCode: 'ABC123',
+      phase: 'QUESTION',
+      currentQuestionPosition: 0,
+      questionStartedAt: Date.now() - 1_000,
+      questionEndsAt: Date.now() + 2_000,
+      transitionDueAt: null,
+    });
+    const restarted = new GameService(redis as never, database as never);
+    restarted.setServer(io as never);
+    const revealQuestion = jest
+      .spyOn(restarted, 'revealQuestion')
+      .mockResolvedValue(true);
+
+    await restarted.getSnapshot({
+      sessionId: 'session-1',
+      subjectId: 'host-1',
+      role: 'host',
+    });
+    await jest.advanceTimersByTimeAsync(2_000);
+
+    expect(revealQuestion).toHaveBeenCalledWith('session-1', 'question-1');
+  });
+
+  it('recreates the leaderboard timer after a service restart', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-07-31T00:00:00.000Z'));
+    const { redis, database, io } = setup();
+    redis.loadGameState.mockResolvedValue({
+      sessionId: 'session-1',
+      roomCode: 'ABC123',
+      phase: 'LEADERBOARD',
+      currentQuestionPosition: 0,
+      questionStartedAt: Date.now() - 20_000,
+      questionEndsAt: Date.now() - 1,
+      transitionDueAt: Date.now() + 2_500,
+    });
+    const restarted = new GameService(redis as never, database as never);
+    restarted.setServer(io as never);
+    const startQuestion = jest
+      .spyOn(restarted, 'startQuestion')
+      .mockResolvedValue(true);
+
+    await restarted.getSnapshot({
+      sessionId: 'session-1',
+      subjectId: 'host-1',
+      role: 'host',
+    });
+    await jest.advanceTimersByTimeAsync(2_500);
+
+    expect(startQuestion).toHaveBeenCalledWith('session-1', 'host-1');
+  });
+
+  it('advances a legacy leaderboard state without a stored deadline', async () => {
+    const { service, redis } = setup();
+    redis.loadGameState.mockResolvedValue({
+      sessionId: 'session-1',
+      roomCode: 'ABC123',
+      phase: 'LEADERBOARD',
+      currentQuestionPosition: 0,
+      questionStartedAt: Date.now() - 20_000,
+      questionEndsAt: Date.now() - 1,
+    });
+    const startQuestion = jest
+      .spyOn(service, 'startQuestion')
+      .mockResolvedValue(true);
+
+    await service.getSnapshot({
+      sessionId: 'session-1',
+      subjectId: 'host-1',
+      role: 'host',
+    });
+    await jest.advanceTimersByTimeAsync(0);
+
+    expect(startQuestion).toHaveBeenCalledWith('session-1', 'host-1');
+  });
+
+  it('does not duplicate the leaderboard timer when snapshots repeat', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-07-31T00:00:00.000Z'));
+    const { service, redis } = setup();
+    redis.loadGameState.mockResolvedValue({
+      sessionId: 'session-1',
+      roomCode: 'ABC123',
+      phase: 'LEADERBOARD',
+      currentQuestionPosition: 0,
+      questionStartedAt: Date.now() - 20_000,
+      questionEndsAt: Date.now() - 1,
+      transitionDueAt: Date.now() + 2_500,
+    });
+    const startQuestion = jest
+      .spyOn(service, 'startQuestion')
+      .mockResolvedValue(true);
+
+    await service.getSnapshot({
+      sessionId: 'session-1',
+      subjectId: 'host-1',
+      role: 'host',
+    });
+    await service.getSnapshot({
+      sessionId: 'session-1',
+      subjectId: 'host-1',
+      role: 'host',
+    });
+    await jest.advanceTimersByTimeAsync(2_500);
+
+    expect(startQuestion).toHaveBeenCalledTimes(1);
+    expect(startQuestion).toHaveBeenCalledWith('session-1', 'host-1');
+  });
+
+  it('persists the leaderboard deadline before scheduling the next question', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-07-31T00:00:00.000Z'));
+    const { service, redis } = setup();
+    redis.loadGameState.mockResolvedValue({
+      sessionId: 'session-1',
+      roomCode: 'ABC123',
+      phase: 'REVEAL',
+      currentQuestionPosition: 0,
+      questionStartedAt: Date.now() - 20_000,
+      questionEndsAt: Date.now() - 1,
+      transitionDueAt: null,
+    });
+
+    await service.next('session-1', 'host-1');
+
+    expect(redis.saveGameState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        phase: 'LEADERBOARD',
+        transitionDueAt: Date.now() + 2_500,
+      }),
+    );
   });
 });
