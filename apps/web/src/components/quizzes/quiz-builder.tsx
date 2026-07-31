@@ -8,12 +8,13 @@ import {
   GripVertical,
   ListPlus,
   Save,
+  Search,
   Settings2,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { createQuiz } from '@/app/quizzes/actions';
-import { Badge, Button, Card, Input, NumberInput, Select, Textarea } from '@/components/ui';
+import { Badge, Button, Card, Input, NumberInput, Select, Switch, Textarea } from '@/components/ui';
 
 type DraftQuestion = {
   id: string;
@@ -24,12 +25,15 @@ type DraftQuestion = {
 };
 
 type QuizDraft = {
-  version: 1;
+  version: 2;
   title: string;
   description: string;
   roundName: string;
   presentationMode: 'SEQUENTIAL' | 'RANDOM';
   playerLimit: number;
+  autoLockAnswers: boolean;
+  autoAdvance: boolean;
+  speedScoring: boolean;
   questions: DraftQuestion[];
 };
 
@@ -37,12 +41,15 @@ const storageKey = 'tahaddi:quiz-builder:draft:v1';
 
 function createInitialDraft(): QuizDraft {
   return {
-    version: 1,
+    version: 2,
     title: '',
     description: '',
     roundName: '',
     presentationMode: 'SEQUENTIAL',
     playerLimit: 50,
+    autoLockAnswers: true,
+    autoAdvance: false,
+    speedScoring: true,
     questions: [],
   };
 }
@@ -61,9 +68,9 @@ function isDraftQuestion(value: unknown): value is DraftQuestion {
 
 export function parseQuizDraft(value: string): QuizDraft | null {
   try {
-    const draft = JSON.parse(value) as Partial<QuizDraft>;
+    const draft = JSON.parse(value) as Partial<QuizDraft> & { version?: number };
     if (
-      draft.version !== 1 ||
+      ![1, 2].includes(draft.version ?? 0) ||
       typeof draft.title !== 'string' ||
       typeof draft.description !== 'string' ||
       typeof draft.roundName !== 'string' ||
@@ -74,7 +81,13 @@ export function parseQuizDraft(value: string): QuizDraft | null {
     ) {
       return null;
     }
-    return draft as QuizDraft;
+    return {
+      ...(draft as Omit<QuizDraft, 'version' | 'autoLockAnswers' | 'autoAdvance' | 'speedScoring'>),
+      version: 2,
+      autoLockAnswers: draft.autoLockAnswers ?? true,
+      autoAdvance: draft.autoAdvance ?? false,
+      speedScoring: draft.speedScoring ?? true,
+    };
   } catch {
     return null;
   }
@@ -87,6 +100,7 @@ export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: 
   const [saveFailed, setSaveFailed] = useState(false);
   const [savingQuiz, setSavingQuiz] = useState(false);
   const [savedRoomCode, setSavedRoomCode] = useState('');
+  const [questionQuery, setQuestionQuery] = useState('');
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -194,6 +208,17 @@ export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: 
   };
 
   const selected = new Set(draft.questions.map((question) => question.id));
+  const filteredAvailableQuestions = useMemo(() => {
+    const query = questionQuery.trim().toLocaleLowerCase('ar');
+    if (!query) return availableQuestions;
+    return availableQuestions.filter((question) =>
+      `${question.prompt} ${question.category}`.toLocaleLowerCase('ar').includes(query),
+    );
+  }, [availableQuestions, questionQuery]);
+  const availableQuestionCount =
+    filteredAvailableQuestions.length === 1
+      ? 'سؤال واحد'
+      : `${filteredAvailableQuestions.length.toLocaleString('ar-SA')} سؤال`;
 
   return (
     <div className="quiz-builder" dir="rtl">
@@ -268,6 +293,36 @@ export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: 
                 )
               }
             />
+            <div className="quiz-builder-wide settings-stack">
+              <div>
+                <Switch
+                  label="تثبيت الإجابة فور اختيارها"
+                  checked={draft.autoLockAnswers}
+                  onChange={(checked) => updateDraft('autoLockAnswers', checked)}
+                />
+                <p className="muted">يرسل اختيار اللاعب مباشرة ولا يعرض زر تأكيد منفصل.</p>
+              </div>
+              <div>
+                <Switch
+                  label="الانتقال التلقائي بعد إجابة الجميع"
+                  checked={draft.autoAdvance}
+                  onChange={(checked) => updateDraft('autoAdvance', checked)}
+                />
+                <p className="muted">
+                  يكشف النتيجة ثم ينتقل بعد ثلاث ثوانٍ عند اكتمال إجابات اللاعبين النشطين.
+                </p>
+              </div>
+              <div>
+                <Switch
+                  label="احتساب سرعة الإجابة"
+                  checked={draft.speedScoring}
+                  onChange={(checked) => updateDraft('speedScoring', checked)}
+                />
+                <p className="muted">
+                  تتدرج نقاط الإجابة الصحيحة حسب الوقت المتبقي باستخدام توقيت الخادم.
+                </p>
+              </div>
+            </div>
           </div>
         </Card>
 
@@ -379,11 +434,32 @@ export function QuizBuilder({ availableQuestions = [] }: { availableQuestions?: 
           <h2>
             <CheckCircle2 /> أسئلة متاحة من بنك الأسئلة
           </h2>
+          {availableQuestions.length > 0 && (
+            <div className="quiz-builder-bank-tools">
+              <Input
+                type="search"
+                label="ابحث في بنك الأسئلة"
+                placeholder="ابحث بالعنوان أو الفئة"
+                value={questionQuery}
+                onChange={(event) => setQuestionQuery(event.target.value)}
+              />
+              <p
+                className="muted quiz-builder-results"
+                role="status"
+                aria-label="نتائج بنك الأسئلة"
+              >
+                <Search aria-hidden="true" />
+                {availableQuestionCount}
+              </p>
+            </div>
+          )}
           {availableQuestions.length === 0 ? (
             <p className="muted">لا توجد أسئلة منشورة أو مسودات في بنك الأسئلة بعد.</p>
+          ) : filteredAvailableQuestions.length === 0 ? (
+            <p className="muted">لا توجد أسئلة مطابقة لعبارة البحث.</p>
           ) : (
             <div className="quiz-builder-list">
-              {availableQuestions.map((question) => (
+              {filteredAvailableQuestions.map((question) => (
                 <article key={question.id} className="list-item">
                   <div>
                     <strong>{question.prompt}</strong>

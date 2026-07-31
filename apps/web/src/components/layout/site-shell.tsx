@@ -21,12 +21,24 @@ import { ThemeToggle } from '../theme-toggle';
 import { Button, ButtonLink } from '../ui';
 import { SignOutButton } from '../auth/sign-out-button';
 
-export function Logo() {
+const homeNavigation = [
+  { label: 'كيف تعمل؟', href: '/#how' },
+  { label: 'أنماط اللعب', href: '/#games' },
+  { label: 'بنك الأسئلة', href: '/questions' },
+  { label: 'التتويج', href: '/#leaderboard' },
+  { label: 'الإدارة', href: '/admin' },
+] as const;
+
+type HeaderVariant = 'default' | 'home';
+
+export function Logo({ variant = 'default' }: { variant?: HeaderVariant }) {
   return (
-    <Link className="logo" href="/" aria-label={`${siteConfig.name} — الصفحة الرئيسية`}>
-      <span>
-        <Trophy />
-      </span>
+    <Link
+      className={cn('logo', variant === 'home' && 'home-logo')}
+      href="/"
+      aria-label={`${siteConfig.name} — الصفحة الرئيسية`}
+    >
+      <span>{variant === 'home' ? 'ت' : <Trophy />}</span>
       <strong>{siteConfig.name}</strong>
     </Link>
   );
@@ -36,7 +48,13 @@ export type HeaderUser = {
   name?: string | null;
 };
 
-export function Header({ user = null }: { user?: HeaderUser | null }) {
+export function Header({
+  user = null,
+  variant = 'default',
+}: {
+  user?: HeaderUser | null;
+  variant?: HeaderVariant;
+}) {
   const [open, setOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const userMenuId = useId();
@@ -75,12 +93,14 @@ export function Header({ user = null }: { user?: HeaderUser | null }) {
     };
   }, [closeUserMenu, userOpen]);
 
+  const isHome = variant === 'home';
+
   return (
-    <header className="site-header">
+    <header className={cn('site-header', isHome && 'home-header')}>
       <div className="container header-inner">
-        <Logo />
+        <Logo variant={variant} />
         <nav className="desktop-nav" aria-label="التنقل الرئيسي">
-          {primaryNavigation.slice(0, 3).map((item) => (
+          {(isHome ? homeNavigation : primaryNavigation.slice(0, 3)).map((item) => (
             <Link key={item.href} href={item.href}>
               {item.label}
             </Link>
@@ -88,12 +108,16 @@ export function Header({ user = null }: { user?: HeaderUser | null }) {
         </nav>
         <div className="header-actions">
           <ButtonLink href="/join" variant="outline" className="hide-mobile">
-            انضم إلى مسابقة
+            {isHome ? 'انضم برمز' : 'انضم إلى مسابقة'}
           </ButtonLink>
-          <ButtonLink href="/quizzes/new" className="hide-tablet">
+          <ButtonLink
+            href="/quizzes/new"
+            variant={isHome ? 'gold' : 'primary'}
+            className="hide-tablet"
+          >
             أنشئ مسابقة
           </ButtonLink>
-          <ThemeToggle />
+          {!isHome && <ThemeToggle />}
           <div className="dropdown" ref={userDropdownRef}>
             <Button
               ref={userMenuButtonRef}
@@ -169,12 +193,31 @@ export function Header({ user = null }: { user?: HeaderUser | null }) {
       </div>
       {open && (
         <nav className="mobile-nav" aria-label="قائمة الجوال">
-          {primaryNavigation.map((item) => (
-            <Link key={item.href} href={item.href} onClick={() => setOpen(false)}>
-              <item.icon />
-              {item.label}
-            </Link>
-          ))}
+          {isHome
+            ? [
+                ...homeNavigation.map((item) => (
+                  <Link key={item.href} href={item.href} onClick={() => setOpen(false)}>
+                    {item.label}
+                  </Link>
+                )),
+                <Link key="join" href="/join" onClick={() => setOpen(false)}>
+                  انضم برمز
+                </Link>,
+                <Link
+                  key="create"
+                  className="mobile-nav-primary"
+                  href="/quizzes/new"
+                  onClick={() => setOpen(false)}
+                >
+                  أنشئ مسابقة
+                </Link>,
+              ]
+            : primaryNavigation.map((item) => (
+                <Link key={item.href} href={item.href} onClick={() => setOpen(false)}>
+                  <item.icon />
+                  {item.label}
+                </Link>
+              ))}
         </nav>
       )}
     </header>
@@ -188,6 +231,7 @@ export function Footer() {
         <div>
           <Logo />
           <p>{siteConfig.description}</p>
+          <small className="site-owner">صاحب الموقع: عبدالعزيز بن سلطان العتيبي</small>
           <small>© ٢٠٢٦ تحدّي. جميع الحقوق محفوظة.</small>
         </div>
         <div>
@@ -211,14 +255,21 @@ export function Footer() {
 export function SiteLayout({
   children,
   user = null,
+  variant = 'default',
 }: {
   children: ReactNode;
   user?: HeaderUser | null;
+  variant?: HeaderVariant;
 }) {
   return (
     <>
-      <Header user={user} />
-      <main id="main-content">{children}</main>
+      <a className="skip-link" href="#main-content">
+        تجاوز إلى المحتوى
+      </a>
+      <Header user={user} variant={variant} />
+      <main id="main-content" tabIndex={-1}>
+        {children}
+      </main>
       <Footer />
     </>
   );

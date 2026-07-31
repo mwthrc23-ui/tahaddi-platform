@@ -1,15 +1,30 @@
 'use server';
 
+import { randomBytes } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
+import { setMafiaAccessToken } from '@/lib/mafia/access-cookie';
 
 const ROOM_CODE_RE = /^[34679ACDEFGHJKMNPQRTUVWXY]{6,8}$/;
 const MAX_PLAYER_NAME_LENGTH = 40;
 
 export type JoinLiveSessionResult =
-  | { status: 'success'; sessionId: string; participantId: string; roomCode: string }
+  | {
+      status: 'success';
+      gameType: 'quiz';
+      sessionId: string;
+      participantId: string;
+      roomCode: string;
+    }
+  | {
+      status: 'success';
+      gameType: 'mafia';
+      sessionId: string;
+      participantId: string;
+      roomCode: string;
+    }
   | { status: 'error'; message: string };
 
 function normalizeRoomCode(value: string) {
@@ -151,22 +166,69 @@ export async function joinLiveSessionByCode(
       select: { id: true, roomCode: true },
     });
 
-    if (!session) {
-      return { status: 'error', message: 'لم نجد جلسة مباشرة مفتوحة بهذا الرمز.' };
+    if (session) {
+      const participant = await prisma.liveParticipant.create({
+        data: { sessionId: session.id, displayName },
+        select: { id: true },
+      });
+
+      revalidatePath(`/live/${session.id}/play`);
+      revalidatePath('/broadcast');
+      return {
+        status: 'success',
+        gameType: 'quiz',
+        sessionId: session.id,
+        participantId: participant.id,
+        roomCode: session.roomCode,
+      };
     }
 
-    const participant = await prisma.liveParticipant.create({
-      data: { sessionId: session.id, displayName },
-      select: { id: true },
+    const mafiaJoin = await prisma.$transaction(async (tx) => {
+      const [mafiaGame] = await tx.$queryRaw<
+        Array<{ id: string; roomCode: string; status: string; maxPlayers: number }>
+      >`SELECT "id", "roomCode", "status"::text, "maxPlayers"
+        FROM "MafiaGame"
+        WHERE "roomCode" = ${roomCode}
+        FOR UPDATE`;
+
+      if (!mafiaGame || mafiaGame.status !== 'LOBBY') {
+        return { status: 'closed' } as const;
+      }
+
+      const participantCount = await tx.mafiaParticipant.count({
+        where: { gameId: mafiaGame.id },
+      });
+      if (participantCount >= mafiaGame.maxPlayers) {
+        return { status: 'full' } as const;
+      }
+
+      const participant = await tx.mafiaParticipant.create({
+        data: {
+          gameId: mafiaGame.id,
+          displayName,
+          accessToken: randomBytes(24).toString('hex'),
+        },
+        select: { id: true, accessToken: true },
+      });
+
+      return { status: 'success', mafiaGame, participant } as const;
     });
 
-    revalidatePath(`/live/${session.id}/play`);
-    revalidatePath('/broadcast');
+    if (mafiaJoin.status === 'closed') {
+      return { status: 'error', message: 'لم نجد غرفة مفتوحة بهذا الرمز.' };
+    }
+    if (mafiaJoin.status === 'full') {
+      return { status: 'error', message: 'اكتمل عدد اللاعبين المسموح به في هذه الغرفة.' };
+    }
+
+    await setMafiaAccessToken(mafiaJoin.mafiaGame.id, mafiaJoin.participant.accessToken);
+    revalidatePath(`/mafia/${mafiaJoin.mafiaGame.id}`);
     return {
       status: 'success',
-      sessionId: session.id,
-      participantId: participant.id,
-      roomCode: session.roomCode,
+      gameType: 'mafia',
+      sessionId: mafiaJoin.mafiaGame.id,
+      participantId: mafiaJoin.participant.id,
+      roomCode: mafiaJoin.mafiaGame.roomCode,
     };
   } catch (error) {
     if (isUniqueConstraintError(error)) {

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
-import { generateUniqueRoomCode } from '@/lib/quiz/room-code';
+import { generateUniqueActivityRoomCode } from '@/lib/quiz/room-code';
 
 const ROOM_CODE_RE = /^[34679ACDEFGHJKMNPQRTUVWXY]{6,8}$/;
 const MAX_QUIZ_QUESTIONS = 100;
@@ -105,7 +105,7 @@ export async function createQuiz(input: CreateQuizInput): Promise<QuizActionResu
     }
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      const roomCode = await generateUniqueRoomCode(prisma);
+      const roomCode = await generateUniqueActivityRoomCode(prisma);
       try {
         const quiz = await prisma.quiz.create({
           data: {

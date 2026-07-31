@@ -14,11 +14,12 @@ export function Reveal({
 }) {
   const reduceMotion = useReducedMotion();
   const visible = { opacity: 1, y: 0 };
+  const initial = eager || reduceMotion ? visible : { opacity: 0, y: 28 };
 
   return (
     <motion.div
       className={className}
-      initial={reduceMotion ? visible : { opacity: 0, y: 28 }}
+      initial={initial}
       animate={eager ? visible : undefined}
       whileInView={eager ? undefined : visible}
       viewport={{ once: true, amount: 0.15 }}

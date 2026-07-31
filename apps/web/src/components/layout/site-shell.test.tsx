@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Header, SiteLayout } from './site-shell';
@@ -74,8 +74,34 @@ describe('Header user menu', () => {
 
     expect(screen.queryByText('الشاشات التجريبية')).not.toBeInTheDocument();
     expect(document.querySelector('a[href^="/demo/"]')).not.toBeInTheDocument();
+    for (const link of screen.getAllByRole('link', { name: 'الألعاب' })) {
+      expect(link).toHaveAttribute('href', '/games');
+    }
     for (const link of screen.getAllByRole('link', { name: 'انضم إلى مسابقة' })) {
       expect(link).toHaveAttribute('href', '/join');
     }
+  });
+
+  it('يعرض تنقل الصفحة الرئيسية وإجراءات الجوال المطابقة للتصميم', async () => {
+    const user = userEvent.setup();
+    render(<Header variant="home" />);
+
+    expect(screen.getByRole('link', { name: 'كيف تعمل؟' })).toHaveAttribute('href', '/#how');
+    expect(screen.getByRole('link', { name: 'أنماط اللعب' })).toHaveAttribute('href', '/#games');
+    expect(screen.getByRole('link', { name: 'بنك الأسئلة' })).toHaveAttribute('href', '/questions');
+    expect(screen.getByRole('link', { name: 'التتويج' })).toHaveAttribute('href', '/#leaderboard');
+    expect(screen.getByRole('link', { name: 'الإدارة' })).toHaveAttribute('href', '/admin');
+    expect(screen.getByRole('link', { name: 'انضم برمز' })).toHaveAttribute('href', '/join');
+
+    await user.click(screen.getByRole('button', { name: 'فتح القائمة' }));
+    const mobileNavigation = screen.getByRole('navigation', { name: 'قائمة الجوال' });
+    expect(within(mobileNavigation).getByRole('link', { name: 'انضم برمز' })).toHaveAttribute(
+      'href',
+      '/join',
+    );
+    expect(within(mobileNavigation).getByRole('link', { name: 'أنشئ مسابقة' })).toHaveAttribute(
+      'href',
+      '/quizzes/new',
+    );
   });
 });

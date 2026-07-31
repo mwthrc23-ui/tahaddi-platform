@@ -71,7 +71,6 @@ import { AnswerOption, QuizTimer } from '@/components/quiz';
 ## المسارات المرجعية
 
 - `/design-system`: معرض المكوّنات والثيم.
-- `/demo/waiting`, `/demo/question`, `/demo/results`, `/demo/winners`: تدفق العرض التجريبي.
 - `/dashboard`: تخطيط لوحة التحكم.
 - `/host`: تخطيط مقدم المسابقة.
 - `/broadcast`: تخطيط 16:9 للشاشات والبث.

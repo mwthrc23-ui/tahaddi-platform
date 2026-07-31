@@ -18,9 +18,8 @@
 
 ## Vercel
 
-اضبط المشروع كـ Node/Next.js، وليس GitHub Pages:
+اضبط مشروع Vercel كـ Node/Next.js:
 
-- `TAHADDI_DEPLOY_TARGET=node`
 - `DATABASE_URL`
 - `DIRECT_URL`
 - `AUTH_SECRET`
