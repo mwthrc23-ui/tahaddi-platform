@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SPECIAL_GAME_META, SPECIAL_GAME_ORDER } from '@tahaddi/domain';
-import { SpecialGameRoom } from './special-game-room';
+import { resolveSpecialGamesRealtimeUrl, SpecialGameRoom } from './special-game-room';
 
 const ioMock = vi.hoisted(() => vi.fn());
 
@@ -28,10 +28,34 @@ vi.mock('socket.io-client', () => ({
 
 describe('SpecialGameRoom', () => {
   afterEach(() => {
+    vi.unstubAllEnvs();
     socketMock.emit.mockClear();
     socketMock.disconnect.mockClear();
     socketMock.listeners.clear();
     ioMock.mockClear();
+  });
+
+  it('normalizes a configured realtime URL for the special-games namespace', () => {
+    expect(
+      resolveSpecialGamesRealtimeUrl(
+        '  https://realtime.example.com///  ',
+        'https://tahaddi.example.com',
+      ),
+    ).toBe('https://realtime.example.com/special-games');
+  });
+
+  it('falls back to the production origin when a loopback realtime URL was embedded', () => {
+    expect(
+      resolveSpecialGamesRealtimeUrl('http://localhost:3001', 'https://tahaddi.example.com'),
+    ).toBe('https://tahaddi.example.com/special-games');
+  });
+
+  it('uses the configured realtime service when rendering locally', () => {
+    vi.stubEnv('NEXT_PUBLIC_REALTIME_URL', ' http://127.0.0.1:3001/ ');
+
+    render(<SpecialGameRoom mode={SPECIAL_GAME_ORDER[0]} initialPin="" />);
+
+    expect(ioMock).toHaveBeenCalledWith('http://127.0.0.1:3001/special-games', expect.any(Object));
   });
 
   it('shows the first room mode rules and creates a room after connecting', async () => {
@@ -70,6 +94,20 @@ describe('SpecialGameRoom', () => {
       pin: '123456',
       playerName: 'نورة',
     });
+  });
+
+  it('shows an actionable offline state when the realtime connection fails', () => {
+    render(<SpecialGameRoom mode={SPECIAL_GAME_ORDER[0]} initialPin="" />);
+
+    act(() => {
+      socketMock.listeners.get('connect_error')?.();
+    });
+
+    expect(screen.getByText('تعذّر الاتصال')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'تعذّر الاتصال بخدمة اللعب المباشر. تحقق من اتصالك ثم أعد تحميل الصفحة.',
+    );
+    expect(screen.getByRole('button', { name: /أنشئ الغرفة/ })).toBeDisabled();
   });
 
   it('renders a scannable QR invitation after the room is created', () => {

@@ -9,7 +9,7 @@
     },
     "realtime": {
       "root": "apps/realtime",
-      "entrypoint": "vercel-entry.cjs",
+      "entrypoint": "src/main.ts",
       "framework": "nestjs",
       "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
       "buildCommand": "cd ../.. && pnpm --filter @tahaddi/contracts build && pnpm --filter @tahaddi/database build && pnpm --filter @tahaddi/domain build && pnpm --filter @tahaddi/realtime build"
