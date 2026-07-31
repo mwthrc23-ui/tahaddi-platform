@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 type VercelConfig = {
   services?: {
     realtime?: {
+      root?: string;
       entrypoint?: string;
       framework?: string;
     };
@@ -30,7 +31,8 @@ describe('Vercel realtime deployment', () => {
 
   it('traces the NestJS source entrypoint and exposes realtime routes', () => {
     expect(config.services?.realtime).toMatchObject({
-      entrypoint: 'src/main.ts',
+      root: '.',
+      entrypoint: 'apps/realtime/src/main.ts',
       framework: 'nestjs',
     });
     expect(config.rewrites).toEqual(
