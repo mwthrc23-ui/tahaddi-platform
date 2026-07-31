@@ -12,6 +12,10 @@ const arabicNumber = new Intl.NumberFormat('ar-SA-u-nu-arab', {
   useGrouping: false,
 });
 
+const MAX_TRANSITION_RETRIES = 3;
+const TRANSITION_RETRY_BASE_DELAY_MS = 1_000;
+const PERMANENT_TRANSITION_FAILURES = new Set([401, 403, 404]);
+
 export function formatMafiaCountdown(totalSeconds: number) {
   const safeSeconds = Math.max(0, Math.ceil(totalSeconds));
   const minutes = Math.floor(safeSeconds / 60);
@@ -36,8 +40,12 @@ export function MafiaPhaseTimer({
 }) {
   const router = useRouter();
   const deadline = phaseEndsAt ? Date.parse(phaseEndsAt) : null;
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(() =>
+    deadline && durationSeconds ? deadline - durationSeconds * 1_000 : 0,
+  );
+  const [transitionRetry, setTransitionRetry] = useState(0);
   const requestedDeadline = useRef<string | null>(null);
+  const retryAttempts = useRef(0);
   const remainingSeconds = deadline ? Math.max(0, Math.ceil((deadline - now) / 1_000)) : 0;
   const progress =
     deadline && durationSeconds
@@ -68,9 +76,18 @@ export function MafiaPhaseTimer({
 
   useEffect(() => {
     if (!deadline || !autoMode) return;
+    const initialSync = window.setTimeout(() => setNow(Date.now()), 0);
     const timer = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearTimeout(initialSync);
+      window.clearInterval(timer);
+    };
   }, [autoMode, deadline]);
+
+  useEffect(() => {
+    requestedDeadline.current = null;
+    retryAttempts.current = 0;
+  }, [phaseEndsAt]);
 
   useEffect(() => {
     if (
@@ -83,6 +100,23 @@ export function MafiaPhaseTimer({
     }
     requestedDeadline.current = phaseEndsAt;
     const controller = new AbortController();
+    let retryTimer: number | null = null;
+    const scheduleRetry = (status?: number) => {
+      if (
+        controller.signal.aborted ||
+        (status && PERMANENT_TRANSITION_FAILURES.has(status)) ||
+        retryAttempts.current >= MAX_TRANSITION_RETRIES
+      ) {
+        return;
+      }
+      const retryDelay = TRANSITION_RETRY_BASE_DELAY_MS * Math.pow(2, retryAttempts.current);
+      retryAttempts.current += 1;
+      requestedDeadline.current = null;
+      retryTimer = window.setTimeout(
+        () => setTransitionRetry((attempt) => attempt + 1),
+        retryDelay,
+      );
+    };
     void fetch(tickEndpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -91,11 +125,27 @@ export function MafiaPhaseTimer({
       signal: controller.signal,
     })
       .then((response) => {
-        if (response.ok) router.refresh();
+        if (response.ok) {
+          retryAttempts.current = 0;
+          router.refresh();
+          return;
+        }
+        scheduleRetry(response.status);
       })
-      .catch(() => null);
-    return () => controller.abort();
-  }, [autoMode, participantId, phaseEndsAt, remainingSeconds, router, tickEndpoint]);
+      .catch(() => scheduleRetry());
+    return () => {
+      controller.abort();
+      if (retryTimer !== null) window.clearTimeout(retryTimer);
+    };
+  }, [
+    autoMode,
+    participantId,
+    phaseEndsAt,
+    remainingSeconds,
+    router,
+    tickEndpoint,
+    transitionRetry,
+  ]);
 
   if (!autoMode || !deadline || !durationSeconds) {
     return (

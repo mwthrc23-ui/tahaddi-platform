@@ -5,9 +5,28 @@ function deadline(seconds: number, now = new Date()) {
   return new Date(now.getTime() + seconds * 1000);
 }
 
-async function resolveNight(gameId: string) {
+function transitionClaimWhere(
+  gameId: string,
+  status: 'NIGHT' | 'DAY' | 'VOTING',
+  expectedPhaseEndsAt: Date | null,
+  force: boolean,
+) {
+  return {
+    id: gameId,
+    status,
+    ...(force ? {} : { phaseEndsAt: expectedPhaseEndsAt }),
+  };
+}
+
+async function resolveNight(gameId: string, expectedPhaseEndsAt: Date | null, force: boolean) {
   const prisma = getPrismaClient();
   await prisma.$transaction(async (tx) => {
+    const claimed = await tx.mafiaGame.updateMany({
+      where: transitionClaimWhere(gameId, 'NIGHT', expectedPhaseEndsAt, force),
+      data: { phaseEndsAt: expectedPhaseEndsAt },
+    });
+    if (claimed.count === 0) return;
+
     const game = await tx.mafiaGame.findUnique({
       where: { id: gameId },
       select: {
@@ -83,25 +102,39 @@ async function resolveNight(gameId: string) {
   });
 }
 
-async function openVoting(gameId: string) {
+async function openVoting(gameId: string, expectedPhaseEndsAt: Date | null, force: boolean) {
   const prisma = getPrismaClient();
-  const game = await prisma.mafiaGame.findUnique({
-    where: { id: gameId },
-    select: { status: true, votingSeconds: true },
-  });
-  if (!game || game.status !== 'DAY') return;
-  await prisma.mafiaGame.update({
-    where: { id: gameId },
-    data: { status: 'VOTING', phaseEndsAt: deadline(game.votingSeconds) },
-  });
-  await prisma.mafiaMessage.create({
-    data: { gameId, channel: 'SYSTEM', body: 'بدأ التصويت. اختروا المشتبه به بحكمة.' },
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.mafiaGame.updateMany({
+      where: transitionClaimWhere(gameId, 'DAY', expectedPhaseEndsAt, force),
+      data: { phaseEndsAt: expectedPhaseEndsAt },
+    });
+    if (claimed.count === 0) return;
+
+    const game = await tx.mafiaGame.findUnique({
+      where: { id: gameId },
+      select: { status: true, votingSeconds: true },
+    });
+    if (!game || game.status !== 'DAY') return;
+    await tx.mafiaGame.update({
+      where: { id: gameId },
+      data: { status: 'VOTING', phaseEndsAt: deadline(game.votingSeconds) },
+    });
+    await tx.mafiaMessage.create({
+      data: { gameId, channel: 'SYSTEM', body: 'بدأ التصويت. اختروا المشتبه به بحكمة.' },
+    });
   });
 }
 
-async function resolveVoting(gameId: string) {
+async function resolveVoting(gameId: string, expectedPhaseEndsAt: Date | null, force: boolean) {
   const prisma = getPrismaClient();
   await prisma.$transaction(async (tx) => {
+    const claimed = await tx.mafiaGame.updateMany({
+      where: transitionClaimWhere(gameId, 'VOTING', expectedPhaseEndsAt, force),
+      data: { phaseEndsAt: expectedPhaseEndsAt },
+    });
+    if (claimed.count === 0) return;
+
     const game = await tx.mafiaGame.findUnique({
       where: { id: gameId },
       select: {
@@ -171,20 +204,9 @@ export async function advanceMafiaGame(gameId: string, force = false) {
   if (!force && (!game.autoMode || !game.phaseEndsAt || game.phaseEndsAt.getTime() > Date.now())) {
     return;
   }
-  if (!force && game.phaseEndsAt) {
-    const claimed = await prisma.mafiaGame.updateMany({
-      where: {
-        id: gameId,
-        status: game.status,
-        phaseEndsAt: game.phaseEndsAt,
-      },
-      data: { phaseEndsAt: null },
-    });
-    if (claimed.count === 0) return;
-  }
-  if (game.status === 'NIGHT') await resolveNight(gameId);
-  if (game.status === 'DAY') await openVoting(gameId);
-  if (game.status === 'VOTING') await resolveVoting(gameId);
+  if (game.status === 'NIGHT') await resolveNight(gameId, game.phaseEndsAt, force);
+  if (game.status === 'DAY') await openVoting(gameId, game.phaseEndsAt, force);
+  if (game.status === 'VOTING') await resolveVoting(gameId, game.phaseEndsAt, force);
 }
 
 export async function markMafiaParticipantSeen(

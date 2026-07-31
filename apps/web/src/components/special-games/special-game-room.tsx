@@ -156,7 +156,31 @@ type ClientEvents = {
 };
 type GameSocket = Socket<ServerEvents, ClientEvents>;
 
-const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL?.replace(/\/$/, '') ?? '';
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '[::1]']);
+
+export function resolveSpecialGamesRealtimeUrl(
+  configuredUrl: string | undefined,
+  currentOrigin: string,
+) {
+  const normalizedUrl = configuredUrl?.trim().replace(/\/+$/, '');
+  if (!normalizedUrl) return '/special-games';
+
+  try {
+    const configured = new URL(normalizedUrl);
+    const current = new URL(currentOrigin);
+    const configuredIsLoopback = LOOPBACK_HOSTS.has(configured.hostname);
+    const currentIsLoopback = LOOPBACK_HOSTS.has(current.hostname);
+    const wouldUseMixedContent = current.protocol === 'https:' && configured.protocol === 'http:';
+
+    if ((!currentIsLoopback && configuredIsLoopback) || wouldUseMixedContent) {
+      return `${current.origin}/special-games`;
+    }
+  } catch {
+    return '/special-games';
+  }
+
+  return `${normalizedUrl}/special-games`;
+}
 
 function Timer({ startsAt, timeLimit }: { startsAt: number; timeLimit: number }) {
   const [remaining, setRemaining] = useState(timeLimit);
@@ -214,6 +238,7 @@ export function SpecialGameRoom({
   const meta = SPECIAL_GAME_META[mode];
   const socketRef = useRef<GameSocket | null>(null);
   const [connected, setConnected] = useState(false);
+  const [connectionFailed, setConnectionFailed] = useState(false);
   const [socketId, setSocketId] = useState('');
   const [room, setRoom] = useState<Room | null>(null);
   const [joinMode, setJoinMode] = useState(Boolean(initialPin));
@@ -263,7 +288,11 @@ export function SpecialGameRoom({
   }, []);
 
   useEffect(() => {
-    const socket: GameSocket = io(`${REALTIME_URL}/special-games`, {
+    const realtimeUrl = resolveSpecialGamesRealtimeUrl(
+      process.env.NEXT_PUBLIC_REALTIME_URL,
+      window.location.origin,
+    );
+    const socket: GameSocket = io(realtimeUrl, {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
     });
@@ -271,6 +300,7 @@ export function SpecialGameRoom({
 
     socket.on('connect', () => {
       setConnected(true);
+      setConnectionFailed(false);
       setSocketId(socket.id ?? '');
       setError('');
     });
@@ -280,8 +310,9 @@ export function SpecialGameRoom({
     });
     socket.on('connect_error', () => {
       setConnected(false);
+      setConnectionFailed(true);
       setBusy(false);
-      setError('تعذّر الاتصال بخدمة اللعب المباشر. شغّل خدمة realtime ثم أعد المحاولة.');
+      setError('تعذّر الاتصال بخدمة اللعب المباشر. تحقق من اتصالك ثم أعد تحميل الصفحة.');
     });
     socket.on('special:error', ({ message }) => {
       setBusy(false);
@@ -422,7 +453,7 @@ export function SpecialGameRoom({
             </ButtonLink>
             <div className="special-status" data-connected={connected || undefined}>
               <Radio aria-hidden="true" />
-              {connected ? 'متصل بخدمة اللعب' : 'جارٍ الاتصال'}
+              {connected ? 'متصل بخدمة اللعب' : connectionFailed ? 'تعذّر الاتصال' : 'جارٍ الاتصال'}
             </div>
           </div>
 
