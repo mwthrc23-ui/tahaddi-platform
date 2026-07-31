@@ -16,10 +16,17 @@ type VercelConfig = {
   }>;
 };
 
+type PackageJson = {
+  dependencies?: Record<string, string>;
+};
+
 describe('Vercel realtime deployment', () => {
   const config = JSON.parse(
     readFileSync(resolve(__dirname, '../../../vercel.json'), 'utf8'),
   ) as VercelConfig;
+  const rootPackage = JSON.parse(
+    readFileSync(resolve(__dirname, '../../../package.json'), 'utf8'),
+  ) as PackageJson;
 
   it('traces the NestJS source entrypoint and exposes realtime routes', () => {
     expect(config.services?.realtime).toMatchObject({
@@ -38,5 +45,26 @@ describe('Vercel realtime deployment', () => {
         },
       ]),
     );
+  });
+
+  it('keeps realtime runtime dependencies visible to the Vercel function packager', () => {
+    const dependencies = rootPackage.dependencies ?? {};
+    const runtimePackages = [
+      '@nestjs/core',
+      '@nestjs/common',
+      '@nestjs/platform-socket.io',
+      '@nestjs/websockets',
+      'ioredis',
+      'socket.io',
+      'zod',
+    ];
+
+    for (const packageName of runtimePackages) {
+      expect(dependencies[packageName]).toEqual(expect.any(String));
+    }
+
+    expect(dependencies['@tahaddi/contracts']).toBe('workspace:*');
+    expect(dependencies['@tahaddi/database']).toBe('workspace:*');
+    expect(dependencies['@tahaddi/domain']).toBe('workspace:*');
   });
 });
