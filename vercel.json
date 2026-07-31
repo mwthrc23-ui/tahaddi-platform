@@ -8,11 +8,11 @@
       "buildCommand": "cd ../.. && pnpm --filter @tahaddi/contracts build && pnpm --filter @tahaddi/database build && pnpm --filter @tahaddi/domain build && pnpm --filter @tahaddi/web build"
     },
     "realtime": {
-      "root": "apps/realtime",
-      "entrypoint": "src/main.ts",
+      "root": ".",
+      "entrypoint": "apps/realtime/src/main.ts",
       "framework": "nestjs",
-      "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-      "buildCommand": "cd ../.. && pnpm --filter @tahaddi/contracts build && pnpm --filter @tahaddi/database build && pnpm --filter @tahaddi/domain build && pnpm --filter @tahaddi/realtime build"
+      "installCommand": "pnpm install --frozen-lockfile",
+      "buildCommand": "pnpm --filter @tahaddi/contracts build && pnpm --filter @tahaddi/database build && pnpm --filter @tahaddi/domain build && pnpm --filter @tahaddi/realtime build"
     }
   },
   "rewrites": [
