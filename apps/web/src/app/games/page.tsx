@@ -1,4 +1,4 @@
-import { CircleDotDashed, Clock3, Orbit, QrCode, UsersRound } from 'lucide-react';
+import { ArrowLeft, CircleDotDashed, Clock3, Orbit, QrCode, Sparkles, UsersRound } from 'lucide-react';
 import { SiteLayout } from '@/components/layout';
 import { Badge, ButtonLink, Card } from '@/components/ui';
 import { getCurrentSession } from '@/lib/auth/session';
@@ -41,15 +41,21 @@ export default async function GamesPage() {
         <div className="container">
           <div className="special-games-heading">
             <div>
-              <h1>الألعاب المميزة</h1>
-              <p>اختر لعبة جاهزة وافتح الغرفة مباشرة، أو تعرّف على التجارب القادمة إلى تحدّي.</p>
+              <span className="special-games-heading__eyebrow">
+                <Sparkles aria-hidden="true" />
+                أوضاع اللعب المباشر
+              </span>
+              <h1>اختر قانون الجولة</h1>
+              <p>اختر نمط اللعب أولًا، ثم افتح الغرفة وشارك رمز الدعوة.</p>
             </div>
-            <QrCode aria-hidden="true" />
+            <div className="special-games-heading__symbol" aria-hidden="true">
+              <QrCode />
+            </div>
           </div>
 
-          <div className="special-games-catalogue">
+          <div className="special-games-catalogue" role="list" aria-label="قوانين الجولة المتاحة">
             {games.map((game, index) => (
-              <Card className="special-game-card" key={game.title}>
+              <Card className="special-game-card" key={game.title} role="listitem">
                 <div className="special-game-card__number" aria-hidden="true">
                   {String(index + 1).padStart(2, '0')}
                 </div>
@@ -58,6 +64,7 @@ export default async function GamesPage() {
                   <h2>{game.title}</h2>
                   <p>{game.description}</p>
                   <Badge>{game.status}</Badge>
+                  <span className="special-game-card__rule">قانون اللعب</span>
                   <div className="special-game-card__facts">
                     <span>
                       <UsersRound aria-hidden="true" />
@@ -75,6 +82,7 @@ export default async function GamesPage() {
                       variant={index === 0 ? 'gold' : 'primary'}
                     >
                       افتح اللعبة
+                      <ArrowLeft aria-hidden="true" />
                     </ButtonLink>
                   ) : null}
                 </div>
