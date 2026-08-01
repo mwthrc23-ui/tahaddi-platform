@@ -19,6 +19,9 @@ import { toArabicDigits } from '../src/lib/utils';
 test('الكتالوج والمسارات والبنوك مشتقة من قوائم الألعاب الثلاث', async ({ page, request }) => {
   await page.goto('/games/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('اختر قانون الجولة');
+  await expect(page.getByText('اختر وضع اللعب، ثم افتح الغرفة وشارك رمز الدعوة — أو ابدأ تحديًا فوريًا من جهازك بلا حساب.')).toBeVisible();
+  await expect(page.getByRole('list', { name: 'الألعاب الجماعية' })).toBeVisible();
+  await expect(page.getByRole('list', { name: 'الألعاب الفورية' })).toBeVisible();
 
   const cards = page.getByRole('article').filter({ has: page.getByRole('heading', { level: 3 }) });
   await expect(cards).toHaveCount(SPECIAL_GAME_ORDER.length + INSTANT_GAME_ORDER.length);

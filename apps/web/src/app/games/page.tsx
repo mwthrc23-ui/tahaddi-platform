@@ -35,8 +35,8 @@ export default async function GamesPage() {
               </span>
               <h1>اختر قانون الجولة</h1>
               <p>
-                غرف جماعية برمز وQR، أو تحديات فورية تبدأ من جهازك بلا حساب.
-                اختر وضعك وابدأ الرحلة.
+                اختر وضع اللعب، ثم افتح الغرفة وشارك رمز الدعوة — أو ابدأ تحديًا فوريًا من
+                جهازك بلا حساب.
               </p>
               <div className="games-hero-stats">
                 <div className="games-stat">
@@ -75,11 +75,15 @@ export default async function GamesPage() {
             <span className="games-section-count">{formatArabicModeCount(SPECIAL_GAME_ORDER.length)} ألعاب</span>
           </div>
 
-          <div className="games-grid games-grid--room">
+          <ul className="games-grid games-grid--room" aria-label="الألعاب الجماعية">
             {SPECIAL_GAME_ORDER.map((mode, index) => {
               const game = SPECIAL_GAME_META[mode];
               return (
-                <article key={mode} className="game-card game-card--room" style={{ animationDelay: `${index * 80}ms` }}>
+                <li className="game-list-item" key={mode}>
+                  <article
+                    className="game-card game-card--room"
+                    style={{ animationDelay: `${index * 80}ms` }}
+                  >
                   <div className="game-card__glow" aria-hidden="true" />
                   <div className="game-card__header">
                     <span className="game-card__index" aria-hidden="true" dir="ltr">
@@ -113,10 +117,11 @@ export default async function GamesPage() {
                       أنشئ الغرفة
                     </CcButton>
                   </div>
-                </article>
+                  </article>
+                </li>
               );
             })}
-          </div>
+          </ul>
 
           <div className="games-section-label">
             <span className="games-section-dot" aria-hidden="true" />
@@ -124,11 +129,15 @@ export default async function GamesPage() {
             <span className="games-section-count">{formatArabicModeCount(INSTANT_GAME_ORDER.length)} ألعاب</span>
           </div>
 
-          <div className="games-grid games-grid--instant">
+          <ul className="games-grid games-grid--instant" aria-label="الألعاب الفورية">
             {INSTANT_GAME_ORDER.map((mode, index) => {
               const game = INSTANT_GAME_META[mode];
               return (
-                <article key={mode} className="game-card game-card--instant" style={{ animationDelay: `${index * 80}ms` }}>
+                <li className="game-list-item" key={mode}>
+                  <article
+                    className="game-card game-card--instant"
+                    style={{ animationDelay: `${index * 80}ms` }}
+                  >
                   <div className="game-card__glow" aria-hidden="true" />
                   <div className="game-card__header">
                     <span className="game-card__index" aria-hidden="true" dir="ltr">
@@ -158,10 +167,11 @@ export default async function GamesPage() {
                       ابدأ اللعب
                     </CcButton>
                   </div>
-                </article>
+                  </article>
+                </li>
               );
             })}
-          </div>
+          </ul>
 
           {UPCOMING_SPECIAL_GAMES.length > 0 && (
             <section className="games-upcoming" aria-labelledby="games-soon-title">
