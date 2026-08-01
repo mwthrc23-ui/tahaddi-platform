@@ -8268,6 +8268,17 @@ body::after {
 .games-grid {
   display: grid;
   gap: 1.25rem;
+  margin-block: 0;
+  padding: 0;
+}
+
+.game-list-item {
+  display: flex;
+  min-inline-size: 0;
+}
+
+.game-list-item > .game-card {
+  flex: 1;
 }
 
 .games-grid--room {
