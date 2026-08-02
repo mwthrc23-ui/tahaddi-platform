@@ -1,11 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = 'http://127.0.0.1:3000';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
   workers: 1,
   timeout: 30_000,
-  use: { baseURL: 'http://127.0.0.1:3000', trace: 'on-first-retry' },
+  use: { baseURL, trace: 'on-first-retry' },
   webServer: [
     {
       command: 'pnpm --filter @tahaddi/realtime exec nest start --watch',
@@ -16,7 +18,7 @@ export default defineConfig({
         ...process.env,
         DATABASE_URL: process.env.DATABASE_URL ?? 'postgresql://tahaddi:tahaddi@localhost:5432/tahaddi',
         AUTH_SECRET: process.env.AUTH_SECRET ?? 'replace-with-a-random-value-for-testing',
-        WEB_ORIGIN: process.env.WEB_ORIGIN ?? 'http://localhost:3000',
+        WEB_ORIGIN: process.env.WEB_ORIGIN ?? baseURL,
         NODE_ENV: process.env.NODE_ENV ?? 'test',
         REDIS_URL: process.env.REDIS_URL ?? 'redis://127.0.0.1:6379',
       },
