@@ -220,6 +220,38 @@ describe('SpecialGamesService', () => {
     expect(results.results[0]?.votes).toBe(2);
   });
 
+  it('rejects reverse votes from sockets that never joined the room', async () => {
+    const { service, store, events } = setup();
+    const room = await service.createRoom('host-1', SPECIAL_GAME_ORDER[1]);
+    const players = ['player-1', 'player-2', 'player-3'];
+    for (const [index, playerId] of players.entries()) {
+      await service.joinRoom(playerId, room.pin, `لاعب ${index + 1}`);
+    }
+    await service.startGame(room.pin, 'host-1');
+    const round = REVERSE_TIME_BANK[0];
+    for (const [index, playerId] of players.entries()) {
+      await service.submitReverseQuestion(
+        playerId,
+        room.pin,
+        round.id,
+        `ما السؤال الصحيح رقم ${index + 1} في هذه الجولة؟`,
+      );
+    }
+    const ballot = events.find((event) => event.event === 'reverse:voting')
+      ?.payload as { submissions: Array<{ id: string }> };
+
+    const result = await service.voteReverse(
+      'outsider-socket',
+      room.pin,
+      ballot.submissions[0].id,
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({ ok: false, code: 'NOT_PLAYER' }),
+    );
+    expect(store.rooms.get(room.pin)?.reverseVoterIds).toEqual([]);
+  });
+
   it('rejects every room mode below its declared minimum with a clear Arabic message', async () => {
     const { service } = setup();
     for (const mode of SPECIAL_GAME_ORDER) {

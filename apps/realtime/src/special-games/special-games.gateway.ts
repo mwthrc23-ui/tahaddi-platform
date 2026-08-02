@@ -14,6 +14,11 @@ import {
   type SpecialGameMode,
 } from '@tahaddi/domain';
 import type { Server, Socket } from 'socket.io';
+import {
+  allowWebSocketOrigin,
+  allowWebSocketRequest,
+} from '../config/web-origins.js';
+import { SocketEventRateLimiter } from './socket-event-rate-limiter.js';
 import { SpecialGamesService } from './special-games.service.js';
 import type {
   ClientToServerSpecialEvents,
@@ -35,7 +40,8 @@ const getRoundCount = (mode: SpecialGameMode) =>
     : REVERSE_TIME_BANK.length;
 
 @WebSocketGateway({
-  cors: { origin: '*', credentials: false },
+  cors: { origin: allowWebSocketOrigin, credentials: true },
+  allowRequest: allowWebSocketRequest,
   namespace: '/special-games',
 })
 export class SpecialGamesGateway
@@ -45,6 +51,7 @@ export class SpecialGamesGateway
   server!: SpecialServer;
 
   private readonly socketRooms = new Map<string, string>();
+  private readonly rateLimiter = new SocketEventRateLimiter();
 
   constructor(private readonly games: SpecialGamesService) {}
 
@@ -53,6 +60,7 @@ export class SpecialGamesGateway
   }
 
   async handleDisconnect(client: SpecialSocket) {
+    this.rateLimiter.clearSocket(client.id);
     const pin = this.socketRooms.get(client.id);
     if (!pin) return;
     this.socketRooms.delete(client.id);
@@ -87,11 +95,33 @@ export class SpecialGamesGateway
     return locked.value;
   }
 
+  private canCreateRoom(client: SpecialSocket) {
+    const socketAllowed = this.rateLimiter.consume(
+      `socket:${client.id}:room-create`,
+      3,
+      60_000,
+    );
+    if (!socketAllowed) return false;
+
+    const address = client.handshake.address?.trim();
+    return address
+      ? this.rateLimiter.consume(`address:${address}:room-create`, 30, 60_000)
+      : true;
+  }
+
   @SubscribeMessage('special:room:create')
   async createRoom(
     @ConnectedSocket() client: SpecialSocket,
     @MessageBody() payload: { mode?: string },
   ) {
+    if (!this.canCreateRoom(client)) {
+      client.emit('special:error', {
+        code: 'RATE_LIMITED',
+        message:
+          'تم إنشاء غرف كثيرة خلال وقت قصير. انتظر دقيقة ثم حاول مجددًا.',
+      });
+      return;
+    }
     if (!payload?.mode || !isSpecialGameMode(payload.mode)) {
       client.emit('special:error', {
         code: 'INVALID_MODE',

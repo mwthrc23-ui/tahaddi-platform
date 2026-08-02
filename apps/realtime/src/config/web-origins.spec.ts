@@ -1,4 +1,9 @@
-import { getAllowedWebOrigins } from './web-origins.js';
+import {
+  allowWebSocketOrigin,
+  allowWebSocketRequest,
+  getAllowedWebOrigins,
+  isAllowedWebSocketOrigin,
+} from './web-origins.js';
 
 describe('getAllowedWebOrigins', () => {
   const originalEnvironment = process.env;
@@ -30,5 +35,42 @@ describe('getAllowedWebOrigins', () => {
       'https://preview.example.vercel.app',
       'http://localhost:3000',
     ]);
+  });
+
+  it('does not expose the local development origin in production', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.WEB_ORIGIN = 'https://play.example.com';
+
+    expect(getAllowedWebOrigins()).toEqual(['https://play.example.com']);
+  });
+
+  it('accepts exact normalized origins and rejects missing or lookalike origins', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.WEB_ORIGIN = 'https://PLAY.example.com:443/';
+
+    expect(isAllowedWebSocketOrigin('https://play.example.com')).toBe(true);
+    expect(isAllowedWebSocketOrigin('https://play.example.com/')).toBe(true);
+    expect(isAllowedWebSocketOrigin('https://play.example.com.evil.test')).toBe(
+      false,
+    );
+    expect(isAllowedWebSocketOrigin('*')).toBe(false);
+    expect(isAllowedWebSocketOrigin('null')).toBe(false);
+    expect(isAllowedWebSocketOrigin(undefined)).toBe(false);
+  });
+
+  it('applies the same origin decision to CORS and the Socket.IO handshake', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.WEB_ORIGIN = 'https://play.example.com';
+    const allowed = jest.fn();
+    const rejected = jest.fn();
+
+    allowWebSocketOrigin('https://play.example.com', allowed);
+    allowWebSocketRequest(
+      { headers: { origin: 'https://evil.example.com' } },
+      rejected,
+    );
+
+    expect(allowed).toHaveBeenCalledWith(null, true);
+    expect(rejected).toHaveBeenCalledWith(null, false);
   });
 });

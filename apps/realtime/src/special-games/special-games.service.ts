@@ -623,6 +623,13 @@ export class SpecialGamesService {
         message: 'التصويت غير مفتوح الآن.',
       };
     }
+    if (!room.players.some((player) => player.id === socketId)) {
+      return {
+        ok: false,
+        code: 'NOT_PLAYER',
+        message: 'انضم إلى الغرفة قبل التصويت.',
+      };
+    }
     if (room.reverseVoterIds.includes(socketId)) {
       return { ok: false, code: 'ALREADY_VOTED', message: 'سُجل صوتك بالفعل.' };
     }
