@@ -7675,18 +7675,6 @@ body::after {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.games-grid > :nth-child(4n + 1) {
-  grid-column: span 2;
-}
-
-.games-grid > :nth-child(4n + 2) {
-  grid-column: span 1;
-}
-
-.games-grid > :nth-child(4n + 3) {
-  grid-column: span 1;
-}
-
 /* Categories Section */
 .categories-section {
   position: relative;
@@ -7976,7 +7964,6 @@ body::after {
 
   .home-preview-arena {
     min-block-size: 24rem;
-    order: -1;
   }
 
   .home-room-card {
@@ -7993,12 +7980,6 @@ body::after {
 
   .games-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .games-grid > :nth-child(4n + 1),
-  .games-grid > :nth-child(4n + 2),
-  .games-grid > :nth-child(4n + 3) {
-    grid-column: auto;
   }
 
   .categories-section .card-grid {
@@ -8028,6 +8009,12 @@ body::after {
   .cta-section .button {
     inline-size: 100%;
     justify-self: stretch;
+  }
+}
+
+@media (max-width: 30rem) {
+  .categories-section .card-grid {
+    grid-template-columns: 1fr;
   }
 }
 

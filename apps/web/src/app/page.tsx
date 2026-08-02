@@ -223,32 +223,6 @@ function HomePageContent({
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="section features-section" id="features">
-        <Reveal className="container">
-          <div className="section-heading centered">
-            <div>
-              <span className="eyebrow">✨ لماذا تحدّي؟</span>
-              <h2>منصة مسابقات عربية فاخرة</h2>
-              <p>تجربة مسابقات عربية أصيلة بتصميم فاخر وتقنية متطورة</p>
-            </div>
-          </div>
-          <div className="features-grid" role="list">
-            {features.map((feature, index) => (
-              <div key={index} className="feature-card" role="listitem">
-                <div className="feature-icon">
-                  {feature.icon}
-                </div>
-                <div className="feature-content">
-                  <h3>{feature.title}</h3>
-                  <p>{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Reveal>
-      </section>
-
       {/* How It Works Section */}
       <section className="section tinted home-how-section" id="how">
         <Reveal className="container">
@@ -294,7 +268,7 @@ function HomePageContent({
               <h2>المسابقة لا تبدأ من صفحة فارغة</h2>
             </div>
           </div>
-          <div className="card-grid three games-grid">
+          <div className="card-grid games-grid">
             {games.map((item) => {
               const GameIcon = item.icon;
               return (
@@ -308,28 +282,6 @@ function HomePageContent({
                 />
               );
             })}
-          </div>
-        </Reveal>
-      </section>
-
-      {/* Categories Section */}
-      <section className="section tinted categories-section" id="categories">
-        <Reveal className="container">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">📚 بنك الأسئلة</span>
-              <h2>اختر الفئة التي تشعل الجولة</h2>
-            </div>
-          </div>
-          <div className="card-grid four">
-            {categories.map((item) => (
-              <CategoryCard
-                key={item.title}
-                title={item.title}
-                icon={item.icon}
-                href={`/questions?category=${encodeURIComponent(item.slug)}`}
-              />
-            ))}
           </div>
         </Reveal>
       </section>
@@ -378,6 +330,52 @@ function HomePageContent({
         </Reveal>
       </section>
 
+      {/* Categories Section */}
+      <section className="section tinted categories-section" id="categories">
+        <Reveal className="container">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">📚 بنك الأسئلة</span>
+              <h2>اختر الفئة التي تشعل الجولة</h2>
+            </div>
+          </div>
+          <div className="card-grid four">
+            {categories.map((item) => (
+              <CategoryCard
+                key={item.title}
+                title={item.title}
+                icon={item.icon}
+                href={`/questions?category=${encodeURIComponent(item.slug)}`}
+              />
+            ))}
+          </div>
+        </Reveal>
+      </section>
+
+      {/* Features Section */}
+      <section className="section features-section" id="features">
+        <Reveal className="container">
+          <div className="section-heading centered">
+            <div>
+              <span className="eyebrow">✨ لماذا تحدّي؟</span>
+              <h2>منصة مسابقات عربية فاخرة</h2>
+              <p>تجربة مسابقات عربية أصيلة بتصميم فاخر وتقنية متطورة</p>
+            </div>
+          </div>
+          <div className="features-grid" role="list">
+            {features.map((feature, index) => (
+              <div key={index} className="feature-card" role="listitem">
+                <div className="feature-icon">{feature.icon}</div>
+                <div className="feature-content">
+                  <h3>{feature.title}</h3>
+                  <p>{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      </section>
+
       {/* Leaderboard Section */}
       <section className="section leaderboard-section" id="leaderboard">
         <Reveal className="container split-section">
@@ -410,12 +408,12 @@ function HomePageContent({
       </section>
 
       {/* CTA Section */}
-      <section className="section">
+      <section className="section" id="final-cta" aria-labelledby="final-cta-heading">
         <Reveal className="container cta-section">
           <div>
             <Gamepad2 aria-hidden="true" />
             <span>مستعد لصناعة التحدّي؟</span>
-            <h2>افتح الغرفة، أرسل الدعوة، واترك الحماس يعمل.</h2>
+            <h2 id="final-cta-heading">افتح الغرفة، أرسل الدعوة، واترك الحماس يعمل.</h2>
           </div>
           <ButtonLink href="/quizzes/new" variant="gold" size="lg">
             أنشئ مسابقتك

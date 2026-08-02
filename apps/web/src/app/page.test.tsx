@@ -56,6 +56,30 @@ describe('HomePage', () => {
     expect(within(steps).getByText('تابع النتيجة')).toBeInTheDocument();
   });
 
+  it('يرتب رحلة الصفحة من فهم الجولة إلى اختيارها ثم بدء التحدي', () => {
+    renderHomePage();
+
+    const sectionIds = Array.from(document.querySelectorAll('main > section')).map(
+      (section) => section.id,
+    );
+
+    expect(sectionIds).toEqual([
+      'top',
+      'how',
+      'games',
+      'public-quizzes',
+      'categories',
+      'features',
+      'leaderboard',
+      'final-cta',
+    ]);
+    expect(
+      screen.getByRole('region', {
+        name: 'افتح الغرفة، أرسل الدعوة، واترك الحماس يعمل.',
+      }),
+    ).toHaveAttribute('id', 'final-cta');
+  });
+
   it('يبقي روابط الألعاب الحديثة والقائمة العامة عاملة', async () => {
     renderHomePage();
 
