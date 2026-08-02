@@ -12,14 +12,11 @@
 
 ## النشر
 
-المصادقة الديناميكية لا تتوافق مع GitHub Pages الثابت. أبقينا `output: 'export'` متاحًا عند `TAHADDI_DEPLOY_TARGET=static`، لكن تشغيل المصادقة يحتاج نشر Next.js على Vercel أو خدمة Node:
+المصادقة الديناميكية تحتاج نشر Next.js على Vercel أو خدمة Node:
 
-1. اضبط `TAHADDI_DEPLOY_TARGET=node`.
-2. وفر `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, وبيانات OAuth في منصة الأسرار.
-3. انقل `apps/web` إلى Vercel أو Node runtime.
-4. أبق `apps/realtime` كخدمة Node طويلة التشغيل مستقلة.
-
-Workflow الحالي لا يرفع Pages إلا إذا كان متغير المستودع `TAHADDI_DEPLOY_TARGET` يساوي `static`.
+1. وفر `DATABASE_URL`, `AUTH_SECRET`, `AUTH_URL`, وبيانات OAuth في منصة الأسرار.
+2. انشر `apps/web` على Vercel أو Node runtime.
+3. أبق `apps/realtime` كخدمة Node طويلة التشغيل مستقلة.
 
 ## اختبارات المرحلة
 

@@ -1,5 +1,3 @@
-# The web app uses NextAuth, API routes, and Server Actions, so it requires a Node runtime.
-# GitHub Pages static export is intentionally not part of this workflow.
 name: CI
 
 on:
@@ -25,7 +23,6 @@ jobs:
       AUTH_URL: http://127.0.0.1:3000
       NEXTAUTH_URL: http://127.0.0.1:3000
       RUN_AUTH_E2E: 'true'
-      TAHADDI_DEPLOY_TARGET: node
     services:
       postgres:
         image: postgres:16-alpine

@@ -18,7 +18,7 @@
 
 الواجهة تعمل افتراضيًا على `http://localhost:3000`، وفحص خدمة الزمن الحقيقي على `http://localhost:3001/health`.
 
-صفحة مرجع الواجهة متاحة في `/design-system`، والشاشات التجريبية في `/demo/waiting` و`/demo/question` و`/demo/results` و`/demo/winners`. يبدأ مسار الجلسة المباشرة من `/host` بعد تسجيل دخول المضيف، ويفضّل Google OAuth عند توفره. ينضم اللاعب كزائر دون حساب من `/join` أو رابط دعوة مثل `/join/[code]`، ثم ينتقل إلى `/live/[sessionId]/play`.
+صفحة مرجع الواجهة متاحة في `/design-system`. يبدأ مسار الجلسة المباشرة من `/host` بعد تسجيل دخول المضيف، ويفضّل Google OAuth عند توفره. ينضم اللاعب كزائر دون حساب من `/join` أو رابط دعوة مثل `/join/[code]`، ثم ينتقل إلى `/live/[sessionId]/play`.
 
 ## الأوامر
 
@@ -29,7 +29,7 @@
 | `pnpm lint`                           | فحص ESLint دون تعديل الملفات      |
 | `pnpm typecheck`                      | فحص TypeScript الصارم             |
 | `pnpm test`                           | تشغيل الاختبارات الحالية          |
-| `pnpm --filter @tahaddi/web test:e2e` | تشغيل اختبارات الواجهة التجريبية  |
+| `pnpm --filter @tahaddi/web test:e2e` | تشغيل اختبارات الواجهة الشاملة    |
 | `pnpm format:check`                   | فحص تنسيق Prettier                |
 | `pnpm db:validate`                    | التحقق من مخطط Prisma             |
 | `pnpm db:generate`                    | توليد عميل Prisma                 |
