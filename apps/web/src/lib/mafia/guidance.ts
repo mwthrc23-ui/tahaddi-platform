@@ -257,3 +257,257 @@ export function getMafiaMission(
   }
   return mafiaRoleGuides[role].missions[phase];
 }
+
+/** Public-facing role blurb safe to show before the game starts. */
+export type MafiaRoleCatalogEntry = {
+  role: MafiaRoleName;
+  label: string;
+  team: 'KILLERS' | 'CITIZENS';
+  teamLabel: string;
+  summary: string;
+  ability: string;
+  unlockAt: number;
+};
+
+export const mafiaRoleCatalog: readonly MafiaRoleCatalogEntry[] = [
+  {
+    role: 'KILLER',
+    label: 'القاتل',
+    team: 'KILLERS',
+    teamLabel: 'فريق القتلة',
+    summary: 'يقضي على المواطنين ليلًا ويتظاهر بالنهار أنه بريء.',
+    ability: 'اختيار ضحية واحدة كل ليلة مع زملائه عبر قناة سرية.',
+    unlockAt: 5,
+  },
+  {
+    role: 'DETECTIVE',
+    label: 'المحقق',
+    team: 'CITIZENS',
+    teamLabel: 'فريق المواطنين',
+    summary: 'يكشف ليلًا إن كان لاعب واحد قاتلًا أم لا.',
+    ability: 'نتيجة التحقيق تظهر له وحده في «معلومة خاصة».',
+    unlockAt: 5,
+  },
+  {
+    role: 'DOCTOR',
+    label: 'الطبيب',
+    team: 'CITIZENS',
+    teamLabel: 'فريق المواطنين',
+    summary: 'يحمي لاعبًا واحدًا من محاولة القتل كل ليلة.',
+    ability: 'يمكنه حماية نفسه أو أي لاعب حي.',
+    unlockAt: 5,
+  },
+  {
+    role: 'GUARD',
+    label: 'الحارس',
+    team: 'CITIZENS',
+    teamLabel: 'فريق المواطنين',
+    summary: 'يحمي لاعبًا آخر من محاولة القتل أثناء الليل.',
+    ability: 'لا يستطيع حماية نفسه؛ متاح من ٧ لاعبين.',
+    unlockAt: 7,
+  },
+  {
+    role: 'WITNESS',
+    label: 'الشاهد',
+    team: 'CITIZENS',
+    teamLabel: 'فريق المواطنين',
+    summary: 'يحصل بعد كل ليل على دليل مختصر عن أحد القتلة.',
+    ability: 'دليل جزئي فقط؛ متاح من ٨ لاعبين.',
+    unlockAt: 8,
+  },
+  {
+    role: 'CITIZEN',
+    label: 'مواطن',
+    team: 'CITIZENS',
+    teamLabel: 'فريق المواطنين',
+    summary: 'بلا قدرة سرية؛ يعتمد على النقاش والتصويت.',
+    ability: 'الملاحظة والمنطق هما أقوى أدواته.',
+    unlockAt: 5,
+  },
+] as const;
+
+export const mafiaHowToPlaySteps = [
+  {
+    title: 'انضم للغرفة',
+    detail: 'اكتب اسمك ورمز الغرفة. لا تحتاج حسابًا.',
+  },
+  {
+    title: 'اقرأ دورك سرًا',
+    detail: 'عند البدء تظهر بطاقتك لك وحدك. لا تصوّر الشاشة ولا تُظهرها.',
+  },
+  {
+    title: 'نفّذ مهمة المرحلة',
+    detail: 'ليلًا: قرار سري إن وُجد. نهارًا: نقاش. ثم صوّت لطرد مشتبه.',
+  },
+  {
+    title: 'كرر حتى الفوز',
+    detail: 'تستمر الدورة حتى يفوز القتلة أو المواطنون.',
+  },
+] as const;
+
+export const mafiaWinConditions = {
+  citizens: {
+    title: 'فوز المواطنين',
+    detail: 'يطردون كل القتلة بالتصويت قبل أن يتساوى العددان.',
+  },
+  killers: {
+    title: 'فوز القتلة',
+    detail: 'يصل عدد القتلة الأحياء إلى عدد المواطنين الأحياء أو يزيد عليه.',
+  },
+} as const;
+
+export const mafiaBeginnerTips = [
+  'لا تكشف دورك مبكرًا إلا إذا كانت الفائدة أكبر من الخطر.',
+  'اسأل كل مشتبه: لماذا صوّت بهذا الاتجاه؟ التناقض دليل.',
+  'القتلة يسمعون بعضهم ليلًا فقط؛ النهار قناة عامة للجميع.',
+  'إذا خرجت من اللعبة تابع من قناة المستبعدين دون كشف الأسرار.',
+  'ثبّت قرار الليل أو الصوت قبل انتهاء المؤقت؛ النظام لا ينتظر.',
+] as const;
+
+export const mafiaNightActionLabels: Partial<
+  Record<MafiaRoleName, { choose: string; confirm: string; confirmed: string }>
+> = {
+  KILLER: {
+    choose: 'اختر الضحية',
+    confirm: 'تثبيت قرار القتل',
+    confirmed: 'تم تثبيت ضحية الليل',
+  },
+  DETECTIVE: {
+    choose: 'تحقق من لاعب',
+    confirm: 'تثبيت التحقيق',
+    confirmed: 'تم تثبيت هدف التحقيق',
+  },
+  DOCTOR: {
+    choose: 'اختر من ستحميه',
+    confirm: 'تثبيت الحماية',
+    confirmed: 'تم تثبيت الحماية',
+  },
+  GUARD: {
+    choose: 'احمِ لاعبًا آخر',
+    confirm: 'تثبيت الحراسة',
+    confirmed: 'تم تثبيت الحراسة',
+  },
+};
+
+export const mafiaTeamLabels = {
+  KILLERS: 'فريق القتلة',
+  CITIZENS: 'فريق المواطنين',
+} as const;
+
+export function getMafiaTeam(role: MafiaRoleName): 'KILLERS' | 'CITIZENS' {
+  return role === 'KILLER' ? 'KILLERS' : 'CITIZENS';
+}
+
+export type MafiaPublicOutcomeKind =
+  | 'night-kill'
+  | 'night-safe'
+  | 'night-no-victim'
+  | 'vote-out'
+  | 'vote-tie';
+
+export type MafiaPublicOutcome = {
+  kind: MafiaPublicOutcomeKind;
+  body: string;
+  victimName: string | null;
+  title: string;
+};
+
+const NAMED_OUTCOME_PATTERN = /«([^»]+)»/;
+
+export function formatNightKillMessage(victimName: string) {
+  return `نتيجة الليل: تم قتل الضحية «${victimName}». ابدأوا النقاش لمعرفة من القاتل.`;
+}
+
+export function formatNightSavedMessage() {
+  return 'نتيجة الليل: لم يُقتل أحد — الحماية أنقذت الضحية المستهدفة.';
+}
+
+export function formatNightNoVictimMessage() {
+  return 'نتيجة الليل: لم يُقتل أحد — لم يتفق القتلة أو لم يُنفَّذ قرار.';
+}
+
+export function formatVoteOutMessage(victimName: string) {
+  return `نتيجة التصويت: تم استبعاد «${victimName}» من اللعبة. الأدوار تبقى سرية حتى النهاية.`;
+}
+
+export function formatVoteTieMessage() {
+  return 'نتيجة التصويت: تعادل — لم يُستبعد أحد. يستمر الليل التالي بنفس العدد.';
+}
+
+export function parseMafiaSystemOutcome(body: string): MafiaPublicOutcome | null {
+  const named = body.match(NAMED_OUTCOME_PATTERN)?.[1] ?? null;
+
+  if (body.startsWith('نتيجة الليل: تم قتل الضحية')) {
+    return {
+      kind: 'night-kill',
+      body,
+      victimName: named,
+      title: named ? `تم قتل الضحية: ${named}` : 'تم قتل ضحية',
+    };
+  }
+  if (body.startsWith('نتيجة الليل: لم يُقتل أحد — الحماية')) {
+    return {
+      kind: 'night-safe',
+      body,
+      victimName: null,
+      title: 'لم يُقتل أحد — الحماية نجحت',
+    };
+  }
+  if (body.startsWith('نتيجة الليل: لم يُقتل أحد')) {
+    return {
+      kind: 'night-no-victim',
+      body,
+      victimName: null,
+      title: 'لم يُقتل أحد هذه الليلة',
+    };
+  }
+  if (body.startsWith('نتيجة التصويت: تم استبعاد')) {
+    return {
+      kind: 'vote-out',
+      body,
+      victimName: named,
+      title: named ? `تم استبعاد: ${named}` : 'تم استبعاد لاعب',
+    };
+  }
+  if (body.startsWith('نتيجة التصويت: تعادل')) {
+    return {
+      kind: 'vote-tie',
+      body,
+      victimName: null,
+      title: 'تعادل التصويت — لم يُستبعد أحد',
+    };
+  }
+  return null;
+}
+
+/** Messages are expected newest-first (as loaded from the room feed). */
+export function getLatestMafiaPublicOutcome(
+  messages: ReadonlyArray<{ channel: string; body: string }>,
+): MafiaPublicOutcome | null {
+  for (const message of messages) {
+    if (message.channel !== 'SYSTEM') continue;
+    const parsed = parseMafiaSystemOutcome(message.body);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
+export function mafiaDisplayInitial(displayName: string) {
+  const trimmed = displayName.trim();
+  return trimmed ? trimmed.charAt(0) : '?';
+}
+
+export function getMafiaPhaseEveryoneHint(phase: MafiaPhaseName): string {
+  switch (phase) {
+    case 'LOBBY':
+      return 'الجميع ينتظر بدء المضيف بعد اكتمال العدد.';
+    case 'NIGHT':
+      return 'الأدوار السرية تختار، وبقية اللاعبين ينتظرون بصمت.';
+    case 'DAY':
+      return 'ناقشوا نتيجة الليل والأدلة في القناة العامة.';
+    case 'VOTING':
+      return 'كل لاعب حي يثبّت صوتًا ضد مشتبه واحد.';
+    case 'FINISHED':
+      return 'انتهت اللعبة وكُشفت الأدوار.';
+  }
+}

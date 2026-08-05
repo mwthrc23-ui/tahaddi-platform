@@ -3,6 +3,7 @@ import {
   isSpecialGameMode,
   PARALLEL_WORLD_BANK,
   REVERSE_TIME_BANK,
+  SPECIAL_GAME_HOW_TO,
   SPECIAL_GAME_META,
   SPECIAL_GAME_ORDER,
   SPECTRUM_BANK,
@@ -10,6 +11,7 @@ import {
 } from '@tahaddi/domain';
 import {
   COLOR_RUSH_BANK,
+  INSTANT_GAME_HOW_TO,
   INSTANT_GAME_META,
   INSTANT_GAME_ORDER,
   isInstantGameMode,
@@ -106,5 +108,20 @@ describe('game content banks', () => {
     );
     expect(new Set(WORD_CODE_BANK.map((item) => item.word)).size).toBe(WORD_CODE_BANK.length);
     expect(new Set(COLOR_RUSH_BANK.map((item) => item.value)).size).toBe(COLOR_RUSH_BANK.length);
+  });
+
+  it('keeps how-to guides complete for every published mode', () => {
+    for (const mode of SPECIAL_GAME_ORDER) {
+      const guide = SPECIAL_GAME_HOW_TO[mode];
+      expect(guide.goal.length).toBeGreaterThan(12);
+      expect(guide.steps.length).toBeGreaterThanOrEqual(3);
+      expect(guide.tip.length).toBeGreaterThan(8);
+    }
+    for (const mode of INSTANT_GAME_ORDER) {
+      const guide = INSTANT_GAME_HOW_TO[mode];
+      expect(guide.goal.length).toBeGreaterThan(12);
+      expect(guide.steps.length).toBeGreaterThanOrEqual(3);
+      expect(guide.tip.length).toBeGreaterThan(8);
+    }
   });
 });

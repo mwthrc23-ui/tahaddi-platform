@@ -12,6 +12,12 @@ const { prisma } = vi.hoisted(() => ({
     mafiaMessage: {
       create: vi.fn(),
     },
+    mafiaAction: {
+      findMany: vi.fn(),
+    },
+    mafiaParticipant: {
+      update: vi.fn(),
+    },
   },
 }));
 
@@ -111,5 +117,47 @@ describe('advanceMafiaGame', () => {
     });
     expect(prisma.mafiaGame.update).toHaveBeenCalledTimes(1);
     expect(prisma.mafiaMessage.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('announces the killed victim by name when night resolves', async () => {
+    const expiredDeadline = new Date('2026-07-25T11:59:59.000Z');
+    prisma.mafiaGame.findUnique
+      .mockResolvedValueOnce({
+        status: 'NIGHT',
+        autoMode: true,
+        phaseEndsAt: expiredDeadline,
+      })
+      .mockResolvedValueOnce({
+        id: 'game-1',
+        status: 'NIGHT',
+        currentRound: 1,
+        daySeconds: 90,
+        participants: [
+          { id: 'p-killer', displayName: 'خالد', role: 'KILLER' },
+          { id: 'p-victim', displayName: 'نورة', role: 'CITIZEN' },
+          { id: 'p-doc', displayName: 'فهد', role: 'DOCTOR' },
+          { id: 'p-det', displayName: 'ليان', role: 'DETECTIVE' },
+          { id: 'p-cit', displayName: 'ماجد', role: 'CITIZEN' },
+        ],
+      });
+    prisma.mafiaGame.updateMany.mockResolvedValue({ count: 1 });
+    prisma.mafiaAction.findMany.mockResolvedValue([{ type: 'KILL', targetId: 'p-victim' }]);
+    prisma.mafiaParticipant.update.mockResolvedValue({});
+    prisma.mafiaGame.update.mockResolvedValue({});
+    prisma.mafiaMessage.create.mockResolvedValue({});
+
+    await advanceMafiaGame('game-1');
+
+    expect(prisma.mafiaParticipant.update).toHaveBeenCalledWith({
+      where: { id: 'p-victim' },
+      data: { status: 'ELIMINATED', eliminatedAt: expect.any(Date) },
+    });
+    expect(prisma.mafiaMessage.create).toHaveBeenCalledWith({
+      data: {
+        gameId: 'game-1',
+        channel: 'SYSTEM',
+        body: expect.stringContaining('تم قتل الضحية «نورة»'),
+      },
+    });
   });
 });

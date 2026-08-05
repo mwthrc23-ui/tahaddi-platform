@@ -26,6 +26,7 @@ import {
   MEMORY_MODE_META,
   MEMORY_SYMBOL_BANK,
   COLOR_RUSH_BANK,
+  INSTANT_GAME_HOW_TO,
   INSTANT_GAME_META,
   WORD_CODE_BANK,
 } from './game-data';
@@ -370,11 +371,23 @@ export function MemoryFlash() {
           <div className="memory-setup-hero">
             <Brain aria-hidden="true" />
             <h2>ومضة الذاكرة</h2>
-            <p>احفظ التسلسل المتزايد، ثم أعد كتابته بأسرع ما يمكن.</p>
+            <p>{INSTANT_GAME_HOW_TO['memory-flash'].goal}</p>
+          </div>
+
+          <div className="instant-howto" aria-label="طريقة اللعب">
+            <ol>
+              {INSTANT_GAME_HOW_TO['memory-flash'].steps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+            <p>
+              <Lightbulb aria-hidden="true" />
+              {INSTANT_GAME_HOW_TO['memory-flash'].tip}
+            </p>
           </div>
 
           <div className="memory-setup-section">
-            <h3>ال modo</h3>
+            <h3>وضع اللعب</h3>
             <div className="memory-mode-grid">
               {(Object.keys(MEMORY_MODE_META) as Array<'solo' | 'versus'>).map((item) => (
                 <button
@@ -598,7 +611,18 @@ function WordCode() {
           <div className="instant-intro">
             <Lightbulb aria-hidden="true" />
             <h2>فكّ أكبر عدد من الشفرات</h2>
-            <p>رتّب الحروف العربية وفق التلميح. كل كلمة صحيحة تمنحك مئة نقطة.</p>
+            <p>{INSTANT_GAME_HOW_TO['word-code'].goal}</p>
+            <div className="instant-howto" aria-label="طريقة اللعب">
+              <ol>
+                {INSTANT_GAME_HOW_TO['word-code'].steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+              <p>
+                <Lightbulb aria-hidden="true" />
+                {INSTANT_GAME_HOW_TO['word-code'].tip}
+              </p>
+            </div>
             <Button variant="gold" size="lg" onClick={reset}>
               ابدأ التحدّي
             </Button>
@@ -701,7 +725,18 @@ function ColorRush() {
           <div className="instant-intro">
             <Sparkles aria-hidden="true" />
             <h2>لا تثق بما تقرأه</h2>
-            <p>اختر لون الحبر الظاهر، وتجاهل معنى الكلمة. كل إصابة تمنحك ٧٥ نقطة.</p>
+            <p>{INSTANT_GAME_HOW_TO['color-rush'].goal}</p>
+            <div className="instant-howto" aria-label="طريقة اللعب">
+              <ol>
+                {INSTANT_GAME_HOW_TO['color-rush'].steps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+              <p>
+                <Lightbulb aria-hidden="true" />
+                {INSTANT_GAME_HOW_TO['color-rush'].tip}
+              </p>
+            </div>
             <Button variant="gold" size="lg" onClick={start}>
               ابدأ التحدّي
             </Button>

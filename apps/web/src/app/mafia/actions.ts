@@ -96,7 +96,7 @@ export async function startMafiaGame(formData: FormData) {
       data: {
         gameId: game.id,
         channel: 'SYSTEM',
-        body: 'بدأت اللعبة. افتح بطاقة دورك سرًا، فالليل قد حل.',
+        body: 'بدأت اللعبة. افتح بطاقة دورك سرًا، نفّذ مهمة الليل إن وُجدت، وانتظر إعلان النتيجة عند الصباح.',
       },
     });
     return 'started' as const;
