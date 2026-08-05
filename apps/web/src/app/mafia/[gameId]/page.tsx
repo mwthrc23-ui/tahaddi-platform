@@ -145,9 +145,10 @@ export default async function MafiaHostPage({
                 <ShieldCheck aria-hidden="true" />
                 لوحة المضيف
               </span>
-              <h1>
-                {mafiaPhaseEmoji[game.status]} {mafiaPhaseLabels[game.status]}
-              </h1>
+<h1>
+  <span aria-hidden="true">{mafiaPhaseEmoji[game.status]} </span>
+  {mafiaPhaseLabels[game.status]}
+</h1>
               <p>
                 الجولة {game.currentRound.toLocaleString('ar-SA')} ·{' '}
                 {game.autoMode ? 'إدارة تلقائية مع تجاوز يدوي' : 'إدارة يدوية'} ·{' '}
