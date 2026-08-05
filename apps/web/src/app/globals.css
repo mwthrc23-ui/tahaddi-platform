@@ -277,6 +277,118 @@ summary:focus-visible {
   font-size: 0.88rem;
   font-weight: 700;
 }
+.mafia-outcome-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  margin-block-end: var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--danger, #ef4444) 55%, var(--border));
+  border-radius: 1rem;
+  background:
+    radial-gradient(
+      circle at 10% 20%,
+      color-mix(in srgb, var(--danger, #ef4444) 22%, transparent),
+      transparent 45%
+    ),
+    color-mix(in srgb, var(--danger, #ef4444) 10%, var(--card));
+  padding: var(--space-4);
+}
+.mafia-outcome-banner[data-kind='night-safe'],
+.mafia-outcome-banner[data-kind='night-no-victim'],
+.mafia-outcome-banner[data-kind='vote-tie'] {
+  border-color: color-mix(in srgb, var(--success, #22c55e) 45%, var(--border));
+  background:
+    radial-gradient(
+      circle at 10% 20%,
+      color-mix(in srgb, var(--success, #22c55e) 18%, transparent),
+      transparent 45%
+    ),
+    color-mix(in srgb, var(--success, #22c55e) 8%, var(--card));
+}
+.mafia-outcome-banner > svg {
+  inline-size: 1.6rem;
+  block-size: 1.6rem;
+  color: var(--danger, #ef4444);
+  margin-block-start: 0.15rem;
+}
+.mafia-outcome-banner[data-kind='night-safe'] > svg,
+.mafia-outcome-banner[data-kind='night-no-victim'] > svg,
+.mafia-outcome-banner[data-kind='vote-tie'] > svg {
+  color: var(--success, #22c55e);
+}
+.mafia-outcome-banner strong {
+  display: block;
+  font-size: 1.15rem;
+}
+.mafia-outcome-banner p {
+  margin: 0.35rem 0 0;
+}
+.mafia-outcome-victim {
+  display: inline-flex;
+  margin-block-start: 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--danger, #ef4444) 18%, transparent);
+  padding: 0.25rem 0.7rem;
+  font-weight: 700;
+}
+.mafia-lobby-layout {
+  display: grid;
+  gap: var(--space-5);
+}
+.mafia-lobby-roster {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+}
+.mafia-lobby-roster__hint {
+  margin: 0.35rem 0 var(--space-4);
+  color: var(--muted-foreground);
+}
+.mafia-player-avatar {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2.4rem;
+  block-size: 2.4rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 22%, var(--card));
+  color: var(--foreground);
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+.mafia-player-avatar--out {
+  background: color-mix(in srgb, var(--danger, #ef4444) 24%, var(--card));
+  color: color-mix(in srgb, var(--danger, #ef4444) 80%, var(--foreground));
+}
+.mafia-player-identity {
+  display: grid;
+  gap: 0.1rem;
+  min-inline-size: 0;
+  flex: 1 1 auto;
+}
+.mafia-player-identity strong {
+  font-size: 1.08rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.mafia-player-identity span {
+  color: var(--muted-foreground);
+  font-size: 0.84rem;
+}
+.mafia-roster-list--lobby li {
+  padding-block: 0.85rem;
+}
+.mafia-badge-killed {
+  background: color-mix(in srgb, var(--danger, #ef4444) 24%, transparent);
+  color: color-mix(in srgb, var(--danger, #ef4444) 85%, var(--foreground));
+}
+.mafia-player-row[data-status='out'] {
+  border-color: color-mix(in srgb, var(--danger, #ef4444) 40%, var(--border));
+  background: color-mix(in srgb, var(--danger, #ef4444) 8%, var(--card));
+}
+.mafia-player-row[data-status='out'] .mafia-player-identity strong {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
 .mafia-allies {
   border: 1px dashed color-mix(in srgb, var(--danger, #ef4444) 50%, var(--border));
   border-radius: 0.9rem;
@@ -344,7 +456,7 @@ summary:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   border: 1px solid var(--border);
   border-radius: 0.85rem;
   padding: 0.65rem 0.85rem;
@@ -588,13 +700,18 @@ summary:focus-visible {
 .mafia-player-row,
 .mafia-message {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: var(--space-3);
   border: 1px solid var(--border);
   border-radius: 1rem;
   background: color-mix(in srgb, var(--card) 86%, transparent);
   padding: var(--space-3);
+}
+.mafia-player-row > form,
+.mafia-message > form {
+  margin-inline-start: auto;
 }
 .mafia-player-row > div,
 .mafia-message > div {

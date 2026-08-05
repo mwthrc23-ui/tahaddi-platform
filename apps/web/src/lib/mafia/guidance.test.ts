@@ -1,15 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatNightKillMessage,
+  formatNightNoVictimMessage,
+  formatNightSavedMessage,
+  formatVoteOutMessage,
+  formatVoteTieMessage,
+  getLatestMafiaPublicOutcome,
   getMafiaMission,
   getMafiaPhaseEveryoneHint,
   getMafiaTeam,
   mafiaBeginnerTips,
+  mafiaDisplayInitial,
   mafiaHowToPlaySteps,
   mafiaNightActionLabels,
   mafiaPhaseGuides,
   mafiaRoleCatalog,
   mafiaRoleGuides,
   mafiaWinConditions,
+  parseMafiaSystemOutcome,
 } from './guidance';
 import type { MafiaRoleName } from './rules';
 
@@ -48,5 +56,32 @@ describe('mafia guidance', () => {
     expect(getMafiaTeam('CITIZEN')).toBe('CITIZENS');
     expect(getMafiaPhaseEveryoneHint('NIGHT')).toContain('الأدوار السرية');
     expect(mafiaNightActionLabels.KILLER?.confirm).toContain('القتل');
+  });
+
+  it('formats and parses public night/vote outcomes with clear victim names', () => {
+    const kill = formatNightKillMessage('سارة');
+    expect(kill).toContain('تم قتل الضحية');
+    expect(kill).toContain('«سارة»');
+    expect(parseMafiaSystemOutcome(kill)).toMatchObject({
+      kind: 'night-kill',
+      victimName: 'سارة',
+      title: 'تم قتل الضحية: سارة',
+    });
+
+    expect(parseMafiaSystemOutcome(formatNightSavedMessage())?.kind).toBe('night-safe');
+    expect(parseMafiaSystemOutcome(formatNightNoVictimMessage())?.kind).toBe('night-no-victim');
+    expect(parseMafiaSystemOutcome(formatVoteOutMessage('ماجد'))).toMatchObject({
+      kind: 'vote-out',
+      victimName: 'ماجد',
+    });
+    expect(parseMafiaSystemOutcome(formatVoteTieMessage())?.kind).toBe('vote-tie');
+    expect(mafiaDisplayInitial(' أحمد')).toBe('أ');
+
+    const latest = getLatestMafiaPublicOutcome([
+      { channel: 'PUBLIC', body: 'مرحبا' },
+      { channel: 'SYSTEM', body: formatNightKillMessage('ليان') },
+      { channel: 'SYSTEM', body: 'بدأت اللعبة.' },
+    ]);
+    expect(latest?.victimName).toBe('ليان');
   });
 });

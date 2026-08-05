@@ -1,4 +1,11 @@
 import { getPrismaClient } from '@/lib/auth/prisma';
+import {
+  formatNightKillMessage,
+  formatNightNoVictimMessage,
+  formatNightSavedMessage,
+  formatVoteOutMessage,
+  formatVoteTieMessage,
+} from './guidance';
 import { determineMafiaWinner, type MafiaRoleName } from './rules';
 
 function deadline(seconds: number, now = new Date()) {
@@ -74,10 +81,10 @@ async function resolveNight(gameId: string, expectedPhaseEndsAt: Date | null, fo
       .filter((role): role is MafiaRoleName => Boolean(role));
     const winner = determineMafiaWinner(aliveRoles);
     const message = eliminated
-      ? `انتهى الليل. خرج ${eliminated.displayName} من اللعبة. ابدأوا النقاش لمعرفة من القاتل.`
+      ? formatNightKillMessage(eliminated.displayName)
       : killedId
-        ? 'انتهى الليل سالمًا: الحماية أنقذت المستهدف. لا أحد خرج.'
-        : 'انتهى الليل من دون ضحية. إما لم يتفق القتلة أو لم يُنفَّذ قرار.';
+        ? formatNightSavedMessage()
+        : formatNightNoVictimMessage();
 
     const killer = game.participants.find((player) => player.role === 'KILLER');
     const witness = game.participants.find((player) => player.role === 'WITNESS');
@@ -181,8 +188,8 @@ async function resolveVoting(gameId: string, expectedPhaseEndsAt: Date | null, f
         gameId,
         channel: 'SYSTEM',
         body: eliminated
-          ? `نتيجة التصويت: خرج ${eliminated.displayName} من اللعبة. الأدوار تبقى سرية حتى النهاية.`
-          : 'تعادلت الأصوات؛ لم يخرج أحد. يستمر الليل التالي بنفس العدد.',
+          ? formatVoteOutMessage(eliminated.displayName)
+          : formatVoteTieMessage(),
       },
     });
     await tx.mafiaGame.update({

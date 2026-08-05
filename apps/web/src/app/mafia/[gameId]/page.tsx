@@ -4,6 +4,7 @@ import {
   Play,
   ShieldCheck,
   SkipForward,
+  Skull,
   Users,
   Volume2,
   VolumeX,
@@ -24,7 +25,9 @@ import { Badge, Button, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
 import {
+  getLatestMafiaPublicOutcome,
   getMafiaPhaseEveryoneHint,
+  mafiaDisplayInitial,
   mafiaPhaseGuides,
   mafiaWinConditions,
   type MafiaPhaseName,
@@ -121,6 +124,15 @@ export default async function MafiaHostPage({
     KILLERS: 'القتلة',
     GHOSTS: 'المستبعدون',
   };
+  const latestOutcome =
+    game.status === 'DAY' || game.status === 'VOTING' || game.status === 'NIGHT'
+      ? getLatestMafiaPublicOutcome(game.messages)
+      : null;
+  const showOutcomeBanner =
+    latestOutcome &&
+    ((game.status === 'DAY' && latestOutcome.kind.startsWith('night-')) ||
+      (game.status === 'VOTING' && latestOutcome.kind.startsWith('night-')) ||
+      (game.status === 'NIGHT' && latestOutcome.kind.startsWith('vote-')));
 
   return (
     <SiteLayout user={{ name: user.name }}>
@@ -161,6 +173,25 @@ export default async function MafiaHostPage({
                 <p>{getMafiaPhaseEveryoneHint(phase)}</p>
                 <span>التالي: {mafiaPhaseGuides[phase].next}</span>
               </section>
+              {showOutcomeBanner && latestOutcome && (
+                <section
+                  className="mafia-outcome-banner"
+                  data-kind={latestOutcome.kind}
+                  aria-live="assertive"
+                  role="status"
+                >
+                  <Skull aria-hidden="true" />
+                  <div>
+                    <strong>{latestOutcome.title}</strong>
+                    <p>{latestOutcome.body}</p>
+                    {latestOutcome.victimName && (
+                      <span className="mafia-outcome-victim">
+                        الاسم الظاهر للجميع: {latestOutcome.victimName}
+                      </span>
+                    )}
+                  </div>
+                </section>
+              )}
             </>
           )}
 
@@ -258,31 +289,53 @@ export default async function MafiaHostPage({
               </Card>
             </div>
 
-            <Card>
+            <Card className={game.status === 'LOBBY' ? 'mafia-lobby-roster' : undefined}>
               <div className="inline-between">
                 <h2>
                   <Users aria-hidden="true" />
-                  اللاعبون
+                  {game.status === 'LOBBY' ? 'اللاعبون في الانتظار' : 'اللاعبون'}
                 </h2>
-                <Badge>
+                <Badge className={game.status === 'LOBBY' ? 'badge-live' : undefined}>
                   {game.participants.length.toLocaleString('ar-SA')} /{' '}
                   {game.maxPlayers.toLocaleString('ar-SA')}
                 </Badge>
               </div>
+              {game.status === 'LOBBY' && (
+                <p className="mafia-lobby-roster__hint">
+                  أسماء المنضمين ظاهرة بوضوح للجميع في غرفة الانتظار.
+                </p>
+              )}
               {game.participants.length ? (
                 <div className="mafia-player-list">
-                  {game.participants.map((participant) => (
-                    <div className="mafia-player-row" key={participant.id}>
-                      <div>
+                  {game.participants.map((participant, index) => (
+                    <div
+                      className="mafia-player-row"
+                      data-status={participant.status === 'ELIMINATED' ? 'out' : 'alive'}
+                      key={participant.id}
+                    >
+                      <span
+                        className={`mafia-player-avatar${
+                          participant.status === 'ELIMINATED' ? ' mafia-player-avatar--out' : ''
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {mafiaDisplayInitial(participant.displayName)}
+                      </span>
+                      <div className="mafia-player-identity">
                         <strong>{participant.displayName}</strong>
                         <span>
-                          {participant.role
-                            ? `${mafiaRoleEmoji[participant.role as MafiaRoleName]} ${mafiaRoleLabels[participant.role as MafiaRoleName]}`
-                            : 'ينتظر توزيع الدور'}
+                          {game.status === 'LOBBY'
+                            ? `لاعب ${(index + 1).toLocaleString('ar-SA')}`
+                            : participant.role
+                              ? `${mafiaRoleEmoji[participant.role as MafiaRoleName]} ${mafiaRoleLabels[participant.role as MafiaRoleName]}`
+                              : 'ينتظر توزيع الدور'}
                           {' · '}
-                          {participant.status === 'ALIVE' ? 'حي' : 'مستبعد'}
+                          {participant.status === 'ALIVE' ? 'حي' : 'ضحية / مستبعد'}
                         </span>
                       </div>
+                      {participant.status === 'ELIMINATED' && (
+                        <Badge className="mafia-badge-killed">ضحية</Badge>
+                      )}
                       <form action={moderateMafiaParticipant}>
                         <input type="hidden" name="gameId" value={game.id} />
                         <input type="hidden" name="participantId" value={participant.id} />

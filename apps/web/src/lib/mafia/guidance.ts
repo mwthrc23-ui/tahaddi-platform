@@ -398,6 +398,105 @@ export function getMafiaTeam(role: MafiaRoleName): 'KILLERS' | 'CITIZENS' {
   return role === 'KILLER' ? 'KILLERS' : 'CITIZENS';
 }
 
+export type MafiaPublicOutcomeKind =
+  | 'night-kill'
+  | 'night-safe'
+  | 'night-no-victim'
+  | 'vote-out'
+  | 'vote-tie';
+
+export type MafiaPublicOutcome = {
+  kind: MafiaPublicOutcomeKind;
+  body: string;
+  victimName: string | null;
+  title: string;
+};
+
+const NAMED_OUTCOME_PATTERN = /«([^»]+)»/;
+
+export function formatNightKillMessage(victimName: string) {
+  return `نتيجة الليل: تم قتل الضحية «${victimName}». ابدأوا النقاش لمعرفة من القاتل.`;
+}
+
+export function formatNightSavedMessage() {
+  return 'نتيجة الليل: لم يُقتل أحد — الحماية أنقذت الضحية المستهدفة.';
+}
+
+export function formatNightNoVictimMessage() {
+  return 'نتيجة الليل: لم يُقتل أحد — لم يتفق القتلة أو لم يُنفَّذ قرار.';
+}
+
+export function formatVoteOutMessage(victimName: string) {
+  return `نتيجة التصويت: تم استبعاد «${victimName}» من اللعبة. الأدوار تبقى سرية حتى النهاية.`;
+}
+
+export function formatVoteTieMessage() {
+  return 'نتيجة التصويت: تعادل — لم يُستبعد أحد. يستمر الليل التالي بنفس العدد.';
+}
+
+export function parseMafiaSystemOutcome(body: string): MafiaPublicOutcome | null {
+  const named = body.match(NAMED_OUTCOME_PATTERN)?.[1] ?? null;
+
+  if (body.startsWith('نتيجة الليل: تم قتل الضحية')) {
+    return {
+      kind: 'night-kill',
+      body,
+      victimName: named,
+      title: named ? `تم قتل الضحية: ${named}` : 'تم قتل ضحية',
+    };
+  }
+  if (body.startsWith('نتيجة الليل: لم يُقتل أحد — الحماية')) {
+    return {
+      kind: 'night-safe',
+      body,
+      victimName: null,
+      title: 'لم يُقتل أحد — الحماية نجحت',
+    };
+  }
+  if (body.startsWith('نتيجة الليل: لم يُقتل أحد')) {
+    return {
+      kind: 'night-no-victim',
+      body,
+      victimName: null,
+      title: 'لم يُقتل أحد هذه الليلة',
+    };
+  }
+  if (body.startsWith('نتيجة التصويت: تم استبعاد')) {
+    return {
+      kind: 'vote-out',
+      body,
+      victimName: named,
+      title: named ? `تم استبعاد: ${named}` : 'تم استبعاد لاعب',
+    };
+  }
+  if (body.startsWith('نتيجة التصويت: تعادل')) {
+    return {
+      kind: 'vote-tie',
+      body,
+      victimName: null,
+      title: 'تعادل التصويت — لم يُستبعد أحد',
+    };
+  }
+  return null;
+}
+
+/** Messages are expected newest-first (as loaded from the room feed). */
+export function getLatestMafiaPublicOutcome(
+  messages: ReadonlyArray<{ channel: string; body: string }>,
+): MafiaPublicOutcome | null {
+  for (const message of messages) {
+    if (message.channel !== 'SYSTEM') continue;
+    const parsed = parseMafiaSystemOutcome(message.body);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
+export function mafiaDisplayInitial(displayName: string) {
+  const trimmed = displayName.trim();
+  return trimmed ? trimmed.charAt(0) : '?';
+}
+
 export function getMafiaPhaseEveryoneHint(phase: MafiaPhaseName): string {
   switch (phase) {
     case 'LOBBY':

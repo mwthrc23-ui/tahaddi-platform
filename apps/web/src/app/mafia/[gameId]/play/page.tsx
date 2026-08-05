@@ -20,9 +20,11 @@ import { Badge, Button, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { getMafiaAccessToken } from '@/lib/mafia/access-cookie';
 import {
+  getLatestMafiaPublicOutcome,
   getMafiaMission,
   getMafiaPhaseEveryoneHint,
   getMafiaTeam,
+  mafiaDisplayInitial,
   mafiaNightActionLabels,
   mafiaPhaseGuides,
   mafiaRoleGuides,
@@ -169,6 +171,15 @@ export default async function MafiaPlayerPage({
       : [];
 
   const team = role ? getMafiaTeam(role) : null;
+  const latestOutcome =
+    game.status === 'DAY' || game.status === 'VOTING' || game.status === 'NIGHT'
+      ? getLatestMafiaPublicOutcome(game.messages)
+      : null;
+  const showOutcomeBanner =
+    latestOutcome &&
+    ((game.status === 'DAY' && latestOutcome.kind.startsWith('night-')) ||
+      (game.status === 'VOTING' && latestOutcome.kind.startsWith('night-')) ||
+      (game.status === 'NIGHT' && latestOutcome.kind.startsWith('vote-')));
 
   return (
     <SiteLayout>
@@ -211,28 +222,65 @@ export default async function MafiaPlayerPage({
                 <p>{getMafiaPhaseEveryoneHint(phase)}</p>
                 <span>التالي: {mafiaPhaseGuides[phase].next}</span>
               </section>
+              {showOutcomeBanner && latestOutcome && (
+                <section
+                  className="mafia-outcome-banner"
+                  data-kind={latestOutcome.kind}
+                  aria-live="assertive"
+                  role="status"
+                >
+                  <Skull aria-hidden="true" />
+                  <div>
+                    <strong>{latestOutcome.title}</strong>
+                    <p>{latestOutcome.body}</p>
+                    {latestOutcome.victimName && (
+                      <span className="mafia-outcome-victim">
+                        الاسم الظاهر للجميع: {latestOutcome.victimName}
+                      </span>
+                    )}
+                  </div>
+                </section>
+              )}
             </>
           )}
 
           {game.status === 'LOBBY' ? (
-            <div className="card-grid two">
+            <div className="mafia-lobby-layout">
               <EmptyState
                 title="بانتظار المضيف"
                 description="تم تسجيل دخولك. ستظهر بطاقة دورك سرًا فور بدء اللعبة. لا تغادر الصفحة."
               />
-              <Card>
-                <h2>
-                  <Users aria-hidden="true" />
-                  من في الغرفة؟
-                </h2>
-                <ul className="mafia-roster-list">
-                  {game.participants.map((item) => (
-                    <li key={item.id} data-self={item.id === player.id || undefined}>
-                      <strong>{item.displayName}</strong>
-                      {item.id === player.id && <Badge>أنت</Badge>}
-                    </li>
-                  ))}
-                </ul>
+              <Card className="mafia-lobby-roster">
+                <div className="inline-between">
+                  <h2>
+                    <Users aria-hidden="true" />
+                    اللاعبون في الانتظار
+                  </h2>
+                  <Badge className="badge-live">
+                    {game.participants.length.toLocaleString('ar-SA')} أسماء ظاهرة
+                  </Badge>
+                </div>
+                <p className="mafia-lobby-roster__hint">
+                  أسماء الجميع واضحة هنا لكل من في الغرفة — بما فيهم أنت.
+                </p>
+                {game.participants.length ? (
+                  <ul className="mafia-roster-list mafia-roster-list--lobby">
+                    {game.participants.map((item, index) => (
+                      <li key={item.id} data-self={item.id === player.id || undefined}>
+                        <span className="mafia-player-avatar" aria-hidden="true">
+                          {mafiaDisplayInitial(item.displayName)}
+                        </span>
+                        <div className="mafia-player-identity">
+                          <strong>{item.displayName}</strong>
+                          <span>لاعب {(index + 1).toLocaleString('ar-SA')}</span>
+                        </div>
+                        {item.id === player.id && <Badge>أنت</Badge>}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="muted">لا يوجد لاعبون بعد.</p>
+                )}
                 <p className="muted">
                   يحتاج المضيف إلى خمسة لاعبين على الأقل. العدد الحالي:{' '}
                   {game.participants.length.toLocaleString('ar-SA')}
@@ -368,8 +416,11 @@ export default async function MafiaPlayerPage({
                       <div>
                         <strong>{nightActionLabel.confirmed}</strong>
                         <p>
-                          الهدف: {submittedAction.target.displayName}. يمكنك تغييره قبل انتهاء
-                          المؤقت.
+                          {role === 'KILLER' ? 'الضحية المختارة' : 'الهدف'}:{' '}
+                          <strong>{submittedAction.target.displayName}</strong>
+                          {role === 'KILLER'
+                            ? '. يمكنك تغييرها قبل انتهاء المؤقت. النتيجة النهائية (قتل أو نجاة بالحماية) تظهر للجميع عند بدء النهار.'
+                            : '. يمكنك تغييره قبل انتهاء المؤقت.'}
                         </p>
                       </div>
                       <form action={submitMafiaAction} className="stack-form">
@@ -515,7 +566,13 @@ export default async function MafiaPlayerPage({
                   <ul className="mafia-roster-list">
                     {alivePlayers.map((item) => (
                       <li key={item.id} data-self={item.id === player.id || undefined}>
-                        <strong>{item.displayName}</strong>
+                        <span className="mafia-player-avatar" aria-hidden="true">
+                          {mafiaDisplayInitial(item.displayName)}
+                        </span>
+                        <div className="mafia-player-identity">
+                          <strong>{item.displayName}</strong>
+                          <span>حي</span>
+                        </div>
                         {item.id === player.id && <Badge>أنت</Badge>}
                         {game.status === 'FINISHED' && item.role && (
                           <span>
@@ -528,14 +585,21 @@ export default async function MafiaPlayerPage({
                   </ul>
                 </div>
                 <div>
-                  <h3>المستبعدون</h3>
+                  <h3>الضحايا / المستبعدون</h3>
                   {eliminatedPlayers.length === 0 ? (
-                    <p className="muted">لم يخرج أحد بعد.</p>
+                    <p className="muted">لم يُقتل أو يُستبعد أحد بعد.</p>
                   ) : (
                     <ul className="mafia-roster-list mafia-roster-list--out">
                       {eliminatedPlayers.map((item) => (
                         <li key={item.id} data-self={item.id === player.id || undefined}>
-                          <strong>{item.displayName}</strong>
+                          <span className="mafia-player-avatar mafia-player-avatar--out" aria-hidden="true">
+                            {mafiaDisplayInitial(item.displayName)}
+                          </span>
+                          <div className="mafia-player-identity">
+                            <strong>{item.displayName}</strong>
+                            <span>تم إخراجه من اللعبة</span>
+                          </div>
+                          <Badge className="mafia-badge-killed">ضحية</Badge>
                           {game.status === 'FINISHED' && item.role && (
                             <span>
                               {mafiaRoleEmoji[item.role as MafiaRoleName]}{' '}
