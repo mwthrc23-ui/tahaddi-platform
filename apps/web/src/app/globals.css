@@ -183,7 +183,7 @@ summary:focus-visible {
 .mafia-howto-list strong {
   font-size: 1.05rem;
 }
-.mafia-howto-list span {
+.mafia-howto-list div span {
   color: var(--muted-foreground);
   overflow-wrap: anywhere;
 }
