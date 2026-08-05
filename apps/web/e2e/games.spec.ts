@@ -19,7 +19,9 @@ import { toArabicDigits } from '../src/lib/utils';
 test('الكتالوج والمسارات والبنوك مشتقة من قوائم الألعاب الثلاث', async ({ page, request }) => {
   await page.goto('/games/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('اختر قانون الجولة');
-  await expect(page.getByText('اختر وضع اللعب، ثم افتح الغرفة وشارك رمز الدعوة — أو ابدأ تحديًا فوريًا من جهازك بلا حساب.')).toBeVisible();
+  await expect(
+    page.getByText('من القاتل إلى العوالم الموازية والتحديات الفورية: اختر الوضع، افهم القواعد بسرعة، وابدأ اللعب — بلا حساب للاعبين.'),
+  ).toBeVisible();
   await expect(page.getByRole('list', { name: 'الألعاب الجماعية' })).toBeVisible();
   await expect(page.getByRole('list', { name: 'الألعاب الفورية' })).toBeVisible();
 
