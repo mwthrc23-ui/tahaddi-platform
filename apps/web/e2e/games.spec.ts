@@ -24,7 +24,7 @@ test('الكتالوج والمسارات والبنوك مشتقة من قوا�
   await expect(page.getByRole('list', { name: 'الألعاب الفورية' })).toBeVisible();
 
   const cards = page.getByRole('article').filter({ has: page.getByRole('heading', { level: 3 }) });
-  await expect(cards).toHaveCount(SPECIAL_GAME_ORDER.length + INSTANT_GAME_ORDER.length + 1);
+  await expect(cards).toHaveCount(SPECIAL_GAME_ORDER.length + INSTANT_GAME_ORDER.length);
 
   for (const mode of SPECIAL_GAME_ORDER) {
     const meta = SPECIAL_GAME_META[mode];
