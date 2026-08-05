@@ -190,10 +190,11 @@ export default async function MafiaPlayerPage({
           )}
           <div className="page-header">
             <div>
-              <span className="eyebrow">
-                {game.status === 'NIGHT' ? <Moon /> : <Sun />}
-                {mafiaPhaseEmoji[game.status]} {mafiaPhaseLabels[game.status]}
-              </span>
+<span className="eyebrow">
+  {game.status === 'NIGHT' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
+  <span aria-hidden="true">{mafiaPhaseEmoji[game.status]} </span>
+  {mafiaPhaseLabels[game.status]}
+</span>
               <h1>مرحبًا {player.displayName}</h1>
               <p>
                 الغرفة {game.roomCode} · الجولة {game.currentRound.toLocaleString('ar-SA')} ·{' '}
