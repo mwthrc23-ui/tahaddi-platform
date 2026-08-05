@@ -1,4 +1,5 @@
 import {
+  CheckCircle2,
   MessageCircle,
   Play,
   ShieldCheck,
@@ -22,8 +23,19 @@ import { RoomCode } from '@/components/quiz';
 import { Badge, Button, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
-import { mafiaPhaseGuides, type MafiaPhaseName } from '@/lib/mafia/guidance';
-import { mafiaPhaseLabels, mafiaRoleLabels, type MafiaRoleName } from '@/lib/mafia/rules';
+import {
+  getMafiaPhaseEveryoneHint,
+  mafiaPhaseGuides,
+  mafiaWinConditions,
+  type MafiaPhaseName,
+} from '@/lib/mafia/guidance';
+import {
+  mafiaPhaseEmoji,
+  mafiaPhaseLabels,
+  mafiaRoleEmoji,
+  mafiaRoleLabels,
+  type MafiaRoleName,
+} from '@/lib/mafia/rules';
 
 export default async function MafiaHostPage({
   params,
@@ -37,7 +49,8 @@ export default async function MafiaHostPage({
     searchParams,
     requireActiveUser('/mafia'),
   ]);
-  const game = await getPrismaClient().mafiaGame.findFirst({
+  const prisma = getPrismaClient();
+  const game = await prisma.mafiaGame.findFirst({
     where: { id: gameId, hostId: user.id },
     select: {
       id: true,
@@ -80,6 +93,35 @@ export default async function MafiaHostPage({
           ? game.votingSeconds
           : null;
 
+  const alivePlayers = game.participants.filter((p) => p.status === 'ALIVE');
+  const nightActors = alivePlayers.filter((p) =>
+    p.role ? ['KILLER', 'DETECTIVE', 'DOCTOR', 'GUARD'].includes(p.role) : false,
+  );
+
+  const [nightActionsCount, votesCount] = await Promise.all([
+    game.status === 'NIGHT'
+      ? prisma.mafiaAction.count({
+          where: {
+            gameId,
+            round: game.currentRound,
+            actorId: { in: nightActors.map((p) => p.id) },
+          },
+        })
+      : Promise.resolve(0),
+    game.status === 'VOTING'
+      ? prisma.mafiaVote.count({
+          where: { gameId, round: game.currentRound },
+        })
+      : Promise.resolve(0),
+  ]);
+
+  const channelLabels: Record<string, string> = {
+    SYSTEM: 'النظام',
+    PUBLIC: 'عام',
+    KILLERS: 'القتلة',
+    GHOSTS: 'المستبعدون',
+  };
+
   return (
     <SiteLayout user={{ name: user.name }}>
       <main className="section mafia-page">
@@ -91,23 +133,35 @@ export default async function MafiaHostPage({
                 <ShieldCheck aria-hidden="true" />
                 لوحة المضيف
               </span>
-              <h1>{mafiaPhaseLabels[game.status]}</h1>
+              <h1>
+                {mafiaPhaseEmoji[game.status]} {mafiaPhaseLabels[game.status]}
+              </h1>
               <p>
                 الجولة {game.currentRound.toLocaleString('ar-SA')} ·{' '}
-                {game.autoMode ? 'إدارة تلقائية مع تجاوز يدوي' : 'إدارة يدوية'}
+                {game.autoMode ? 'إدارة تلقائية مع تجاوز يدوي' : 'إدارة يدوية'} ·{' '}
+                {alivePlayers.length.toLocaleString('ar-SA')} أحياء
               </p>
             </div>
             <Badge className="badge-live">{game.roomCode}</Badge>
           </div>
 
           {game.status !== 'LOBBY' && game.status !== 'FINISHED' && (
-            <MafiaPhaseTimer
-              phase={phase}
-              phaseEndsAt={game.phaseEndsAt?.toISOString() ?? null}
-              durationSeconds={phaseDuration}
-              autoMode={game.autoMode}
-              tickEndpoint={`/api/mafia/${game.id}/tick`}
-            />
+            <>
+              <MafiaPhaseTimer
+                phase={phase}
+                phaseEndsAt={game.phaseEndsAt?.toISOString() ?? null}
+                durationSeconds={phaseDuration}
+                autoMode={game.autoMode}
+                tickEndpoint={`/api/mafia/${game.id}/tick`}
+              />
+              <section className="mafia-everyone-banner" aria-live="polite">
+                <strong>
+                  {mafiaPhaseEmoji[phase]} الآن: {mafiaPhaseLabels[phase]}
+                </strong>
+                <p>{getMafiaPhaseEveryoneHint(phase)}</p>
+                <span>التالي: {mafiaPhaseGuides[phase].next}</span>
+              </section>
+            </>
           )}
 
           {query.error === 'players' && (
@@ -132,6 +186,41 @@ export default async function MafiaHostPage({
                   <p>{mafiaPhaseGuides[phase].hostTask}</p>
                   <span>التالي: {mafiaPhaseGuides[phase].next}</span>
                 </div>
+
+                {game.status === 'NIGHT' && (
+                  <div className="mafia-host-progress" role="status">
+                    <CheckCircle2 aria-hidden="true" />
+                    <div>
+                      <strong>قرارات الليل</strong>
+                      <p>
+                        {nightActionsCount.toLocaleString('ar-SA')} من{' '}
+                        {nightActors.length.toLocaleString('ar-SA')} أدوار سرية ثبّتت قرارها
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {game.status === 'VOTING' && (
+                  <div className="mafia-host-progress" role="status">
+                    <CheckCircle2 aria-hidden="true" />
+                    <div>
+                      <strong>أصوات الجولة</strong>
+                      <p>
+                        {votesCount.toLocaleString('ar-SA')} من{' '}
+                        {alivePlayers.length.toLocaleString('ar-SA')} لاعبين صوّتوا
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {game.status === 'DAY' && (
+                  <div className="mafia-host-progress" role="status">
+                    <CheckCircle2 aria-hidden="true" />
+                    <div>
+                      <strong>نقاش النهار</strong>
+                      <p>اترك وقتًا قصيرًا لكل مشتبه ثم انتقل للتصويت عند الجاهزية.</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="dashboard-actions">
                   {game.status === 'LOBBY' ? (
                     <form action={startMafiaGame}>
@@ -151,7 +240,10 @@ export default async function MafiaHostPage({
                     </form>
                   ) : (
                     <p className="text-success">
-                      الفائز: {game.winner === 'KILLERS' ? 'القتلة' : 'المواطنون'}
+                      الفائز:{' '}
+                      {game.winner === 'KILLERS'
+                        ? mafiaWinConditions.killers.title
+                        : mafiaWinConditions.citizens.title}
                     </p>
                   )}
                   <form action={toggleMafiaChat}>
@@ -185,7 +277,7 @@ export default async function MafiaHostPage({
                         <strong>{participant.displayName}</strong>
                         <span>
                           {participant.role
-                            ? mafiaRoleLabels[participant.role as MafiaRoleName]
+                            ? `${mafiaRoleEmoji[participant.role as MafiaRoleName]} ${mafiaRoleLabels[participant.role as MafiaRoleName]}`
                             : 'ينتظر توزيع الدور'}
                           {' · '}
                           {participant.status === 'ALIVE' ? 'حي' : 'مستبعد'}
@@ -222,11 +314,15 @@ export default async function MafiaHostPage({
             </div>
             <div className="mafia-messages">
               {[...game.messages].reverse().map((message) => (
-                <div className="mafia-message" key={message.id}>
+                <div
+                  className="mafia-message"
+                  data-system={message.channel === 'SYSTEM' || undefined}
+                  key={message.id}
+                >
                   <div>
                     <strong>{message.participant?.displayName ?? 'النظام'}</strong>
                     <span>
-                      {message.channel} ·{' '}
+                      {channelLabels[message.channel] ?? message.channel} ·{' '}
                       {message.createdAt.toLocaleTimeString('ar-SA', {
                         hour: '2-digit',
                         minute: '2-digit',

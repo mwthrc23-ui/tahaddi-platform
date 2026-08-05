@@ -257,3 +257,158 @@ export function getMafiaMission(
   }
   return mafiaRoleGuides[role].missions[phase];
 }
+
+/** Public-facing role blurb safe to show before the game starts. */
+export type MafiaRoleCatalogEntry = {
+  role: MafiaRoleName;
+  label: string;
+  team: 'KILLERS' | 'CITIZENS';
+  teamLabel: string;
+  summary: string;
+  ability: string;
+  unlockAt: number;
+};
+
+export const mafiaRoleCatalog: readonly MafiaRoleCatalogEntry[] = [
+  {
+    role: 'KILLER',
+    label: 'القاتل',
+    team: 'KILLERS',
+    teamLabel: 'فريق القتلة',
+    summary: 'يقضي على المواطنين ليلًا ويتظاهر بالنهار أنه بريء.',
+    ability: 'اختيار ضحية واحدة كل ليلة مع زملائه عبر قناة سرية.',
+    unlockAt: 5,
+  },
+  {
+    role: 'DETECTIVE',
+    label: 'المحقق',
+    team: 'CITIZENS',
+    teamLabel: 'فريق المواطنين',
+    summary: 'يكشف ليلًا إن كان لاعب واحد قاتلًا أم لا.',
+    ability: 'نتيجة التحقيق تظهر له وحده في «معلومة خاصة».',
+    unlockAt: 5,
+  },
+  {
+    role: 'DOCTOR',
+    label: 'الطبيب',
+    team: 'CITIZENS',
+    teamLabel: 'فريق المواطنين',
+    summary: 'يحمي لاعبًا واحدًا من محاولة القتل كل ليلة.',
+    ability: 'يمكنه حماية نفسه أو أي لاعب حي.',
+    unlockAt: 5,
+  },
+  {
+    role: 'GUARD',
+    label: 'الحارس',
+    team: 'CITIZENS',
+    teamLabel: 'فريق المواطنين',
+    summary: 'يحمي لاعبًا آخر من محاولة القتل أثناء الليل.',
+    ability: 'لا يستطيع حماية نفسه؛ متاح من ٧ لاعبين.',
+    unlockAt: 7,
+  },
+  {
+    role: 'WITNESS',
+    label: 'الشاهد',
+    team: 'CITIZENS',
+    teamLabel: 'فريق المواطنين',
+    summary: 'يحصل بعد كل ليل على دليل مختصر عن أحد القتلة.',
+    ability: 'دليل جزئي فقط؛ متاح من ٨ لاعبين.',
+    unlockAt: 8,
+  },
+  {
+    role: 'CITIZEN',
+    label: 'مواطن',
+    team: 'CITIZENS',
+    teamLabel: 'فريق المواطنين',
+    summary: 'بلا قدرة سرية؛ يعتمد على النقاش والتصويت.',
+    ability: 'الملاحظة والمنطق هما أقوى أدواته.',
+    unlockAt: 5,
+  },
+] as const;
+
+export const mafiaHowToPlaySteps = [
+  {
+    title: 'انضم للغرفة',
+    detail: 'اكتب اسمك ورمز الغرفة. لا تحتاج حسابًا.',
+  },
+  {
+    title: 'اقرأ دورك سرًا',
+    detail: 'عند البدء تظهر بطاقتك لك وحدك. لا تصوّر الشاشة ولا تُظهرها.',
+  },
+  {
+    title: 'نفّذ مهمة المرحلة',
+    detail: 'ليلًا: قرار سري إن وُجد. نهارًا: نقاش. ثم صوّت لطرد مشتبه.',
+  },
+  {
+    title: 'كرر حتى الفوز',
+    detail: 'تستمر الدورة حتى يفوز القتلة أو المواطنون.',
+  },
+] as const;
+
+export const mafiaWinConditions = {
+  citizens: {
+    title: 'فوز المواطنين',
+    detail: 'يطردون كل القتلة بالتصويت قبل أن يتساوى العددان.',
+  },
+  killers: {
+    title: 'فوز القتلة',
+    detail: 'يصل عدد القتلة الأحياء إلى عدد المواطنين الأحياء أو يزيد عليه.',
+  },
+} as const;
+
+export const mafiaBeginnerTips = [
+  'لا تكشف دورك مبكرًا إلا إذا كانت الفائدة أكبر من الخطر.',
+  'اسأل كل مشتبه: لماذا صوّت بهذا الاتجاه؟ التناقض دليل.',
+  'القتلة يسمعون بعضهم ليلًا فقط؛ النهار قناة عامة للجميع.',
+  'إذا خرجت من اللعبة تابع من قناة المستبعدين دون كشف الأسرار.',
+  'ثبّت قرار الليل أو الصوت قبل انتهاء المؤقت؛ النظام لا ينتظر.',
+] as const;
+
+export const mafiaNightActionLabels: Partial<
+  Record<MafiaRoleName, { choose: string; confirm: string; confirmed: string }>
+> = {
+  KILLER: {
+    choose: 'اختر الضحية',
+    confirm: 'تثبيت قرار القتل',
+    confirmed: 'تم تثبيت ضحية الليل',
+  },
+  DETECTIVE: {
+    choose: 'تحقق من لاعب',
+    confirm: 'تثبيت التحقيق',
+    confirmed: 'تم تثبيت هدف التحقيق',
+  },
+  DOCTOR: {
+    choose: 'اختر من ستحميه',
+    confirm: 'تثبيت الحماية',
+    confirmed: 'تم تثبيت الحماية',
+  },
+  GUARD: {
+    choose: 'احمِ لاعبًا آخر',
+    confirm: 'تثبيت الحراسة',
+    confirmed: 'تم تثبيت الحراسة',
+  },
+};
+
+export const mafiaTeamLabels = {
+  KILLERS: 'فريق القتلة',
+  CITIZENS: 'فريق المواطنين',
+} as const;
+
+export function getMafiaTeam(role: MafiaRoleName): 'KILLERS' | 'CITIZENS' {
+  return role === 'KILLER' ? 'KILLERS' : 'CITIZENS';
+}
+
+export function getMafiaPhaseEveryoneHint(phase: MafiaPhaseName): string {
+  switch (phase) {
+    case 'LOBBY':
+      return 'الجميع ينتظر بدء المضيف بعد اكتمال العدد.';
+    case 'NIGHT':
+      return 'الأدوار السرية تختار، وبقية اللاعبين ينتظرون بصمت.';
+    case 'DAY':
+      return 'ناقشوا نتيجة الليل والأدلة في القناة العامة.';
+    case 'VOTING':
+      return 'كل لاعب حي يثبّت صوتًا ضد مشتبه واحد.';
+    case 'FINISHED':
+      return 'انتهت اللعبة وكُشفت الأدوار.';
+  }
+}

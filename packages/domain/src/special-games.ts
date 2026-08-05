@@ -47,6 +47,13 @@ export type ReverseTimeRound = {
   hint: string;
 };
 
+export type SpecialGameHowTo = {
+  mode: SpecialGameMode;
+  goal: string;
+  steps: readonly string[];
+  tip: string;
+};
+
 export const SPECIAL_GAME_META: Record<SpecialGameMode, SpecialGameMeta> = {
   'parallel-world': {
     mode: 'parallel-world',
@@ -74,6 +81,42 @@ export const SPECIAL_GAME_META: Record<SpecialGameMode, SpecialGameMeta> = {
     minimumPlayers: 4,
     roundSeconds: 45,
     contentLabel: 'بنك أسئلة',
+  },
+};
+
+export const SPECIAL_GAME_HOW_TO: Record<SpecialGameMode, SpecialGameHowTo> = {
+  'parallel-world': {
+    mode: 'parallel-world',
+    goal: 'أجب عن سؤالك الخاص — الإجابة الصحيحة واحدة للجميع رغم اختلاف السؤال.',
+    steps: [
+      'ينشئ المضيف الغرفة ويشارك الرمز أو QR.',
+      'كل لاعب يرى سؤالًا من «عالم» مختلف (جغرافيا، تاريخ…).',
+      'اختر الإجابة قبل انتهاء المؤقت.',
+      'عند الكشف تظهر الإجابة المشتركة ومن أصاب.',
+    ],
+    tip: 'لا تشارك نص سؤالك مع الآخرين؛ التشابه في الخيارات هو دليلك.',
+  },
+  'reverse-time': {
+    mode: 'reverse-time',
+    goal: 'تصنع سؤالًا ذكيًا يؤدي إلى الإجابة الظاهرة، ثم تصوّت لأفضل سؤال.',
+    steps: [
+      'تظهر الإجابة أولًا مع تلميح الفئة.',
+      'اكتب سؤالًا يؤدي منطقيًا إلى هذه الإجابة.',
+      'صوّت لأسئلة الآخرين (لا تصوّت لنفسك).',
+      'الأكثر أصواتًا يفوز بنقاط الجولة.',
+    ],
+    tip: 'اجعل السؤال واضحًا ومفاجئًا في آن واحد — تجنّب ذكر الإجابة حرفيًا.',
+  },
+  infiltrator: {
+    mode: 'infiltrator',
+    goal: 'الأغلبية تجيب عن سؤال واحد؛ الدخيل يرى سؤالًا مختلفًا ويحاول التمويه.',
+    steps: [
+      'أجب عن السؤال الذي تراه دون كشف نصّه.',
+      'اطلع على إجابات الجميع وصوّت لمن تشك أنه الدخيل.',
+      'الدخيل يحاول تخمين سؤال الأغلبية ليفوز إن نجا.',
+      'يُكشف الدخيل وتُحسب النقاط.',
+    ],
+    tip: 'اختر إجابة تبدو طبيعية ضمن سياق المجموعة حتى لا تُكشف.',
   },
 };
 
@@ -333,6 +376,68 @@ export const PARALLEL_WORLD_BANK: ParallelWorldRound[] = [
       },
     ],
   },
+  {
+    id: 'parallel-mecca',
+    answer: 'مكة المكرمة',
+    reveal: 'القبلة والحج والتاريخ اجتمعت في مكة المكرمة.',
+    variants: [
+      {
+        face: 'geography',
+        faceLabel: 'جغرافيا',
+        prompt: 'في أي مدينة سعودية يقع المسجد الحرام؟',
+        options: ['مكة المكرمة', 'المدينة المنورة', 'الطائف', 'جدة'],
+      },
+      {
+        face: 'culture',
+        faceLabel: 'ثقافة',
+        prompt: 'إلى أي مدينة يتوجه المسلمون في الحج كل عام؟',
+        options: ['مكة المكرمة', 'القدس', 'دمشق', 'بغداد'],
+      },
+      {
+        face: 'history',
+        faceLabel: 'تاريخ',
+        prompt: 'أين وُلد النبي محمد صلى الله عليه وسلم؟',
+        options: ['مكة المكرمة', 'يثرب', 'الطائف', 'نجران'],
+      },
+      {
+        face: 'tourism',
+        faceLabel: 'معالم',
+        prompt: 'في أي مدينة يرتفع جبل النور وغار حراء؟',
+        options: ['مكة المكرمة', 'العلا', 'أبها', 'تبوك'],
+      },
+    ],
+  },
+  {
+    id: 'parallel-oxygen',
+    answer: 'الأكسجين',
+    reveal: 'التنفس والرمز الكيميائي والحياة على الأرض تشير إلى الأكسجين.',
+    variants: [
+      {
+        face: 'science',
+        faceLabel: 'علوم',
+        prompt: 'ما الغاز الأساسي الذي نتنفسه للبقاء أحياء؟',
+        options: ['الأكسجين', 'النيتروجين', 'الهيليوم', 'ثاني أكسيد الكربون'],
+      },
+      {
+        face: 'science',
+        faceLabel: 'كيمياء',
+        prompt: 'ما العنصر الذي رمزه O في الجدول الدوري؟',
+        options: ['الأكسجين', 'الأوزون', 'الذهب', 'الأرجون'],
+      },
+      {
+        face: 'geography',
+        faceLabel: 'بيئة',
+        prompt: 'ما الغاز الذي تنتجه النباتات أثناء البناء الضوئي؟',
+        options: ['الأكسجين', 'الميثان', 'الهيدروجين', 'الكلور'],
+      },
+      {
+        face: 'culture',
+        faceLabel: 'صحة',
+        prompt: 'أي غاز يُضخ في المستشفيات لدعم التنفس؟',
+        options: ['الأكسجين', 'النيون', 'الرادون', 'الزينون'],
+      },
+    ],
+  },
 ];
 
 export const REVERSE_TIME_BANK: ReverseTimeRound[] = [
@@ -378,6 +483,30 @@ export const REVERSE_TIME_BANK: ReverseTimeRound[] = [
     answer: 'الوقت',
     category: 'ألغاز',
     hint: 'اكتب سؤالًا لا يمكن تخزين إجابته في صندوق.',
+  },
+  {
+    id: 'reverse-coffee',
+    answer: 'القهوة',
+    category: 'ثقافة',
+    hint: 'اربطها بعادة صباحية أو ضيافة عربية.',
+  },
+  {
+    id: 'reverse-football',
+    answer: 'كرة القدم',
+    category: 'رياضة',
+    hint: 'استخدم ملعبًا أو هدفًا أو بطولة دون ذكر الاسم.',
+  },
+  {
+    id: 'reverse-book',
+    answer: 'الكتاب',
+    category: 'معرفة',
+    hint: 'فكّر في صفحات أو مكتبة أو عنوان.',
+  },
+  {
+    id: 'reverse-sun',
+    answer: 'الشمس',
+    category: 'طبيعة',
+    hint: 'استعن بالضوء أو النهار أو النظام الشمسي.',
   },
 ];
 

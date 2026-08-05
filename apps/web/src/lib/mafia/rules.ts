@@ -9,12 +9,29 @@ export const mafiaRoleLabels: Record<MafiaRoleName, string> = {
   CITIZEN: 'مواطن',
 };
 
+export const mafiaRoleEmoji: Record<MafiaRoleName, string> = {
+  KILLER: '🗡️',
+  DETECTIVE: '🔍',
+  DOCTOR: '💊',
+  GUARD: '🛡️',
+  WITNESS: '👁️',
+  CITIZEN: '👤',
+};
+
 export const mafiaPhaseLabels = {
   LOBBY: 'غرفة الانتظار',
   NIGHT: 'الليل',
   DAY: 'النقاش النهاري',
   VOTING: 'التصويت',
   FINISHED: 'انتهت اللعبة',
+} as const;
+
+export const mafiaPhaseEmoji = {
+  LOBBY: '🚪',
+  NIGHT: '🌙',
+  DAY: '☀️',
+  VOTING: '🗳️',
+  FINISHED: '🏆',
 } as const;
 
 export function buildMafiaRoles(playerCount: number, requestedKillerCount: number) {

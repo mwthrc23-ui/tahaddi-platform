@@ -1,10 +1,14 @@
 import {
+  BookOpenCheck,
   Clock3,
   Eye,
+  Lightbulb,
   MessageCircle,
   Moon,
   Shield,
   Sun,
+  Target,
+  Trophy,
   UserRoundSearch,
   Users,
   Vote,
@@ -15,6 +19,13 @@ import { SiteLayout } from '@/components/layout';
 import { Badge, Button, ButtonLink, Card, EmptyState } from '@/components/ui';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { getCurrentSession } from '@/lib/auth/session';
+import {
+  mafiaBeginnerTips,
+  mafiaHowToPlaySteps,
+  mafiaRoleCatalog,
+  mafiaWinConditions,
+} from '@/lib/mafia/guidance';
+import { mafiaRoleEmoji } from '@/lib/mafia/rules';
 
 export default async function MafiaPage() {
   const session = await getCurrentSession();
@@ -41,15 +52,49 @@ export default async function MafiaPage() {
             <div>
               <span className="eyebrow">
                 <Moon aria-hidden="true" />
-                لعبة مستقلة
+                لعبة اجتماعية مستقلة
               </span>
               <h1>من هو القاتل؟</h1>
-              <p>لعبة اجتماعية سرية بإدارة آلية أو يدوية، وأدوار لا يراها إلا أصحابها.</p>
+              <p>
+                أدوار سرية، ليل ونهار وتصويت. كل لاعب يرى بطاقته ومهمته فقط — والهدف واضح للجميع من
+                أول دقيقة.
+              </p>
             </div>
-            <ButtonLink href="/join" variant="outline">
-              دخول لاعب
-            </ButtonLink>
+            <div className="mafia-hero-actions">
+              <ButtonLink href="#mafia-start" variant="gold">
+                ابدأ الآن
+              </ButtonLink>
+              <ButtonLink href="/join" variant="outline">
+                دخول لاعب
+              </ButtonLink>
+            </div>
           </div>
+
+          <section className="mafia-howto" aria-labelledby="mafia-howto-title">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">
+                  <BookOpenCheck aria-hidden="true" />
+                  للمبتدئين
+                </span>
+                <h2 id="mafia-howto-title">كيف تلعب في ٤ خطوات؟</h2>
+                <p>لا تحتاج خبرة سابقة. اتبع التسلسل واترك المؤقت يدير المراحل.</p>
+              </div>
+            </div>
+            <ol className="mafia-howto-list">
+              {mafiaHowToPlaySteps.map((step, index) => (
+                <li key={step.title}>
+                  <span className="mafia-howto-index" aria-hidden="true">
+                    {(index + 1).toLocaleString('ar-SA')}
+                  </span>
+                  <div>
+                    <strong>{step.title}</strong>
+                    <span>{step.detail}</span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
 
           <section className="mafia-flow" aria-labelledby="mafia-flow-title">
             <div className="section-heading">
@@ -69,21 +114,30 @@ export default async function MafiaPage() {
                 <Moon aria-hidden="true" />
                 <div>
                   <strong>١. الليل</strong>
-                  <span>الأدوار السرية تنفذ مهامها. الوقت الافتراضي ٤٥ ثانية.</span>
+                  <span>
+                    القاتل يختار ضحية، المحقق يتحقق، الطبيب/الحارس يحمون. الباقون ينتظرون. الوقت
+                    الافتراضي ٤٥ ثانية.
+                  </span>
                 </div>
               </li>
               <li>
                 <Sun aria-hidden="true" />
                 <div>
                   <strong>٢. النهار</strong>
-                  <span>تُعلن نتيجة الليل ويبدأ النقاش العام. الوقت الافتراضي ٩٠ ثانية.</span>
+                  <span>
+                    تُعلن نتيجة الليل (من خرج أو نجا). ناقشوا الأدلة في القناة العامة. الوقت
+                    الافتراضي ٩٠ ثانية.
+                  </span>
                 </div>
               </li>
               <li>
                 <Vote aria-hidden="true" />
                 <div>
                   <strong>٣. التصويت</strong>
-                  <span>يثبت كل لاعب حي صوته. الوقت الافتراضي ٤٥ ثانية.</span>
+                  <span>
+                    كل لاعب حي يثبّت صوتًا ضد مشتبه واحد. الأعلى أصواتًا يخرج. الوقت الافتراضي ٤٥
+                    ثانية.
+                  </span>
                 </div>
               </li>
             </ol>
@@ -92,11 +146,91 @@ export default async function MafiaPage() {
             </p>
           </section>
 
+          <section className="mafia-win" aria-labelledby="mafia-win-title">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">
+                  <Trophy aria-hidden="true" />
+                  شروط الفوز
+                </span>
+                <h2 id="mafia-win-title">متى تنتهي اللعبة؟</h2>
+              </div>
+            </div>
+            <div className="card-grid two mafia-win-grid">
+              <Card className="mafia-win-card mafia-win-card--citizens">
+                <Target aria-hidden="true" />
+                <h3>{mafiaWinConditions.citizens.title}</h3>
+                <p>{mafiaWinConditions.citizens.detail}</p>
+              </Card>
+              <Card className="mafia-win-card mafia-win-card--killers">
+                <Shield aria-hidden="true" />
+                <h3>{mafiaWinConditions.killers.title}</h3>
+                <p>{mafiaWinConditions.killers.detail}</p>
+              </Card>
+            </div>
+          </section>
+
+          <section className="mafia-roles" aria-labelledby="mafia-roles-title">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">
+                  <UserRoundSearch aria-hidden="true" />
+                  دليل الأدوار
+                </span>
+                <h2 id="mafia-roles-title">ما الذي يفعله كل دور؟</h2>
+                <p>الأدوار تُوزَّع سرًا عند البدء. هذا الدليل عام للجميع قبل اللعب.</p>
+              </div>
+            </div>
+            <ul className="mafia-roles-grid">
+              {mafiaRoleCatalog.map((entry) => (
+                <li key={entry.role}>
+                  <article className="mafia-role-tile" data-team={entry.team.toLowerCase()}>
+                    <div className="mafia-role-tile__head">
+                      <span className="mafia-role-tile__emoji" aria-hidden="true">
+                        {mafiaRoleEmoji[entry.role]}
+                      </span>
+                      <div>
+                        <h3>{entry.label}</h3>
+                        <Badge>{entry.teamLabel}</Badge>
+                      </div>
+                    </div>
+                    <p>{entry.summary}</p>
+                    <p className="mafia-role-tile__ability">
+                      <strong>القدرة:</strong> {entry.ability}
+                    </p>
+                    {entry.unlockAt > 5 && (
+                      <span className="mafia-role-tile__unlock">
+                        يظهر من {entry.unlockAt.toLocaleString('ar-SA')} لاعبين
+                      </span>
+                    )}
+                  </article>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="mafia-tips" aria-labelledby="mafia-tips-title">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">
+                  <Lightbulb aria-hidden="true" />
+                  نصائح سريعة
+                </span>
+                <h2 id="mafia-tips-title">حتى لا تضيع في أول جولة</h2>
+              </div>
+            </div>
+            <ul className="mafia-tips-list">
+              {mafiaBeginnerTips.map((tip) => (
+                <li key={tip}>{tip}</li>
+              ))}
+            </ul>
+          </section>
+
           <div className="card-grid three mafia-features">
             <Card>
               <UserRoundSearch aria-hidden="true" />
               <h2>أدوار متوازنة</h2>
-              <p className="muted">قاتل، محقق، طبيب، حارس، شاهد ومواطنون.</p>
+              <p className="muted">قاتل، محقق، طبيب، حارس، شاهد ومواطنون — بحسب عدد اللاعبين.</p>
             </Card>
             <Card>
               <Shield aria-hidden="true" />
@@ -110,7 +244,7 @@ export default async function MafiaPage() {
             </Card>
           </div>
 
-          <div className="card-grid two mafia-entry-grid">
+          <div id="mafia-start" className="card-grid two mafia-entry-grid">
             <Card>
               <Badge>للاعب</Badge>
               <h2>ادخل برمز الغرفة</h2>

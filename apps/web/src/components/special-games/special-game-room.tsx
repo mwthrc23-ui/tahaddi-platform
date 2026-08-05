@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { io, type Socket } from 'socket.io-client';
-import { SPECIAL_GAME_META, type SpecialGameMode } from '@tahaddi/domain';
+import { SPECIAL_GAME_HOW_TO, SPECIAL_GAME_META, type SpecialGameMode } from '@tahaddi/domain';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Button, ButtonLink, Card, Input } from '@/components/ui';
 
@@ -236,6 +236,7 @@ export function SpecialGameRoom({
   initialPin: string;
 }) {
   const meta = SPECIAL_GAME_META[mode];
+  const howTo = SPECIAL_GAME_HOW_TO[mode];
   const socketRef = useRef<GameSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const [connectionFailed, setConnectionFailed] = useState(false);
@@ -482,6 +483,19 @@ export function SpecialGameRoom({
                   <dd>رمز + QR</dd>
                 </div>
               </dl>
+              <div className="special-howto">
+                <h2>كيف تلعب؟</h2>
+                <p className="special-howto__goal">{howTo.goal}</p>
+                <ol>
+                  {howTo.steps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+                <p className="special-howto__tip">
+                  <Sparkles aria-hidden="true" />
+                  {howTo.tip}
+                </p>
+              </div>
             </div>
 
             <Card className="special-entry-panel">

@@ -5,23 +5,27 @@ import { INSTANT_GAME_META, INSTANT_GAME_ORDER } from '@/components/instant-game
 import { SiteLayout } from '@/components/layout';
 import { getCurrentSession } from '@/lib/auth/session';
 import { formatArabicModeCount, toArabicDigits } from '@/lib/utils';
-import { Gamepad2, Users, Zap } from 'lucide-react';
+import { Gamepad2, Skull, Users, Zap } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'الألعاب | تحدّي',
-  description: 'أوضاع لعب مبتكرة: غرف جماعية برمز دعوة، وتحديات فورية بلا تسجيل.',
+  description: 'أوضاع لعب مبتكرة: من هو القاتل، غرف جماعية برمز دعوة، وتحديات فورية بلا تسجيل.',
   alternates: { canonical: '/games' },
 };
 
+const SOCIAL_FEATURED = {
+  title: 'من هو القاتل؟',
+  description:
+    'لعبة أدوار سرية: ليل، نقاش، وتصويت. كل لاعب يرى بطاقته ومهمته فقط — واضحة للمبتدئين.',
+  href: '/mafia',
+  minimumPlayers: 5,
+  roundLabel: 'مراحل مؤقتة',
+  contentLabel: 'أدوار سرية',
+} as const;
+
 export default async function GamesPage() {
   const session = await getCurrentSession();
-  const games = [
-    ...SPECIAL_GAME_ORDER.map((mode) => ({
-      ...SPECIAL_GAME_META[mode],
-      kind: 'room' as const,
-    })),
-    ...INSTANT_GAME_ORDER.map((mode) => ({ ...INSTANT_GAME_META[mode], kind: 'instant' as const })),
-  ];
+  const totalModes = SPECIAL_GAME_ORDER.length + INSTANT_GAME_ORDER.length + 1;
 
   return (
     <SiteLayout user={session?.user ? { name: session.user.name } : null}>
@@ -31,18 +35,18 @@ export default async function GamesPage() {
             <div className="games-hero-content">
               <span className="games-hero-badge">
                 <Zap aria-hidden="true" />
-                {formatArabicModeCount(games.length)} وضع لعب
+                {formatArabicModeCount(totalModes)} وضع لعب
               </span>
               <h1>اختر قانون الجولة</h1>
               <p>
-                اختر وضع اللعب، ثم افتح الغرفة وشارك رمز الدعوة — أو ابدأ تحديًا فوريًا من
-                جهازك بلا حساب.
+                من القاتل إلى العوالم الموازية والتحديات الفورية: اختر الوضع، افهم القواعد بسرعة،
+                وابدأ اللعب — بلا حساب للاعبين.
               </p>
               <div className="games-hero-stats">
                 <div className="games-stat">
                   <Users aria-hidden="true" />
                   <div>
-                    <strong>{formatArabicModeCount(games.length)}</strong>
+                    <strong>{formatArabicModeCount(totalModes)}</strong>
                     <span>وضع لعب</span>
                   </div>
                 </div>
@@ -68,6 +72,52 @@ export default async function GamesPage() {
               <div className="games-orb games-orb--tertiary" />
             </div>
           </header>
+
+          <div className="games-section-label">
+            <span className="games-section-dot" aria-hidden="true" />
+            <h2>لعبة اجتماعية مميزة</h2>
+            <span className="games-section-count">١ لعبة</span>
+          </div>
+
+          <ul className="games-grid games-grid--room" aria-label="اللعبة الاجتماعية">
+            <li className="game-list-item">
+              <article className="game-card game-card--room game-card--featured">
+                <div className="game-card__glow" aria-hidden="true" />
+                <div className="game-card__header">
+                  <span className="game-card__index" aria-hidden="true" dir="ltr">
+                    00
+                  </span>
+                  <span className="game-card__kind">
+                    <Skull aria-hidden="true" />
+                    اجتماعية
+                  </span>
+                </div>
+                <div className="game-card__body">
+                  <h3 id="mode-mafia">{SOCIAL_FEATURED.title}</h3>
+                  <p>{SOCIAL_FEATURED.description}</p>
+                  <div className="game-card__meta">
+                    <div className="game-meta-item">
+                      <Users aria-hidden="true" />
+                      <span>{toArabicDigits(SOCIAL_FEATURED.minimumPlayers)}+ لاعب</span>
+                    </div>
+                    <div className="game-meta-item">
+                      <Zap aria-hidden="true" />
+                      <span>{SOCIAL_FEATURED.roundLabel}</span>
+                    </div>
+                    <div className="game-meta-item">
+                      <Gamepad2 aria-hidden="true" />
+                      <span>{SOCIAL_FEATURED.contentLabel}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="game-card__footer">
+                  <CcButton href={SOCIAL_FEATURED.href} aria-labelledby="mode-mafia">
+                    افتح اللعبة
+                  </CcButton>
+                </div>
+              </article>
+            </li>
+          </ul>
 
           <div className="games-section-label">
             <span className="games-section-dot" aria-hidden="true" />

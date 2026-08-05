@@ -29,6 +29,9 @@ test('يبقي مدخل لعبة القاتل واضحًا ومتجاوبًا', 
   await page.goto('/mafia');
 
   await expect(page.getByRole('heading', { level: 1, name: 'من هو القاتل؟' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'كيف تلعب في ٤ خطوات؟' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'ما الذي يفعله كل دور؟' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'متى تنتهي اللعبة؟' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'ادخل برمز الغرفة' })).toBeVisible();
   await expect(page.getByLabel('اسم اللاعب')).toBeVisible();
   await expect(page.getByLabel('رمز الغرفة')).toBeVisible();

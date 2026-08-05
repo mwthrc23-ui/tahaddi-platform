@@ -137,6 +137,12 @@ export const WORD_CODE_BANK = [
   { word: 'صدارة', scrambled: 'رادصة', hint: 'المركز الأول' },
   { word: 'إجابة', scrambled: 'بةإجا', hint: 'حل السؤال' },
   { word: 'حماس', scrambled: 'سامح', hint: 'شعور يشعل التحدّي' },
+  { word: 'تحدّي', scrambled: 'ديحت', hint: 'اسم المنصة' },
+  { word: 'ذكاء', scrambled: 'كاءذ', hint: 'قدرة على الفهم السريع' },
+  { word: 'لغز', scrambled: 'زغل', hint: 'سؤال يحتاج تفكيرًا' },
+  { word: 'فوز', scrambled: 'زوف', hint: 'عكس الخسارة' },
+  { word: 'وقت', scrambled: 'تقو', hint: 'يُقاس بالثواني' },
+  { word: 'قمر', scrambled: 'رمق', hint: 'يضيء الليل' },
 ] as const;
 
 export const COLOR_RUSH_BANK = [
@@ -144,7 +150,45 @@ export const COLOR_RUSH_BANK = [
   { label: 'أزرق', value: '#00d4ff' },
   { label: 'ذهبي', value: '#ffb000' },
   { label: 'أخضر', value: '#10b981' },
+  { label: 'بنفسجي', value: '#a78bfa' },
+  { label: 'برتقالي', value: '#fb923c' },
 ] as const;
+
+export const INSTANT_GAME_HOW_TO: Record<
+  InstantGameMode,
+  { goal: string; steps: readonly string[]; tip: string }
+> = {
+  'memory-flash': {
+    goal: 'احفظ تسلسل الرموز ثم أعده بالترتيب الصحيح.',
+    steps: [
+      'اختر الصعوبة ووضع اللعب.',
+      'شاهد التسلسل أثناء العرض.',
+      'أعد الضغط على الرموز بنفس الترتيب.',
+      'كل مرحلة تضيف رمزًا — اجمع أعلى رصيد.',
+    ],
+    tip: 'ركّز على الألوان والأشكال معًا؛ التمهل أفضل من التخمين.',
+  },
+  'word-code': {
+    goal: 'رتّب الحروف العربية المبعثرة لتكون الكلمة الصحيحة.',
+    steps: [
+      'اقرأ التلميح أولًا.',
+      'انظر للحروف المبعثرة.',
+      'اكتب الكلمة كاملة.',
+      'اجمع النقاط قبل انتهاء الوقت.',
+    ],
+    tip: 'ابدأ بالحروف النادرة أو ال التعريف إن وُجدت.',
+  },
+  'color-rush': {
+    goal: 'اختر لون الحبر لا معنى الكلمة المكتوبة.',
+    steps: [
+      'ستظهر كلمة لون بلون حبر مختلف.',
+      'تجاهل معنى الكلمة.',
+      'اضغط على لون الحبر الحقيقي.',
+      'كل إجابة صحيحة تزيد رصيدك وسرعتك.',
+    ],
+    tip: 'انظر لحواف الحروف لا تقرأ الكلمة بصوت داخلي.',
+  },
+};
 
 export function isInstantGameMode(value: string): value is InstantGameMode {
   return INSTANT_GAME_ORDER.includes(value as InstantGameMode);

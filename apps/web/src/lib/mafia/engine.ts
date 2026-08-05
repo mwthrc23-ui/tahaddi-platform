@@ -74,10 +74,10 @@ async function resolveNight(gameId: string, expectedPhaseEndsAt: Date | null, fo
       .filter((role): role is MafiaRoleName => Boolean(role));
     const winner = determineMafiaWinner(aliveRoles);
     const message = eliminated
-      ? `انتهى الليل. خرج ${eliminated.displayName} من اللعبة.`
+      ? `انتهى الليل. خرج ${eliminated.displayName} من اللعبة. ابدأوا النقاش لمعرفة من القاتل.`
       : killedId
-        ? 'انتهى الليل، لكن الحماية أنقذت المستهدف.'
-        : 'انتهى الليل من دون ضحية.';
+        ? 'انتهى الليل سالمًا: الحماية أنقذت المستهدف. لا أحد خرج.'
+        : 'انتهى الليل من دون ضحية. إما لم يتفق القتلة أو لم يُنفَّذ قرار.';
 
     const killer = game.participants.find((player) => player.role === 'KILLER');
     const witness = game.participants.find((player) => player.role === 'WITNESS');
@@ -121,7 +121,11 @@ async function openVoting(gameId: string, expectedPhaseEndsAt: Date | null, forc
       data: { status: 'VOTING', phaseEndsAt: deadline(game.votingSeconds) },
     });
     await tx.mafiaMessage.create({
-      data: { gameId, channel: 'SYSTEM', body: 'بدأ التصويت. اختروا المشتبه به بحكمة.' },
+      data: {
+        gameId,
+        channel: 'SYSTEM',
+        body: 'بدأ التصويت. ثبّت كل لاعب حي صوته ضد مشتبه واحد قبل انتهاء المؤقت.',
+      },
     });
   });
 }
@@ -177,8 +181,8 @@ async function resolveVoting(gameId: string, expectedPhaseEndsAt: Date | null, f
         gameId,
         channel: 'SYSTEM',
         body: eliminated
-          ? `اختار التصويت ${eliminated.displayName}، وقد خرج من اللعبة.`
-          : 'تعادلت الأصوات؛ لم يخرج أحد.',
+          ? `نتيجة التصويت: خرج ${eliminated.displayName} من اللعبة. الأدوار تبقى سرية حتى النهاية.`
+          : 'تعادلت الأصوات؛ لم يخرج أحد. يستمر الليل التالي بنفس العدد.',
       },
     });
     await tx.mafiaGame.update({
