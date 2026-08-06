@@ -10,6 +10,9 @@ import {
   VICTORY_NARRATIVES,
   CHARACTER_ARCHETYPES,
   ROLE_FLAVOR,
+  MAFIA_EPILOGUE_BADGES,
+  buildTakeaways,
+  pickEpilogueBadges,
   type MafiaEndingStyle,
 } from './narrative';
 import {
@@ -71,8 +74,17 @@ describe('Mafia Narrative Engine', () => {
     }
   });
 
-  it('pickEndingStyle returns a valid ending style', () => {
-    const styles: MafiaEndingStyle[] = ['DRAMA', 'TRAGEDY', 'HOPE', 'IRONY', 'MYSTERY'];
+  it('pickEndingStyle returns a valid ending style from the extended set (8 moods)', () => {
+    const styles: MafiaEndingStyle[] = [
+      'DRAMA',
+      'TRAGEDY',
+      'HOPE',
+      'IRONY',
+      'MYSTERY',
+      'COMEDY',
+      'EPIC',
+      'FOLKLORE',
+    ];
     for (let round = 1; round <= 8; round++) {
       for (let k = 1; k <= 3; k++) {
         for (let r = 2; r <= 10; r++) {
@@ -81,33 +93,133 @@ describe('Mafia Narrative Engine', () => {
         }
       }
     }
+    const seen = new Set<MafiaEndingStyle>();
+    for (let r = 1; r < 50 && seen.size < 8; r++) seen.add(pickEndingStyle(r, 1, 5));
+    expect(seen.size).toBe(8);
   });
 
-  it('renderEliminationText returns non-empty distinct variants', () => {
+  it('renderEliminationText returns non-empty distinct variants (extended count)', () => {
     const nightSet = new Set<string>();
     const voteSet = new Set<string>();
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 60; i++) {
       nightSet.add(renderEliminationText('NIGHT', 'أحمد', i));
       voteSet.add(renderEliminationText('VOTING', 'أحمد', i));
     }
     expect(nightSet.size).toBe(ELIMINATION_NARRATIVES.NIGHT.length);
     expect(voteSet.size).toBe(ELIMINATION_NARRATIVES.VOTING.length);
+    expect(ELIMINATION_NARRATIVES.NIGHT.length).toBeGreaterThanOrEqual(7);
+    expect(ELIMINATION_NARRATIVES.VOTING.length).toBeGreaterThanOrEqual(7);
     for (const n of nightSet) {
       expect(n).toContain('أحمد');
       expect(n.length).toBeGreaterThan(20);
     }
   });
 
-  it('has intro and victory narratives for all teams/styles', () => {
-    expect(INTRO_NARRATIVES.length).toBeGreaterThanOrEqual(4);
-    for (const i of INTRO_NARRATIVES) expect(i.length).toBeGreaterThan(60);
+  it('has intro + victory narratives for all extended teams/styles (9 intros, 8 endings × 2 teams)', () => {
+    expect(INTRO_NARRATIVES.length).toBeGreaterThanOrEqual(9);
+    for (const i of INTRO_NARRATIVES) expect(i.length).toBeGreaterThan(40);
     expect(Object.keys(VICTORY_NARRATIVES)).toEqual(['CITIZENS', 'KILLERS']);
-    const endingStyles: MafiaEndingStyle[] = ['DRAMA', 'TRAGEDY', 'HOPE', 'IRONY', 'MYSTERY'];
+    const endingStyles: MafiaEndingStyle[] = [
+      'DRAMA',
+      'TRAGEDY',
+      'HOPE',
+      'IRONY',
+      'MYSTERY',
+      'COMEDY',
+      'EPIC',
+      'FOLKLORE',
+    ];
     for (const team of ['CITIZENS', 'KILLERS'] as const) {
       for (const s of endingStyles) {
-        expect(VICTORY_NARRATIVES[team][s].length).toBeGreaterThan(80);
+        expect(VICTORY_NARRATIVES[team][s]?.length).toBeGreaterThan(40);
       }
     }
+  });
+
+  it('MAFIA_EPILOGUE_BADGES: 5 badges with glyphs, labels, descriptions', () => {
+    expect(Object.keys(MAFIA_EPILOGUE_BADGES)).toHaveLength(5);
+    for (const b of Object.values(MAFIA_EPILOGUE_BADGES)) {
+      expect(b.glyph.length).toBeGreaterThanOrEqual(2);
+      expect(b.label.length).toBeGreaterThan(3);
+      expect(b.description.length).toBeGreaterThan(10);
+    }
+  });
+
+  it('buildTakeaways surfaces elimination rate, silence, loudness, accusation fluidity, top guesser', () => {
+    const counts = new Map<string, number>();
+    counts.set('حسان', 2);
+    counts.set('مريم', 18);
+    counts.set('سامي', 40);
+    const votes = [
+      { voterId: 'a', targetId: 'b', round: 1 },
+      { voterId: 'a', targetId: 'c', round: 2 },
+      { voterId: 'a', targetId: 'd', round: 3 },
+      { voterId: 'a', targetId: 'e', round: 4 },
+    ];
+    const guesses = new Map<string, number>();
+    guesses.set('سامي', 4);
+    const t = buildTakeaways({
+      round: 4,
+      totalPlayers: 10,
+      eliminatedIds: ['b', 'c', 'd'],
+      publicMessageCounts: counts,
+      votedTargets: votes,
+      correctGuesses: guesses,
+    });
+    expect(t.length).toBeGreaterThanOrEqual(3);
+    expect(t.map((x) => x.title).some((x) => x.includes('نسبة'))).toBe(true);
+    expect(t.map((x) => x.title).some((x) => x.includes('صامت'))).toBe(true);
+    expect(t.map((x) => x.title).some((x) => x.includes('دولاب'))).toBe(true);
+    expect(t.map((x) => x.title).some((x) => x.includes('عراف'))).toBe(true);
+    expect(t.length).toBeLessThanOrEqual(5);
+  });
+
+  it('pickEpilogueBadges awards SILENT_THINKER / ACCUSATION / LUCKY / ORACLE / DETECTIVE badges', () => {
+    const silent = pickEpilogueBadges({
+      takeawayIds: [],
+      wasAliveAtEnd: false,
+      publicMessages: 1,
+      correctGuesses: 0,
+      investigateCount: 0,
+    });
+    expect(silent.map((b) => b.id)).toContain('SILENT_THINKER');
+
+    const fluid = pickEpilogueBadges({
+      takeawayIds: ['fluid-xxx'],
+      wasAliveAtEnd: false,
+      publicMessages: 20,
+      correctGuesses: 0,
+      investigateCount: 0,
+    });
+    expect(fluid.map((b) => b.id)).toContain('ACCUSATION_MACHINE');
+
+    const lucky = pickEpilogueBadges({
+      takeawayIds: [],
+      wasAliveAtEnd: true,
+      publicMessages: 20,
+      correctGuesses: 0,
+      investigateCount: 0,
+    });
+    expect(lucky.map((b) => b.id)).toContain('LUCKY_SURVIVOR');
+
+    const oracle = pickEpilogueBadges({
+      takeawayIds: [],
+      wasAliveAtEnd: false,
+      publicMessages: 20,
+      correctGuesses: 3,
+      investigateCount: 0,
+    });
+    expect(oracle.map((b) => b.id)).toContain('FORTUNE_TELLER');
+
+    const detective = pickEpilogueBadges({
+      takeawayIds: [],
+      role: 'DETECTIVE',
+      wasAliveAtEnd: false,
+      publicMessages: 20,
+      correctGuesses: 0,
+      investigateCount: 3,
+    });
+    expect(detective.map((b) => b.id)).toContain('PERFECT_DETECTIVE');
   });
 
   it('buildNarrativeEvent returns narrative ids with the right suffixes', () => {

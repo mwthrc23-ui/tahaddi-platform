@@ -10,7 +10,62 @@ export type MafiaCharacterArchetype =
   | 'OFFICER'
   | 'TRAVELER';
 
-export type MafiaEndingStyle = 'DRAMA' | 'TRAGEDY' | 'HOPE' | 'IRONY' | 'MYSTERY';
+export type MafiaEndingStyle =
+  | 'DRAMA'
+  | 'TRAGEDY'
+  | 'HOPE'
+  | 'IRONY'
+  | 'MYSTERY'
+  | 'COMEDY'
+  | 'EPIC'
+  | 'FOLKLORE';
+
+export type MafiaEpilogueBadgeId =
+  | 'SILENT_THINKER'
+  | 'ACCUSATION_MACHINE'
+  | 'FORTUNE_TELLER'
+  | 'LUCKY_SURVIVOR'
+  | 'PERFECT_DETECTIVE';
+
+export type MafiaEpilogueBadge = {
+  id: MafiaEpilogueBadgeId;
+  label: string;
+  description: string;
+  glyph: string;
+};
+
+export const MAFIA_EPILOGUE_BADGES: Record<MafiaEpilogueBadgeId, MafiaEpilogueBadge> = {
+  SILENT_THINKER: {
+    id: 'SILENT_THINKER',
+    label: 'الصامت الحكيم',
+    description: 'أقل لاعب أرسل رسائل لكنه أبدى دقة فائقة في التصويت.',
+    glyph: '🤫',
+  },
+  ACCUSATION_MACHINE: {
+    id: 'ACCUSATION_MACHINE',
+    label: 'آلة الاتهامات',
+    description: 'صوّت ضد لاعبين مختلفين في كل جولة، ولم يتردد أبدًا.',
+    glyph: '🎯',
+  },
+  FORTUNE_TELLER: {
+    id: 'FORTUNE_TELLER',
+    label: 'عراف القرية',
+    description: 'خمن أدوار ٣ لاعبين أو أكثر بشكل صحيح قبل كشفها.',
+    glyph: '🔮',
+  },
+  LUCKY_SURVIVOR: {
+    id: 'LUCKY_SURVIVOR',
+    label: 'المحظوظ',
+    description: 'نجى حتى النهاية رغم كونه الهدف الأول في أكثر من جولة.',
+    glyph: '🍀',
+  },
+  PERFECT_DETECTIVE: {
+    id: 'PERFECT_DETECTIVE',
+    label: 'المحقق المثابر',
+    description: 'حقق في كل جولة وكشف هوية قاتل واحد على الأقل.',
+    glyph: '🔍',
+  },
+};
 
 export type MafiaNarrativeCharacter = {
   archetype: MafiaCharacterArchetype;
@@ -252,6 +307,11 @@ export const INTRO_NARRATIVES = [
   'كان الليل باردًا كالجليد، والريح تحكي قصصًا قديمة. لكن هذه المرة كانت القصة حقيقية: جريمة ارتُكبت في الظلام.',
   'جمعت القرية أهلها في الساحة الكبرى. صمت مرعب يقطع النفس قبل أن يتكلم أحد. ما الذي حدث في الليل؟',
   'في زاوية غير مرئية، تحركت يد القاتل ببرود شديد. لم يعرف أحد أنه سيشارك في اللعبة الأكثر فتكًا في تاريخ القرية.',
+  '🧟 فجأة انطفأت المشاعل كلها. وعندما عادت… اختفى أحد المشاركين، وبقي صدى ضحكة باردة في الجو.',
+  '🎭 سأل المضيف بلهجة غامضة: هل أنتم مستعدون؟ أدرك اللاعبون أن اللعبة بدأت فعليًا من الساعة التي جلسوا فيها.',
+  '🌫️ سحبت ضبابية كثيفة فوق المساحة. وسمع الجميع: «أنت، يا من في الخلف، ابقَ صامتًا… أنت التالي».',
+  '📜 قرأ الكاتب على ورقة قديمة: «علي الشرف، كل من هنا لديه سرّ واحد. من سيُفشي سرّه أولاً؟».',
+  '🍷 رفع كأس النبيذ المزيف وقال: «لنحتفل!». لم يعرف أحد أنّ أحدهم لم يعد منهم منذ دقائق.',
 ];
 
 export const VICTORY_NARRATIVES: Record<'CITIZENS' | 'KILLERS', Record<MafiaEndingStyle, string>> = {
@@ -266,6 +326,12 @@ export const VICTORY_NARRATIVES: Record<'CITIZENS' | 'KILLERS', Record<MafiaEndi
       'أُخرجت العصابة من القرية بضحكات مريرة. لكن بعد سنوات، أصبح أحد الأطفال الذين رأوا المشهد هو القاتل في القصة التالية.',
     MYSTERY:
       'أُعلن انتصار المواطنين وكُشفت الأدوار. لكن الرسالة الغريبة التي عثرت عليها في الجيب لم تعزُ لأحد. هل بقي أحدٌ في الظلال؟',
+    COMEDY:
+      'بينما كانوا يحتفلون، أدرك الجميع أنّ القاتل كان يخفي وجهه خلف قناع الجبن! انتهت اللعبة بضحكات جماعية ووجبة كشري مشتركة.',
+    EPIC:
+      'صُنعت الأسطورة هذا المساء: بقي مواطنان صامدان في وجه العصابة كاملة. كُتب اسمهما في جدران القرية كأبطال خالدين.',
+    FOLKLORE:
+      'سارّت الأمهات قصة هذه الليلة لأبنائهن: كيف انتصر البسطاء على الظالم، وكيف تحولت الحيلة إلى كفاح عظيم في أذهان كل من سمعها.',
   },
   KILLERS: {
     DRAMA:
@@ -278,6 +344,12 @@ export const VICTORY_NARRATIVES: Record<'CITIZENS' | 'KILLERS', Record<MafiaEndi
       'فاز القتلة بهدوء تام. ما لم يعرفوه أنّ الضحية الأولى كانت تحمل سرًا قاتلًا لهم جميعًا. النصر كان حبلًا مُشنقةً بانتظارهم.',
     MYSTERY:
       'الهرب كان مذهلاً. اختفى القاتل في الظلام، ولم يبقَ سوى بصمة قديمة على الجدار تذكر اسمًا غير مذكور في أي سجل.',
+    COMEDY:
+      'اكتشف القاتلون فور الفوز أنّهم كلاهما زوج أمّهات من نفس القرية! انهزت الضحكة من الكل، واتفقوا على مباراة شطرنج بدلاً من القتل.',
+    EPIC:
+      'برودٌ لا يُصدّق، وخطةٌ تآمرية دقيقة لثلاثة أيام. سارَ القاتلُ الواحد من الأبواب، والآخر يحدّث نفسه بالكلمات التي أيدته في كل خطة.',
+    FOLKLORE:
+      'عاد ساكنو المنطقة بعد سنوات يروون حكاية هذا الفوز المرير، وكيف أنّ الخداع الماكِل هو الذي يخلق أسطورة القاتل الطويل العمر.',
   },
 };
 
@@ -286,11 +358,19 @@ export const ELIMINATION_NARRATIVES: Record<'NIGHT' | 'VOTING', string[]> = {
     'في منتصف الليل، سُمع صوت ضحية… ثم صمت مطوّل. خرج {name} من اللعبة في صمت مرعب.',
     'تحرّكت الأظافر الخفية بسرعة بلا رحمة. صرخة خافتة، ثم اختفى {name} إلى الأبد من بين الأحياء.',
     'الضوء انطفأ للحظة، وعندما عاد لم يعد {name} موجودًا. الدماء على الأرض كانت دليلاً وحيدًا.',
+    '🧟 تحرك ظلّ خفي خلف {name}، وبنظرة واحدة… اختفى اسمه من سجلات هذه الليلة.',
+    '🗡️ كتب الليلة قصصه بقلم حادّ. هدفتْ الرماح لـ {name} دون أن يُصمت صرخة أحد.',
+    '🌙 سقطت {name} بين ذراعي الليل، كأنّ الظلام نسي أن يذكر اسمه في سؤدّ.',
+    '🐺 ضمّر الذئب بعيدًا، وبعد دقائق… تبقّى فقط قطعة ثياب {name} على العشب.',
   ],
   VOTING: [
     'رفعت الأصوات بحماس، واتّفق الجميع على نتيجة واحدة. خرج {name} من الحلبة وهو يردد أنّه بريء.',
     'تداعت الحجج لاختيار المشتبه به. تمّ الإجماع على طرد {name}، والصمت عاد يكتنف الساحة.',
     'عدّت الأصوات ببطء، وكانت النتيجة صادمة للكثيرين. سار {name} نحو الباب وهو ينظر إلى المراتب الواحدة تلو الأخرى.',
+    '⚖️ تردّدت الكفة أخيرًا. صرّح الرئيس: «اللاعب {name} خارج القضية من هذه اللحظة».',
+    '🎭 وُضعت الوسامة على جبين {name}، وهتفت الحشد: «إياك هو المشتبه!».',
+    '📣 تناثرت التهم في الهواء. صوّت الجميع ضد {name}، ولم يَدَّعِ أحدٌ براءته تلك اللحظة.',
+    '🔕 رنّ الجرس لفصل الجولة. انحسرتْ الموجة عن {name}، وبقيت نظرة الحنين الأخيرة للملاعبين.',
   ],
 };
 
@@ -300,8 +380,123 @@ export function pickEndingStyle(
   citizensRemained: number,
 ): MafiaEndingStyle {
   const sum = round * 7 + killerCount * 13 + citizensRemained * 5;
-  const styles: MafiaEndingStyle[] = ['DRAMA', 'TRAGEDY', 'HOPE', 'IRONY', 'MYSTERY'];
+  const styles: MafiaEndingStyle[] = [
+    'DRAMA',
+    'TRAGEDY',
+    'HOPE',
+    'IRONY',
+    'MYSTERY',
+    'COMEDY',
+    'EPIC',
+    'FOLKLORE',
+  ];
   return styles[sum % styles.length];
+}
+
+export type MafiaTakeaway = {
+  id: string;
+  title: string;
+  summary: string;
+};
+
+export function buildTakeaways(args: {
+  round: number;
+  totalPlayers: number;
+  eliminatedIds: string[];
+  publicMessageCounts: Map<string, number>;
+  votedTargets: Array<{ voterId: string; targetId: string; round: number }>;
+  correctGuesses?: Map<string, number>;
+}): MafiaTakeaway[] {
+  const { round, totalPlayers, eliminatedIds, publicMessageCounts, votedTargets, correctGuesses } =
+    args;
+  const result: MafiaTakeaway[] = [];
+  const eliminationPct = Math.round((eliminatedIds.length / Math.max(1, totalPlayers)) * 100);
+  if (eliminatedIds.length === 0) {
+    result.push({
+      id: 'no-eliminations',
+      title: 'ليلة ساحرة بدون خسائر',
+      summary: 'جميع اللاعبين نجوا حتى الجولة الأخيرة. ندرة إحصائية!',
+    });
+  } else {
+    result.push({
+      id: 'elimination-rate',
+      title: `نسبة خروج ${eliminationPct}%`,
+      summary: `خارجون ${eliminatedIds.length} من أصل ${totalPlayers} لاعبين في ${round} جولات.`,
+    });
+  }
+  if (publicMessageCounts.size > 0) {
+    const sorted = [...publicMessageCounts.entries()].sort((a, b) => a[1] - b[1]);
+    const [silentId, silentCount] = sorted[0];
+    const [loudId, loudCount] = sorted[sorted.length - 1];
+    if (silentId && silentCount <= Math.max(1, loudCount * 0.1)) {
+      result.push({
+        id: `silent-${silentId}`,
+        title: 'لاعب صامت بأسلوب استثنائي',
+        summary: `أرسل ${silentCount} رسائل فقط وأكمل اللعبة بدءً من الظلال.`,
+      });
+    }
+    if (loudId && loudCount >= 12) {
+      result.push({
+        id: `loud-${loudId}`,
+        title: 'دولاب النقاش العام',
+        summary: `أكثر لاعب رسائل بـ ${loudCount} مشاركة، وهي أكثر من ${Math.round(
+          (loudCount / Math.max(1, silentCount || 1)) * 10,
+        )}× أقل لاعب رسائل.`,
+      });
+    }
+  }
+  if (votedTargets.length > 0) {
+    const byVoter = new Map<string, Set<string>>();
+    for (const v of votedTargets) {
+      const s = byVoter.get(v.voterId) ?? new Set<string>();
+      s.add(v.targetId);
+      byVoter.set(v.voterId, s);
+    }
+    let fluid: string | null = null;
+    for (const [voterId, s] of byVoter.entries()) {
+      if (s.size >= Math.max(3, round)) {
+        fluid = voterId;
+        break;
+      }
+    }
+    if (fluid) {
+      result.push({
+        id: `fluid-${fluid}`,
+        title: 'آلة اتهامات دوارة',
+        summary: `صوّت ضد ${
+          byVoter.get(fluid)?.size ?? 0
+        } لاعبين مختلفين؛ لم يكن هناك ثقة ثابتة!`,
+      });
+    }
+  }
+  if (correctGuesses && correctGuesses.size > 0) {
+    const top = [...correctGuesses.entries()].sort((a, b) => b[1] - a[1])[0];
+    if (top && top[1] >= 3) {
+      result.push({
+        id: `oracle-${top[0]}`,
+        title: 'عراف القرية الرسمي',
+        summary: `خمن ${top[1]} أدوار بشكل صحيح قبل أن تُكشف في النهاية.`,
+      });
+    }
+  }
+  return result.slice(0, 5);
+}
+
+export function pickEpilogueBadges(args: {
+  takeawayIds: string[];
+  role?: MafiaRoleName;
+  wasAliveAtEnd: boolean;
+  publicMessages: number;
+  correctGuesses: number;
+  investigateCount: number;
+}): MafiaEpilogueBadge[] {
+  const ids: MafiaEpilogueBadgeId[] = [];
+  if (args.takeawayIds.includes('silent') || args.publicMessages <= 3) ids.push('SILENT_THINKER');
+  if (args.takeawayIds.find((id) => id.startsWith('fluid-'))) ids.push('ACCUSATION_MACHINE');
+  if (args.correctGuesses >= 3) ids.push('FORTUNE_TELLER');
+  if (args.wasAliveAtEnd) ids.push('LUCKY_SURVIVOR');
+  if (args.role === 'DETECTIVE' && args.investigateCount >= 2) ids.push('PERFECT_DETECTIVE');
+  return ids.map((id) => MAFIA_EPILOGUE_BADGES[id]);
 }
 
 export function renderEliminationText(

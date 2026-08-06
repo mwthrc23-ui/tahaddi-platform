@@ -1,19 +1,27 @@
 import {
   Clock3,
   Eye,
+  Gauge,
   MessageCircle,
   Moon,
   Shield,
+  Sparkles,
   Sun,
   UserRoundSearch,
   Users,
   Vote,
+  Zap,
 } from 'lucide-react';
 import { createMafiaGame } from '@/app/mafia/actions';
 import { GAME_GUIDES, GameHowTo } from '@/components/games/shared';
 import { JoinQuizForm } from '@/components/home/join-quiz-form';
 import { SiteLayout } from '@/components/layout';
 import { Badge, Button, ButtonLink, Card, EmptyState } from '@/components/ui';
+import {
+  MAFIA_GAME_MODES,
+  applyModeMultipliers,
+  type MafiaGameModeId,
+} from '@/lib/mafia/game-modes';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { getCurrentSession } from '@/lib/auth/session';
 
@@ -125,14 +133,89 @@ export default async function MafiaPage() {
               <Badge className="badge-live">للمضيف</Badge>
               <h2>أنشئ غرفة قاتل</h2>
               {session?.user ? (
-                <form action={createMafiaGame} className="stack-form">
+                <form action={createMafiaGame} className="stack-form" id="mafia-create-form">
+                  <fieldset className="mafia-mode-presets">
+                    <legend>
+                      <Sparkles aria-hidden="true" />
+                      اختيار سريع لأسلوب اللعبة
+                    </legend>
+                    <div className="mafia-mode-presets-grid">
+                      {(Object.keys(MAFIA_GAME_MODES) as MafiaGameModeId[]).map((id) => {
+                        const mode = MAFIA_GAME_MODES[id];
+                        return (
+                          <label
+                            key={id}
+                            className="mafia-mode-preset"
+                            data-mode={id}
+                            htmlFor={`mafia-mode-${id}`}
+                          >
+                            <input
+                              id={`mafia-mode-${id}`}
+                              type="radio"
+                              name="modeId"
+                              value={id}
+                              defaultChecked={id === 'CLASSIC'}
+                              onChange={(e) => {
+                                if (!e.currentTarget.checked) return;
+                                const timers = applyModeMultipliers(id, {
+                                  nightSeconds: 45,
+                                  daySeconds: 90,
+                                  votingSeconds: 45,
+                                  killerCount: 1,
+                                  maxPlayers: 12,
+                                });
+                                const get = (n: string) =>
+                                  document.getElementById(n) as HTMLInputElement | null;
+                                get('mafia-nightSeconds')?.setAttribute(
+                                  'value',
+                                  String(timers.nightSeconds),
+                                );
+                                get('mafia-daySeconds')?.setAttribute(
+                                  'value',
+                                  String(timers.daySeconds),
+                                );
+                                get('mafia-votingSeconds')?.setAttribute(
+                                  'value',
+                                  String(timers.votingSeconds),
+                                );
+                                const kill = document.getElementById(
+                                  'mafia-killerCount',
+                                ) as HTMLSelectElement | null;
+                                if (kill) {
+                                  kill.value = String(Math.min(3, timers.killerCount));
+                                }
+                              }}
+                            />
+                            <div className="mafia-mode-preset-head">
+                              <strong>{mode.label}</strong>
+                              <Badge>
+                                {mode.timeMultiplier === 1
+                                  ? 'وقت عادي'
+                                  : `سرعة ${mode.timeMultiplier < 1 ? 'أسرع' : 'أبطأ'}`}
+                              </Badge>
+                            </div>
+                            <p className="muted">{mode.tagline}</p>
+                            <ul>
+                              {mode.features.slice(0, 2).map((f) => (
+                                <li key={f}>
+                                  <Zap aria-hidden="true" />
+                                  {f}
+                                </li>
+                              ))}
+                            </ul>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+
                   <label>
                     الحد الأعلى للاعبين
                     <input name="maxPlayers" type="number" min="5" max="30" defaultValue="12" />
                   </label>
                   <label>
                     عدد القتلة
-                    <select name="killerCount" defaultValue="1">
+                    <select id="mafia-killerCount" name="killerCount" defaultValue="1">
                       <option value="1">قاتل واحد</option>
                       <option value="2">قاتلان</option>
                       <option value="3">ثلاثة قتلة</option>
@@ -140,8 +223,9 @@ export default async function MafiaPage() {
                   </label>
                   <div className="form-row">
                     <label>
-                      وقت الليل بالثواني
+                      <Gauge aria-hidden="true" /> وقت الليل بالثواني
                       <input
+                        id="mafia-nightSeconds"
                         name="nightSeconds"
                         type="number"
                         min="20"
@@ -151,11 +235,19 @@ export default async function MafiaPage() {
                     </label>
                     <label>
                       وقت النهار بالثواني
-                      <input name="daySeconds" type="number" min="30" max="300" defaultValue="90" />
+                      <input
+                        id="mafia-daySeconds"
+                        name="daySeconds"
+                        type="number"
+                        min="30"
+                        max="300"
+                        defaultValue="90"
+                      />
                     </label>
                     <label>
                       وقت التصويت بالثواني
                       <input
+                        id="mafia-votingSeconds"
                         name="votingSeconds"
                         type="number"
                         min="20"
