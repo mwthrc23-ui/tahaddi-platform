@@ -185,24 +185,28 @@ export class SpecialGamesGateway
   ) {
     if (!payload?.pin) return;
     const pin = payload.pin;
-    await client.leave(pin);
-    this.socketRooms.delete(client.id);
     const result = await this.runLocked(client, pin, () =>
       this.games.leaveRoom(client.id, pin),
     );
     if (!result) return;
-    if (result.ok) {
-      this.server.to(pin).emit('special:room:state', {
-        pin: result.room.pin,
-        hostId: result.room.hostId,
-        mode: result.room.mode,
-        phase: result.room.phase,
-        roundIndex: result.room.roundIndex,
-        roundCount: getRoundCount(result.room.mode),
-        players: result.room.players,
-        readyPlayerIds: result.room.readyPlayerIds ?? [],
-      });
+    if (!result.ok) {
+      await client.leave(pin);
+      this.socketRooms.delete(client.id);
+      this.emitError(client, result);
+      return;
     }
+    await client.leave(pin);
+    this.socketRooms.delete(client.id);
+    this.server.to(pin).emit('special:room:state', {
+      pin: result.room.pin,
+      hostId: result.room.hostId,
+      mode: result.room.mode,
+      phase: result.room.phase,
+      roundIndex: result.room.roundIndex,
+      roundCount: getRoundCount(result.room.mode),
+      players: result.room.players,
+      readyPlayerIds: result.room.readyPlayerIds ?? [],
+    });
   }
 
   @SubscribeMessage('special:player:ready')
