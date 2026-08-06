@@ -41,33 +41,39 @@ export function WaitingRoom({
   const allReady =
     room.players.length > 0 && room.players.every((p) => readyIds.includes(p.id));
 
-  // Auto-start countdown
+  // Auto-start countdown; state is only updated from timer callbacks to
+  // satisfy react-hooks/set-state-in-effect.
   const [countdown, setCountdown] = useState<number | null>(null);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (isHost && minimumReached && allReady) {
-      let seconds = AUTO_START_SECONDS;
-      setCountdown(seconds);
-      countdownRef.current = setInterval(() => {
-        seconds -= 1;
-        if (seconds <= 0) {
-          clearInterval(countdownRef.current!);
-          setCountdown(null);
-          setBusy(true);
-          socketRef.current?.emit('special:game:start', { pin: room.pin });
-        } else {
-          setCountdown(seconds);
-        }
-      }, 1000);
-    } else {
-      if (countdownRef.current) clearInterval(countdownRef.current);
-      setCountdown(null);
-    }
+    if (!(isHost && minimumReached && allReady)) return;
+
+    let seconds = AUTO_START_SECONDS;
+    const initTimeout = window.setTimeout(() => setCountdown(seconds), 0);
+    const interval = window.setInterval(() => {
+      seconds -= 1;
+      if (seconds <= 0) {
+        window.clearInterval(interval);
+        countdownRef.current = null;
+        setCountdown(null);
+        setBusy(true);
+        socketRef.current?.emit('special:game:start', { pin: room.pin });
+      } else {
+        setCountdown(seconds);
+      }
+    }, 1000);
+    countdownRef.current = interval;
+
     return () => {
-      if (countdownRef.current) clearInterval(countdownRef.current);
+      window.clearTimeout(initTimeout);
+      window.clearInterval(interval);
+      countdownRef.current = null;
     };
-  }, [isHost, minimumReached, allReady, room.pin, socketRef, setBusy]);
+  }, [isHost, minimumReached, allReady, room.pin, setBusy, socketRef]);
+
+  const activeCountdown =
+    isHost && minimumReached && allReady ? countdown : null;
 
   const handleLeave = () => {
     setBusy(true);
@@ -91,14 +97,12 @@ export function WaitingRoom({
           role="status"
         >
           {minimumReached
-            ? allReady
-              ? isHost
-                ? countdown !== null
-                  ? `تبدأ اللعبة خلال ${countdown.toLocaleString('ar-SA')} ثانية…`
-                  : 'الكل جاهز. يمكنك البدء الآن.'
-                : countdown !== null
-                  ? `تبدأ اللعبة خلال ${countdown.toLocaleString('ar-SA')} ثانية…`
-                  : 'اكتمل العدد. انتظر المضيف.'
+          ? allReady
+            ? isHost
+              ? activeCountdown !== null
+                ? `تبدأ اللعبة خلال ${activeCountdown.toLocaleString('ar-SA')} ثانية…`
+                : 'الكل جاهز. يمكنك البدء الآن.'
+              : 'اكتمل العدد. انتظر المضيف.'
               : `اكتمل الحد الأدنى. اضغط «جاهز» للمتابعة.`
             : `بانتظار ${Math.max(0, meta.minimumPlayers - room.players.length).toLocaleString('ar-SA')} لاعبين على الأقل.`}
         </p>
@@ -111,7 +115,10 @@ export function WaitingRoom({
             loading={busy}
             disabled={!minimumReached || busy}
             onClick={() => {
-              if (countdownRef.current) clearInterval(countdownRef.current);
+              if (countdownRef.current !== null) {
+                window.clearInterval(countdownRef.current);
+                countdownRef.current = null;
+              }
               setCountdown(null);
               setBusy(true);
               socketRef.current?.emit('special:game:start', { pin: room.pin });
