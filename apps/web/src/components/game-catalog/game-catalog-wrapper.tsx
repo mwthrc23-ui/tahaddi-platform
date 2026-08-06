@@ -206,6 +206,7 @@ function GameCatalogShell({ sessionUserName }: { sessionUserName: string | null 
                   ref={catalog.sentinelRef as unknown as React.RefObject<HTMLDivElement>}
                   aria-hidden="true"
                 />
+                {/* eslint-disable react-hooks/refs */}
                 {catalog.hasMore ? (
                   <div className="gc-load-more">
                     <button type="button" onClick={catalog.loadMore}>
@@ -213,6 +214,7 @@ function GameCatalogShell({ sessionUserName }: { sessionUserName: string | null 
                     </button>
                   </div>
                 ) : null}
+                {/* eslint-enable react-hooks/refs */}
               </>
             )}
           </div>

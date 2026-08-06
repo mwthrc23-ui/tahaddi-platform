@@ -256,11 +256,12 @@ export function applyModeMultipliers(
   const killMul = m.killerMultiplier;
   const newKillers = Math.max(1, Math.round(settings.killerCount * killMul));
   const playerForKillers = Math.max(5, Math.min(settings.maxPlayers, settings.maxPlayers));
+  const safeKillers = Math.max(1, Math.floor((playerForKillers - 2) / 3));
   return {
     nightSeconds: Math.max(15, Math.round(settings.nightSeconds * multiplier)),
     daySeconds: Math.max(30, Math.round(settings.daySeconds * multiplier)),
     votingSeconds: Math.max(15, Math.round(settings.votingSeconds * multiplier)),
-    killerCount: Math.min(newKillers, Math.max(1, Math.floor((playerForKillers - 2) / 3)),
+    killerCount: Math.min(newKillers, safeKillers),
   } as const;
 }
 

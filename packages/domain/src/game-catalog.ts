@@ -489,7 +489,7 @@ export function mergeCatalogWithExisting(base?: EnhancedGameMeta[]): EnhancedGam
     platforms: ['web', 'pwa'] as PlatformValue[],
     categories: ['اجتماعي'] as GameCategory[],
     tags: ['قيد التطوير'],
-    accent: ['#ab47bc', '#26c6da', '#ec407a'][i % 3],
+    accent: ['#ab47bc', '#26c6da', '#ec407a'][i % 3] ?? '#ab47bc',
     requiresRealtime: true,
     requiresAuth: false,
   }));

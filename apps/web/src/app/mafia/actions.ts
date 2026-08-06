@@ -12,7 +12,7 @@ import {
   shuffled,
   type MafiaGameModeId,
 } from '@/lib/mafia/rules';
-import { buildNarrativeEvent, buildNarrative, pickArchetype } from '@/lib/mafia/narrative';
+import { buildNarrativeEvent, buildNarrative } from '@/lib/mafia/narrative';
 import { MAFIA_GAME_MODES, applyModeMultipliers } from '@/lib/mafia/game-modes';
 import { generateUniqueActivityRoomCode } from '@/lib/quiz/room-code';
 

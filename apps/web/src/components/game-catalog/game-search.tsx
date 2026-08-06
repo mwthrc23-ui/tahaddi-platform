@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { Search, X as CloseIcon } from 'lucide-react';
 import type { UseGameCatalogReturn } from './use-game-catalog.js';
 
@@ -20,11 +20,6 @@ export function GameSearch({ catalog }: { catalog: UseGameCatalogReturn }) {
 
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [highlighted, setHighlighted] = useState<number>(-1);
-
-  useEffect(() => {
-    setHighlighted(activeSuggestionIndex);
-  }, [activeSuggestionIndex]);
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
@@ -42,19 +37,17 @@ export function GameSearch({ catalog }: { catalog: UseGameCatalogReturn }) {
     if (!suggestions.length) return;
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      const next = (highlighted + 1) % suggestions.length;
+      const next = (activeSuggestionIndex + 1) % suggestions.length;
       setActiveSuggestionIndex(next);
-      setHighlighted(next);
       setSuggestionsOpen(true);
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      const next = (highlighted - 1 + suggestions.length) % suggestions.length;
+      const next = (activeSuggestionIndex - 1 + suggestions.length) % suggestions.length;
       setActiveSuggestionIndex(next);
-      setHighlighted(next);
       setSuggestionsOpen(true);
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      const picked = suggestions[highlighted >= 0 ? highlighted : 0];
+      const picked = suggestions[activeSuggestionIndex >= 0 ? activeSuggestionIndex : 0];
       if (picked) applySuggestion(picked);
     } else if (event.key === 'Escape') {
       event.preventDefault();
@@ -72,8 +65,8 @@ export function GameSearch({ catalog }: { catalog: UseGameCatalogReturn }) {
           aria-expanded={suggestionsOpen && suggestions.length > 0}
           aria-controls="gc-suggestions-list"
           aria-activedescendant={
-            highlighted >= 0 && suggestions[highlighted]
-              ? `gc-suggestion-${suggestions[highlighted].id}`
+            activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]
+              ? `gc-suggestion-${suggestions[activeSuggestionIndex].id}`
               : undefined
           }
           aria-autocomplete="list"
@@ -108,10 +101,9 @@ export function GameSearch({ catalog }: { catalog: UseGameCatalogReturn }) {
               key={s.id}
               id={`gc-suggestion-${s.id}`}
               role="option"
-              aria-selected={highlighted === i}
+              aria-selected={activeSuggestionIndex === i}
               className="gc-suggestion"
               onMouseEnter={() => {
-                setHighlighted(i);
                 setActiveSuggestionIndex(i);
               }}
               onClick={() => applySuggestion(s)}
