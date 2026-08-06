@@ -8,7 +8,7 @@ import {
   Play,
   UsersRound,
 } from 'lucide-react';
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useReducer, type RefObject } from 'react';
 import type { SpecialGameMeta } from '@tahaddi/domain';
 import { Button } from '@/components/ui';
 import type { GameSocket, Player, Room } from './use-special-game-socket';
@@ -26,6 +26,23 @@ interface WaitingRoomProps {
 /** Auto-start countdown seconds once all minimum players are ready. */
 const AUTO_START_SECONDS = 10;
 
+type CountdownState = { value: number | null };
+
+function countdownReducer(
+  state: CountdownState,
+  action: { type: 'start'; seconds: number } | { type: 'tick' } | { type: 'reset' },
+): CountdownState {
+  switch (action.type) {
+    case 'start':
+      return { value: action.seconds };
+    case 'tick':
+      if (state.value === null) return state;
+      return { value: state.value > 1 ? state.value - 1 : 0 };
+    case 'reset':
+      return { value: null };
+  }
+}
+
 export function WaitingRoom({
   room,
   socketId,
@@ -42,32 +59,30 @@ export function WaitingRoom({
     room.players.length > 0 && room.players.every((p) => readyIds.includes(p.id));
 
   // Auto-start countdown
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [countdownState, dispatchCountdown] = useReducer(countdownReducer, { value: null });
+  const countdown = countdownState.value;
 
   useEffect(() => {
-    if (isHost && minimumReached && allReady) {
-      let seconds = AUTO_START_SECONDS;
-      setCountdown(seconds);
-      countdownRef.current = setInterval(() => {
-        seconds -= 1;
-        if (seconds <= 0) {
-          clearInterval(countdownRef.current!);
-          setCountdown(null);
-          setBusy(true);
-          socketRef.current?.emit('special:game:start', { pin: room.pin });
-        } else {
-          setCountdown(seconds);
-        }
-      }, 1000);
-    } else {
-      if (countdownRef.current) clearInterval(countdownRef.current);
-      setCountdown(null);
+    if (!(isHost && minimumReached && allReady)) {
+      dispatchCountdown({ type: 'reset' });
+      return undefined;
     }
-    return () => {
-      if (countdownRef.current) clearInterval(countdownRef.current);
-    };
-  }, [isHost, minimumReached, allReady, room.pin, socketRef, setBusy]);
+
+    dispatchCountdown({ type: 'start', seconds: AUTO_START_SECONDS });
+
+    const interval = window.setInterval(() => {
+      dispatchCountdown({ type: 'tick' });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [isHost, minimumReached, allReady]);
+
+  useEffect(() => {
+    if (countdown !== 0) return;
+
+    setBusy(true);
+    socketRef.current?.emit('special:game:start', { pin: room.pin });
+  }, [countdown, room.pin, setBusy, socketRef]);
 
   const handleLeave = () => {
     setBusy(true);
@@ -111,8 +126,7 @@ export function WaitingRoom({
             loading={busy}
             disabled={!minimumReached || busy}
             onClick={() => {
-              if (countdownRef.current) clearInterval(countdownRef.current);
-              setCountdown(null);
+              dispatchCountdown({ type: 'reset' });
               setBusy(true);
               socketRef.current?.emit('special:game:start', { pin: room.pin });
             }}

@@ -253,8 +253,8 @@ export function SpecialGameRoom({
   });
   const effectivePin = pin || lastPin;
 
-  // Infiltrator role-reveal gate
-  const [roleRevealed, setRoleRevealed] = useState(false);
+  // Infiltrator role-reveal gate (tracks the last round whose overlay was dismissed)
+  const [revealedRoundId, setRevealedRoundId] = useState<string | null>(null);
 
   const shareUrl =
     room && typeof window !== 'undefined'
@@ -270,7 +270,6 @@ export function SpecialGameRoom({
     if (!room) return;
     setBusy(true);
     resetRoundState();
-    setRoleRevealed(false);
     socketRef.current?.emit('special:round:next', { pin: room.pin });
   };
 
@@ -297,11 +296,6 @@ export function SpecialGameRoom({
       playerName,
     });
   };
-
-  // Reset role-reveal when a new round starts
-  useEffect(() => {
-    if (infiltratorRound) setRoleRevealed(false);
-  }, [infiltratorRound?.roundId]);
 
   const phaseTitle = useMemo(() => {
     if (!room) return activeMeta.title;
@@ -472,7 +466,7 @@ export function SpecialGameRoom({
     room.phase === 'infiltrator-answering' &&
     !isHost &&
     infiltratorRound &&
-    !roleRevealed;
+    revealedRoundId !== infiltratorRound.roundId;
 
   return (
     <section className="section special-game-stage">
@@ -495,7 +489,7 @@ export function SpecialGameRoom({
         {showRoleReveal && (
           <InfiltratorRoleReveal
             isInfiltrator={infiltratorRound!.isInfiltrator}
-            onContinue={() => setRoleRevealed(true)}
+            onContinue={() => setRevealedRoundId(infiltratorRound!.roundId)}
           />
         )}
 
@@ -845,7 +839,7 @@ export function SpecialGameRoom({
                       اعرض الإجابات المجهولة
                     </Button>
                   </Card>
-                ) : roleRevealed && infiltratorRound ? (
+                ) : revealedRoundId === infiltratorRound?.roundId && infiltratorRound ? (
                   <Card className="special-question-panel">
                     <div className="special-round-meta">
                       <span data-role={infiltratorRound.isInfiltrator ? 'infiltrator' : 'majority'}>
@@ -902,7 +896,7 @@ export function SpecialGameRoom({
                       </p>
                     )}
                   </Card>
-                ) : !roleRevealed ? null : (
+                ) : infiltratorRound ? null : (
                   <Card className="special-waiting">
                     <LoaderCircle className="spin" aria-hidden="true" />
                     جارٍ تسليم دورك السري…
