@@ -1,1 +1,1 @@
-export * from '../../../../packages/domain/src/game-catalog.js';
+export * from '../../../../../packages/domain/src/game-catalog';

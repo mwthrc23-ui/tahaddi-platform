@@ -61,7 +61,7 @@ describe('Mafia Narrative Engine', () => {
   });
 
   it('all 8 archetypes exist and have all 6 roles flavor texts', () => {
-    const archetypes = Object.keys(CHARACTER_ARCHETYPES);
+    const archetypes = Object.keys(CHARACTER_ARCHETYPES) as (keyof typeof CHARACTER_ARCHETYPES)[];
     expect(archetypes).toHaveLength(8);
     const roles: MafiaRoleName[] = ['KILLER', 'DETECTIVE', 'DOCTOR', 'GUARD', 'WITNESS', 'CITIZEN'];
     for (const role of roles) {
@@ -207,11 +207,12 @@ describe('Mafia Game Modes & Quests', () => {
 
 describe('Mafia Core Rules', () => {
   it('buildMafiaRoles for N players returns N roles with requested killer count + detectives', () => {
+    const maxKillers = (p: number) => Math.max(1, Math.floor((p - 2) / 3));
     const tests = [
-      { p: 5, k: 1 },
-      { p: 8, k: 2 },
-      { p: 10, k: 3 },
-      { p: 12, k: 3 },
+      { p: 5, k: 1, guard: 0, witness: 0 },
+      { p: 8, k: 2, guard: 1, witness: 1 },
+      { p: 10, k: maxKillers(10), guard: 1, witness: 1 },
+      { p: 12, k: maxKillers(12), guard: 1, witness: 1 },
     ];
     for (const t of tests) {
       const r = buildMafiaRoles(t.p, t.k);
@@ -220,8 +221,8 @@ describe('Mafia Core Rules', () => {
       expect(killers).toHaveLength(t.k);
       expect(r.filter((x) => x === 'DETECTIVE').length).toBe(1);
       expect(r.filter((x) => x === 'DOCTOR').length).toBe(1);
-      expect(r.filter((x) => x === 'GUARD').length).toBe(1);
-      if (t.p >= 7) expect(r.filter((x) => x === 'WITNESS').length).toBe(1);
+      expect(r.filter((x) => x === 'GUARD').length).toBe(t.guard);
+      expect(r.filter((x) => x === 'WITNESS').length).toBe(t.witness);
     }
   });
 

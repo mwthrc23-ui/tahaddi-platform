@@ -1,5 +1,5 @@
 export type EntityId = string;
 export type UtcTimestamp = string;
 
-export * from './special-games.js';
-export * from './game-catalog.js';
+export * from './special-games';
+export * from './game-catalog';

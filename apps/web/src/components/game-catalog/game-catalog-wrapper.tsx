@@ -3,11 +3,11 @@
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Gamepad2, Search as SearchIcon, Sparkles, Users, Zap } from 'lucide-react';
-import { useGameCatalog } from './use-game-catalog.js';
-import { GameSearch } from './game-search.jsx';
-import { GameFilters } from './game-filters.jsx';
-import { GameSortBar } from './game-sort-bar.jsx';
-import { GameCard } from './game-card.jsx';
+import { useGameCatalog } from './use-game-catalog';
+import { GameSearch } from './game-search';
+import { GameFilters } from './game-filters';
+import { GameSortBar } from './game-sort-bar';
+import { GameCard } from './game-card';
 import { formatArabicModeCount, toArabicDigits } from '@/lib/utils';
 
 function GameCatalogShell({ sessionUserName }: { sessionUserName: string | null }) {

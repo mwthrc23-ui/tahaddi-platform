@@ -1,5 +1,5 @@
-import type { SpecialGameMode, SpecialGameMeta } from './special-games.js';
-import { SPECIAL_GAME_META, SPECIAL_GAME_ORDER, UPCOMING_SPECIAL_GAMES } from './special-games.js';
+import type { SpecialGameMode, SpecialGameMeta } from './special-games';
+import { SPECIAL_GAME_META, SPECIAL_GAME_ORDER, UPCOMING_SPECIAL_GAMES } from './special-games';
 
 export type InstantGameMode = 'memory-flash' | 'word-code' | 'color-rush';
 

@@ -18,7 +18,7 @@ import {
   type GameSearchSuggestion,
   type GameSortKey,
   type PlatformValue,
-} from './game-catalog-types.js';
+} from './game-catalog-types';
 
 const SEARCH_DEBOUNCE_MS = 160;
 const PAGE_SIZE = 6;

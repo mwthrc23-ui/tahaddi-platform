@@ -9,7 +9,7 @@ import {
   Wifi,
   Zap,
 } from 'lucide-react';
-import type { EnhancedGameMeta } from './game-catalog-types.js';
+import type { EnhancedGameMeta } from './game-catalog-types';
 import { toArabicDigits } from '@/lib/utils';
 
 function RatingStars({ value }: { value: number }) {

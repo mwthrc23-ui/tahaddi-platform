@@ -1,8 +1,8 @@
 'use client';
 
 import { Grid3X3, List, SlidersHorizontal } from 'lucide-react';
-import type { UseGameCatalogReturn } from './use-game-catalog.js';
-import type { GameSortKey } from './game-catalog-types.js';
+import type { UseGameCatalogReturn } from './use-game-catalog';
+import type { GameSortKey } from './game-catalog-types';
 
 const SORT_OPTIONS: Array<{ key: GameSortKey; label: string }> = [
   { key: 'popular', label: 'الأكثر شعبية' },

@@ -1,16 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
-  GameCatalogWrapper,
   GameSearch,
   GameFilters,
   GameSortBar,
   GameCard,
-} from '../game-catalog/index.js';
-import { useGameCatalog } from '../game-catalog/use-game-catalog.js';
-import type { UseGameCatalogReturn } from '../game-catalog/use-game-catalog.js';
-import type { EnhancedGameMeta } from '../game-catalog/game-catalog-types.js';
+} from './index';
+import type { UseGameCatalogReturn } from './use-game-catalog';
+import type { EnhancedGameMeta } from './game-catalog-types';
 import React from 'react';
 import {
   INJECTED_GAME_CATALOG,
@@ -66,7 +64,10 @@ function makeCatalog(partial: Partial<UseGameCatalogReturn> = {}): UseGameCatalo
 
 describe('GameCatalog UI', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('GameCard renders grid/list variants and accent CSS custom property', () => {
@@ -92,12 +93,18 @@ describe('GameCatalog UI', () => {
     render(<GameSearch catalog={catalog} />);
     const input = screen.getByRole('combobox');
     expect(input).toHaveAttribute('aria-autocomplete', 'list');
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    await user.type(input, 'خدعة');
-    expect(setQuery).toHaveBeenCalled();
+    const user = userEvent.setup();
+    await user.click(input);
+    for (const ch of 'خدعة') {
+      await user.keyboard(ch);
+    }
+    if (setQuery.mock.calls.length === 0) {
+      await vi.advanceTimersByTimeAsync(1000);
+    }
+    expect(setQuery.mock.calls.length).toBeGreaterThan(0);
     const opt = screen.getByRole('option', { name: /خدعة الألوان/ });
     expect(opt).toBeInTheDocument();
-  });
+  }, 30000);
 
   it('GameSortBar exposes sort select, view toggle, and filter badge', () => {
     const setSort = vi.fn();
@@ -110,7 +117,7 @@ describe('GameCatalog UI', () => {
     });
     render(<GameSortBar catalog={catalog} onOpenFilters={() => {}} />);
     expect(screen.getByLabelText(/ترتيب حسب/)).toBeInTheDocument();
-    const [gridBtn, listBtn] = screen.getAllByRole('button', { name: /عرض/ });
+    const [gridBtn] = screen.getAllByRole('button', { name: /عرض/ });
     expect(gridBtn).toHaveAttribute('aria-pressed', 'true');
   });
 

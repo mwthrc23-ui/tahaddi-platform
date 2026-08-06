@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { Search, X as CloseIcon } from 'lucide-react';
-import type { UseGameCatalogReturn } from './use-game-catalog.js';
+import type { UseGameCatalogReturn } from './use-game-catalog';
 
 export function GameSearch({ catalog }: { catalog: UseGameCatalogReturn }) {
   const {

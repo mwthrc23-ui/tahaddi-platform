@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, X as CloseIcon } from 'lucide-react';
-import type { UseGameCatalogReturn } from './use-game-catalog.js';
-import type { DifficultyValue, GameKind, PlatformValue } from './game-catalog-types.js';
+import type { UseGameCatalogReturn } from './use-game-catalog';
+import type { DifficultyValue, GameKind, PlatformValue } from './game-catalog-types';
 
 const KIND_META: Record<GameKind, { label: string; icon: string }> = {
   room: { label: 'جماعية', icon: '👥' },
