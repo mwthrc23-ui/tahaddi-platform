@@ -103,7 +103,7 @@ describe('SpecialGameRoom', () => {
       socketMock.listeners.get('connect_error')?.();
     });
 
-    expect(screen.getByText('تعذّر الاتصال')).toBeInTheDocument();
+    expect(screen.getByText('انقطع الاتصال — جارٍ المحاولة مجددًا')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent(
       'تعذّر الاتصال بخدمة اللعب المباشر. تحقق من اتصالك ثم أعد تحميل الصفحة.',
     );
@@ -163,9 +163,11 @@ describe('SpecialGameRoom', () => {
       } as never);
     });
 
-    expect(
-      screen.getByRole('dialog', { name: /أنت الدخيل/ }),
-    ).toBeInTheDocument();
+    // The secret role stays hidden behind a face-down card until the
+    // player flips it — the dialog never names the role up front.
+    const dialog = screen.getByRole('dialog', { name: /بطاقتك السرية/ });
+    expect(dialog).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'اكشف دورك السري' }));
     await user.click(screen.getByRole('button', { name: /فهمت/ }));
 
     expect(screen.getByText('أنت الدخيل')).toBeInTheDocument();

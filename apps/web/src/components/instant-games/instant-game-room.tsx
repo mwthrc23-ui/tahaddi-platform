@@ -16,8 +16,9 @@ import {
   Users,
   Zap,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Button, Card } from '@/components/ui';
+import { GAME_GUIDES, GameHowTo } from '@/components/games/shared';
 import { toArabicDigits } from '@/lib/utils';
 import {
   type MemoryDifficulty,
@@ -59,7 +60,15 @@ function getStage(level: number) {
   return { label: 'مبتدئ', color: '#f87171', icon: Brain };
 }
 
-function ScoreBar({ score, seconds, isPaused }: { score: number; seconds: number; isPaused: boolean }) {
+function ScoreBar({
+  score,
+  seconds,
+  isPaused,
+}: {
+  score: number;
+  seconds: number;
+  isPaused: boolean;
+}) {
   return (
     <div className="instant-scorebar" aria-label="حالة اللعبة">
       <span>
@@ -100,13 +109,18 @@ function StagePill({ level }: { level: number }) {
 function PreviewSequence({ sequence, progress }: { sequence: number[]; progress: number }) {
   return (
     <div className="memory-preview-wrap">
-      <div className="memory-preview-progress" style={{ '--preview-progress': progress } as React.CSSProperties} />
+      <div
+        className="memory-preview-progress"
+        style={{ '--preview-progress': progress } as React.CSSProperties}
+      />
       <div className="memory-preview" aria-live="polite" aria-label="شاهد التسلسل">
         {sequence.map((symbolIndex, index) => (
           <span
             key={`${symbolIndex}-${index}`}
             className="memory-preview-chip"
-            style={{ '--symbol-color': MEMORY_SYMBOL_BANK[symbolIndex]?.color } as React.CSSProperties}
+            style={
+              { '--symbol-color': MEMORY_SYMBOL_BANK[symbolIndex]?.color } as React.CSSProperties
+            }
           >
             {MEMORY_SYMBOL_BANK[symbolIndex]?.value}
           </span>
@@ -138,7 +152,11 @@ function GameSummary({
   return (
     <div className="instant-intro memory-summary" role="status">
       <div className="memory-summary-header">
-        {isNewRecord ? <Trophy aria-hidden="true" className="memory-summary-trophy" /> : <Sparkles aria-hidden="true" />}
+        {isNewRecord ? (
+          <Trophy aria-hidden="true" className="memory-summary-trophy" />
+        ) : (
+          <Sparkles aria-hidden="true" />
+        )}
         <h2>{isNewRecord ? 'رقم قياسي جديد!' : 'انتهت الجولة'}</h2>
       </div>
 
@@ -192,7 +210,11 @@ export function MemoryFlash() {
   const [mistakeSymbol, setMistakeSymbol] = useState<number | null>(null);
   const [lastChoiceCorrect, setLastChoiceCorrect] = useState<boolean | null>(null);
   const [screen, setScreen] = useState<'setup' | 'play' | 'summary'>('setup');
-  const [versusState, setVersusState] = useState<{ score: number; lives: number; finished: boolean } | null>(null);
+  const [versusState, setVersusState] = useState<{
+    score: number;
+    lives: number;
+    finished: boolean;
+  } | null>(null);
 
   const settings: MemorySettings = useMemo(() => MEMORY_DIFFICULTIES[difficulty], [difficulty]);
   const previewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -254,7 +276,10 @@ export function MemoryFlash() {
   useEffect(() => {
     if (!preview) return;
     const duration = settings.previewBaseMs + sequence.length * settings.previewStepMs;
-    previewTimerRef.current = window.setTimeout(() => setPreview(false), duration) as unknown as ReturnType<typeof setTimeout>;
+    previewTimerRef.current = window.setTimeout(
+      () => setPreview(false),
+      duration,
+    ) as unknown as ReturnType<typeof setTimeout>;
     return () => {
       if (previewTimerRef.current) window.clearTimeout(previewTimerRef.current);
     };
@@ -318,7 +343,10 @@ export function MemoryFlash() {
       setLastChoiceCorrect(true);
       setMistakeSymbol(null);
 
-      const newCombo = { count: combo.count + 1, multiplier: Math.min(4, 2 + Math.floor(combo.count / 4)) };
+      const newCombo = {
+        count: combo.count + 1,
+        multiplier: Math.min(4, 2 + Math.floor(combo.count / 4)),
+      };
       setCombo(newCombo);
 
       const points = settings.pointsPerSymbol * newCombo.multiplier;
@@ -338,7 +366,10 @@ export function MemoryFlash() {
         setLastChoiceCorrect(null);
 
         previewTimerRef.current = window.setTimeout(() => {
-          setSequence((current) => [...current, Math.floor(Math.random() * MEMORY_SYMBOL_BANK.length)]);
+          setSequence((current) => [
+            ...current,
+            Math.floor(Math.random() * MEMORY_SYMBOL_BANK.length),
+          ]);
           setInputIndex(0);
           setPreview(true);
         }, 300) as unknown as ReturnType<typeof setTimeout>;
@@ -346,14 +377,25 @@ export function MemoryFlash() {
         setInputIndex((value) => value + 1);
       }
     },
-    [combo.count, inputIndex, lives, mode, paused, preview, screen, sequence, settings.pointsPerSymbol, started],
+    [
+      combo.count,
+      inputIndex,
+      lives,
+      mode,
+      paused,
+      preview,
+      screen,
+      sequence,
+      settings.pointsPerSymbol,
+      started,
+    ],
   );
 
   const togglePause = useCallback(() => {
     setPaused((value) => !value);
   }, []);
 
-  const versusScore = mode === 'versus' ? versusState?.score ?? 0 : 0;
+  const versusScore = mode === 'versus' ? (versusState?.score ?? 0) : 0;
   const bestStage = getStage(sequence.length).label;
 
   const previewProgress = useMemo(() => {
@@ -409,7 +451,8 @@ export function MemoryFlash() {
                     <strong style={{ color: getStage(0).color }}>{cfg.pointsPerSymbol}</strong>
                     <span>نقطة/رمز</span>
                     <small>
-                      {toArabicDigits(cfg.startingLives)} أرواح • {toArabicDigits(cfg.totalSeconds)} ثانية
+                      {toArabicDigits(cfg.startingLives)} أرواح • {toArabicDigits(cfg.totalSeconds)}{' '}
+                      ثانية
                     </small>
                   </button>
                 );
@@ -427,10 +470,10 @@ export function MemoryFlash() {
   }
 
   if (screen === 'summary') {
-  return (
-    <>
-      <ScoreBar score={score} seconds={seconds} isPaused={false} />
-      <Card className="instant-board">
+    return (
+      <>
+        <ScoreBar score={score} seconds={seconds} isPaused={false} />
+        <Card className="instant-board">
           <GameSummary
             score={score}
             sequence={sequence}
@@ -460,7 +503,9 @@ export function MemoryFlash() {
           </span>
           <span className="memory-lives" aria-label={`المحاولات المتبقية: ${lives}`}>
             {'●'.repeat(Math.max(0, lives))}
-            <span className="memory-lives-empty">{'○'.repeat(Math.max(0, settings.startingLives - lives))}</span>
+            <span className="memory-lives-empty">
+              {'○'.repeat(Math.max(0, settings.startingLives - lives))}
+            </span>
           </span>
         </div>
 
@@ -657,41 +702,92 @@ function WordCode() {
   );
 }
 
+const COLOR_BLIND_KEY = 'tahaddi.color-rush.color-blind';
+
+function readColorBlindPreference(): boolean {
+  try {
+    return localStorage.getItem(COLOR_BLIND_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+const colorBlindListeners = new Set<() => void>();
+
+function subscribeColorBlind(listener: () => void) {
+  colorBlindListeners.add(listener);
+  return () => {
+    colorBlindListeners.delete(listener);
+  };
+}
+
+function writeColorBlindPreference(value: boolean) {
+  try {
+    localStorage.setItem(COLOR_BLIND_KEY, value ? '1' : '0');
+  } catch {
+    // ignore storage errors
+  }
+  colorBlindListeners.forEach((listener) => listener());
+}
+
+const COLOR_RUSH_PRACTICE_ATTEMPTS = 5;
+
 function ColorRush() {
   const [round, setRound] = useState(0);
   const [score, setScore] = useState(0);
   const [seconds, setSeconds] = useState(45);
   const [started, setStarted] = useState(false);
+  const [practice, setPractice] = useState(false);
   const [message, setMessage] = useState('');
+  const colorBlind = useSyncExternalStore(
+    subscribeColorBlind,
+    readColorBlindPreference,
+    () => false,
+  );
   const wordIndex = round % COLOR_RUSH_BANK.length;
   const inkIndex = (round * 3 + 1) % COLOR_RUSH_BANK.length;
+
+  const toggleColorBlind = () => {
+    writeColorBlindPreference(!colorBlind);
+  };
 
   const start = () => {
     setRound(0);
     setScore(0);
     setSeconds(45);
     setMessage('');
+    setPractice(false);
+    setStarted(true);
+  };
+
+  const startPractice = () => {
+    setRound(0);
+    setScore(0);
+    setSeconds(45);
+    setMessage('');
+    setPractice(true);
     setStarted(true);
   };
 
   useEffect(() => {
-    if (!started || seconds <= 0) return;
+    if (!started || practice || seconds <= 0) return;
     const timer = window.setInterval(() => setSeconds((value) => Math.max(0, value - 1)), 1000);
     return () => window.clearInterval(timer);
-  }, [seconds, started]);
+  }, [seconds, started, practice]);
 
   const choose = (index: number) => {
     if (index === inkIndex) {
-      setScore((value) => value + 75);
-      setMessage('خاطف! +٧٥');
+      setMessage(practice ? 'صحيح! هذا هو لون الحبر.' : 'خاطف! +٧٥');
+      if (!practice) setScore((value) => value + 75);
     } else {
-      setScore((value) => Math.max(0, value - 25));
       setMessage('ركّز على اللون لا الكلمة.');
+      if (!practice) setScore((value) => Math.max(0, value - 25));
     }
     setRound((value) => value + 1);
   };
 
-  const finished = started && seconds === 0;
+  const finished = started && !practice && seconds === 0;
+  const practiceDone = started && practice && round >= COLOR_RUSH_PRACTICE_ATTEMPTS;
 
   return (
     <>
@@ -702,9 +798,14 @@ function ColorRush() {
             <Sparkles aria-hidden="true" />
             <h2>لا تثق بما تقرأه</h2>
             <p>اختر لون الحبر الظاهر، وتجاهل معنى الكلمة. كل إصابة تمنحك ٧٥ نقطة.</p>
-            <Button variant="gold" size="lg" onClick={start}>
-              ابدأ التحدّي
-            </Button>
+            <div className="instant-actions">
+              <Button variant="gold" size="lg" onClick={start}>
+                ابدأ التحدّي
+              </Button>
+              <Button variant="outline" size="lg" onClick={startPractice}>
+                جولة تدريبية
+              </Button>
+            </div>
           </div>
         ) : finished ? (
           <div className="instant-intro" role="status">
@@ -716,10 +817,39 @@ function ColorRush() {
               تحدٍّ جديد
             </Button>
           </div>
+        ) : practiceDone ? (
+          <div className="instant-intro" role="status">
+            <Check aria-hidden="true" />
+            <h2>انتهى التدريب!</h2>
+            <p>فهمت الفكرة؟ حان وقت التحدّي الحقيقي مع المؤقّت والنقاط.</p>
+            <div className="instant-actions">
+              <Button variant="gold" size="lg" onClick={start}>
+                ابدأ التحدّي
+              </Button>
+              <Button variant="outline" size="lg" onClick={startPractice}>
+                <RotateCcw aria-hidden="true" />
+                تدريب من جديد
+              </Button>
+            </div>
+          </div>
         ) : (
-          <div className="color-rush">
+          <div className="color-rush" data-color-blind={colorBlind || undefined}>
+            {practice ? (
+              <span className="color-rush__practice" role="status">
+                تدريب بلا وقت ولا نقاط — المحاولة {toArabicDigits(round + 1)} من{' '}
+                {toArabicDigits(COLOR_RUSH_PRACTICE_ATTEMPTS)}
+              </span>
+            ) : null}
             <span>ما لون الحبر؟</span>
             <strong style={{ color: COLOR_RUSH_BANK[inkIndex]?.value }}>
+              {colorBlind ? (
+                <span
+                  className="color-rush__ink-symbol"
+                  aria-label={`رمز الحبر: ${COLOR_RUSH_BANK[inkIndex]?.symbolLabel}`}
+                >
+                  {COLOR_RUSH_BANK[inkIndex]?.symbol}
+                </span>
+              ) : null}
               {COLOR_RUSH_BANK[wordIndex]?.label}
             </strong>
             <p aria-live="polite">{message}</p>
@@ -731,10 +861,23 @@ function ColorRush() {
                   style={{ '--rush-color': color.value } as React.CSSProperties}
                   onClick={() => choose(index)}
                 >
+                  {colorBlind ? (
+                    <span className="color-rush__option-symbol" aria-hidden="true">
+                      {color.symbol}
+                    </span>
+                  ) : null}
                   {color.label}
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              className="color-rush__cb-toggle"
+              aria-pressed={colorBlind}
+              onClick={toggleColorBlind}
+            >
+              {colorBlind ? 'إخفاء رموز الألوان' : 'وضع عمى الألوان: إظهار رموز مميزة'}
+            </button>
           </div>
         )}
       </Card>
@@ -746,7 +889,7 @@ export function InstantGameRoom({ mode }: { mode: 'memory-flash' | 'word-code' |
   const meta = useMemo(() => INSTANT_GAME_META[mode], [mode]);
 
   return (
-    <section className="section instant-game">
+    <section className="section instant-game" data-game={mode}>
       <div className="container instant-shell">
         <Link className="instant-back" href="/games">
           <ArrowRight aria-hidden="true" />
@@ -757,7 +900,14 @@ export function InstantGameRoom({ mode }: { mode: 'memory-flash' | 'word-code' |
           <h1>{meta.title}</h1>
           <p>{meta.description}</p>
         </header>
-        {mode === 'memory-flash' ? <MemoryFlash /> : mode === 'word-code' ? <WordCode /> : <ColorRush />}
+        {mode === 'memory-flash' ? (
+          <MemoryFlash />
+        ) : mode === 'word-code' ? (
+          <WordCode />
+        ) : (
+          <ColorRush />
+        )}
+        <GameHowTo guide={GAME_GUIDES[mode]} />
       </div>
     </section>
   );

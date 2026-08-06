@@ -10,16 +10,19 @@ vi.mock('@/components/motion/reveal', () => ({
   ),
 }));
 
-describe('HomePage', () => {
-  const renderHomePage = () =>
-    render(
-      <ThemeProvider>
-        <HomePage />
-      </ThemeProvider>,
-    );
+vi.mock('@/app/quizzes/actions', () => ({
+  getPublicQuizzes: vi.fn().mockResolvedValue({ status: 'success', quizzes: [] }),
+}));
 
-  it('يعرض الواجهة المعتمدة ومسارَي الإنشاء والانضمام دون نموذج داخل البطل', () => {
-    renderHomePage();
+vi.mock('@/lib/auth/session', () => ({
+  getCurrentSession: vi.fn().mockResolvedValue(null),
+}));
+
+describe('HomePage', () => {
+  const renderHomePage = async () => render(<ThemeProvider>{await HomePage()}</ThemeProvider>);
+
+  it('يعرض الواجهة المعتمدة ومسارَي الإنشاء والانضمام دون نموذج داخل البطل', async () => {
+    await renderHomePage();
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'الجولة تبدأ من رمز واحد.' }),
@@ -38,8 +41,8 @@ describe('HomePage', () => {
     expect(within(roomPreview).getByText('١٢ لاعبًا')).toBeInTheDocument();
   });
 
-  it('يشرح خطوات الجولة ويحتفظ بمزايا المنصة الحقيقية', () => {
-    renderHomePage();
+  it('يشرح خطوات الجولة ويحتفظ بمزايا المنصة الحقيقية', async () => {
+    await renderHomePage();
 
     expect(
       screen.getByRole('heading', {
@@ -56,8 +59,8 @@ describe('HomePage', () => {
     expect(within(steps).getByText('تابع النتيجة')).toBeInTheDocument();
   });
 
-  it('يرتب رحلة الصفحة من فهم الجولة إلى اختيارها ثم بدء التحدي', () => {
-    renderHomePage();
+  it('يرتب رحلة الصفحة من فهم الجولة إلى اختيارها ثم بدء التحدي', async () => {
+    await renderHomePage();
 
     const sectionIds = Array.from(document.querySelectorAll('main > section')).map(
       (section) => section.id,
@@ -81,7 +84,7 @@ describe('HomePage', () => {
   });
 
   it('يبقي روابط الألعاب الحديثة والقائمة العامة عاملة', async () => {
-    renderHomePage();
+    await renderHomePage();
 
     for (const link of screen.getAllByRole('link', { name: 'أنشئ مسابقة' })) {
       expect(link).toHaveAttribute('href', '/quizzes/new');

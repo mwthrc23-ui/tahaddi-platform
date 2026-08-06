@@ -10,6 +10,7 @@ import {
   Vote,
 } from 'lucide-react';
 import { createMafiaGame } from '@/app/mafia/actions';
+import { GAME_GUIDES, GameHowTo } from '@/components/games/shared';
 import { JoinQuizForm } from '@/components/home/join-quiz-form';
 import { SiteLayout } from '@/components/layout';
 import { Badge, Button, ButtonLink, Card, EmptyState } from '@/components/ui';
@@ -50,6 +51,8 @@ export default async function MafiaPage() {
               دخول لاعب
             </ButtonLink>
           </div>
+
+          <GameHowTo guide={GAME_GUIDES.mafia} />
 
           <section className="mafia-flow" aria-labelledby="mafia-flow-title">
             <div className="section-heading">

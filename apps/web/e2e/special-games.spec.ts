@@ -113,6 +113,7 @@ test('يكمل ثالث وضع غرفة بأربعة سياقات مستقلة �
     await host.getByRole('button', { name: 'ابدأ الجولة' }).click();
     await Promise.all(
       pages.map(async (player) => {
+        await player.getByRole('button', { name: 'اكشف دورك السري' }).click();
         await player.getByRole('button', { name: 'فهمت — ابدأ' }).click();
         await expectRoundTimer(player, SPECIAL_GAME_META[mode].roundSeconds);
       }),

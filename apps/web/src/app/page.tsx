@@ -18,7 +18,6 @@ import {
   WholeWord,
   Zap,
 } from 'lucide-react';
-import { Suspense } from 'react';
 import { getPublicQuizzes, type PublicQuiz, type PublicQuizzesResult } from '@/app/quizzes/actions';
 import { SiteLayout } from '@/components/layout';
 import { Reveal } from '@/components/motion/reveal';
@@ -124,17 +123,7 @@ const features = [
   },
 ];
 
-const emptyPublicQuizzes: PublicQuizzesResult = { status: 'success', quizzes: [] };
-
-export default function HomePage() {
-  return (
-    <Suspense fallback={<HomePageContent publicQuizResult={emptyPublicQuizzes} user={null} />}>
-      <HomePageData />
-    </Suspense>
-  );
-}
-
-async function HomePageData() {
+export default async function HomePage() {
   const [publicQuizResult, session] = await Promise.all([getPublicQuizzes(6), getCurrentSession()]);
 
   return (
@@ -161,8 +150,7 @@ function HomePageContent({
         <div className="container home-preview-layout">
           <div className="home-preview-copy">
             <div className="home-preview-status">
-              <span aria-hidden="true" />
-              ✨ تجربة مسابقات عربية فاخرة
+              <span aria-hidden="true" />✨ تجربة مسابقات عربية فاخرة
             </div>
             <h1>
               الجولة تبدأ من <span>رمز واحد.</span>

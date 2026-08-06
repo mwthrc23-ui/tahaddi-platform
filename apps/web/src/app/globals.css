@@ -1,6 +1,7 @@
 @import '../../tokens.css';
 @import 'tailwindcss';
 @import '../styles/claude-code.css';
+@import '../components/games/shared/games-shared.css';
 
 /* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 */
 /* Hallmark · genre: competitive modern-minimal · macrostructure: Workbench · theme: design.md · enrichment: Tier-A product board · nav: existing SiteLayout · footer: existing SiteLayout */
@@ -721,8 +722,15 @@ summary:focus-visible {
 }
 
 @keyframes lobby-dot-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.35; transform: scale(0.7); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.7);
+  }
 }
 
 .live-question-stage {
@@ -1545,6 +1553,32 @@ summary:focus-visible {
 }
 .color-rush button:hover {
   background: color-mix(in srgb, var(--rush-color) 24%, var(--surface-raised));
+}
+.color-rush__practice {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.9rem;
+}
+.color-rush__ink-symbol {
+  margin-inline-end: var(--space-3);
+}
+.color-rush__option-symbol {
+  color: var(--rush-color);
+  margin-inline-end: var(--space-2);
+}
+.color-rush__cb-toggle {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted-foreground);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.color-rush__cb-toggle[aria-pressed='true'] {
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--game-accent, var(--primary)) 45%, var(--border));
 }
 
 @media (max-width: 34rem) {
@@ -4212,7 +4246,9 @@ tr:last-child td {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: rgb(16 8 26 / 0.6);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .waiting-list__player:hover {
@@ -4277,8 +4313,15 @@ tr:last-child td {
 }
 
 @keyframes waiting-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
 }
 
 .waiting-list__empty {
@@ -7622,7 +7665,11 @@ body::after {
   background:
     radial-gradient(circle at 65% 50%, rgb(255 143 0 / 0.12), transparent 26rem),
     repeating-linear-gradient(45deg, transparent 0 18px, rgb(255 183 77 / 0.025) 18px 20px),
-    linear-gradient(115deg, color-mix(in srgb, var(--accent) 10%, var(--background)), var(--background));
+    linear-gradient(
+      115deg,
+      color-mix(in srgb, var(--accent) 10%, var(--background)),
+      var(--background)
+    );
 }
 
 .leaderboard-section .eyebrow {
@@ -7648,8 +7695,7 @@ body::after {
   border-radius: var(--radius-xl);
   background:
     repeating-linear-gradient(135deg, transparent 0 13px, rgb(255 183 77 / 0.05) 13px 14px),
-    linear-gradient(145deg, rgb(255 183 77 / 0.1), transparent 52%),
-    var(--surface-glass-strong);
+    linear-gradient(145deg, rgb(255 183 77 / 0.1), transparent 52%), var(--surface-glass-strong);
   box-shadow:
     var(--shadow-lg),
     inset 0 0 0 1px rgb(255 255 255 / 0.12),
@@ -7710,7 +7756,9 @@ body::after {
     repeating-linear-gradient(135deg, transparent 0 11px, rgb(255 183 77 / 0.035) 11px 12px),
     rgb(16 8 26 / 0.72);
   backdrop-filter: blur(6px);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .leaderboard-preview li:hover {
@@ -7967,8 +8015,7 @@ body::after {
   margin-block-end: clamp(3rem, 7vw, 5rem);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  background:
-    linear-gradient(135deg, rgb(16 8 26 / 0.95), rgb(6 2 10 / 0.98));
+  background: linear-gradient(135deg, rgb(16 8 26 / 0.95), rgb(6 2 10 / 0.98));
   box-shadow:
     var(--shadow-lg),
     0 0 80px rgb(255 183 77 / 0.08),
@@ -8116,9 +8163,16 @@ body::after {
 }
 
 @keyframes games-orb-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  33% { transform: translateY(-1.5rem) scale(1.08); }
-  66% { transform: translateY(1rem) scale(0.94); }
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  33% {
+    transform: translateY(-1.5rem) scale(1.08);
+  }
+  66% {
+    transform: translateY(1rem) scale(0.94);
+  }
 }
 
 /* Section Labels */
@@ -8441,8 +8495,7 @@ body::after {
   padding: clamp(1.25rem, 3vw, 2rem);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  background:
-    linear-gradient(135deg, rgb(16 8 26 / 0.9), rgb(6 2 10 / 0.95));
+  background: linear-gradient(135deg, rgb(16 8 26 / 0.9), rgb(6 2 10 / 0.95));
   box-shadow: var(--shadow-lg);
 }
 
@@ -8510,7 +8563,9 @@ body::after {
 
 .host-panel:hover {
   border-color: rgba(255, 183, 77, 0.32);
-  box-shadow: var(--shadow-lg), 0 0 40px rgb(255 183 77 / 0.08);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 40px rgb(255 183 77 / 0.08);
 }
 
 .host-panel__header {
@@ -8674,7 +8729,9 @@ body::after {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: rgb(16 8 26 / 0.6);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .host-quiz-row:hover {
@@ -8864,8 +8921,7 @@ body::after {
   margin-block-end: clamp(3rem, 7vw, 5rem);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  background:
-    linear-gradient(135deg, rgb(16 8 26 / 0.95), rgb(6 2 10 / 0.98));
+  background: linear-gradient(135deg, rgb(16 8 26 / 0.95), rgb(6 2 10 / 0.98));
   box-shadow:
     var(--shadow-lg),
     0 0 80px rgb(255 183 77 / 0.08),
@@ -9013,9 +9069,16 @@ body::after {
 }
 
 @keyframes games-orb-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  33% { transform: translateY(-1.5rem) scale(1.08); }
-  66% { transform: translateY(1rem) scale(0.94); }
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  33% {
+    transform: translateY(-1.5rem) scale(1.08);
+  }
+  66% {
+    transform: translateY(1rem) scale(0.94);
+  }
 }
 
 /* Section Labels */
@@ -9327,8 +9390,7 @@ body::after {
   padding: clamp(1.25rem, 3vw, 2rem);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  background:
-    linear-gradient(135deg, rgb(16 8 26 / 0.9), rgb(6 2 10 / 0.95));
+  background: linear-gradient(135deg, rgb(16 8 26 / 0.9), rgb(6 2 10 / 0.95));
   box-shadow: var(--shadow-lg);
 }
 
@@ -9396,7 +9458,9 @@ body::after {
 
 .host-panel:hover {
   border-color: rgba(255, 183, 77, 0.32);
-  box-shadow: var(--shadow-lg), 0 0 40px rgb(255 183 77 / 0.08);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 40px rgb(255 183 77 / 0.08);
 }
 
 .host-panel__header {
@@ -9560,7 +9624,9 @@ body::after {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: rgb(16 8 26 / 0.6);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .host-quiz-row:hover {
@@ -9830,7 +9896,9 @@ body::after {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: rgb(255 255 255 / 0.02);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .leaderboard-table li:hover {
@@ -9893,7 +9961,12 @@ body::after {
   gap: 1rem;
   padding: 1rem;
   border-radius: var(--radius-md);
-  background: linear-gradient(90deg, rgb(255 255 255 / 0.03), rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.03));
+  background: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0.03),
+    rgb(255 255 255 / 0.06),
+    rgb(255 255 255 / 0.03)
+  );
   background-size: 200% 100%;
   animation: leaderboard-shimmer 1.4s infinite linear;
 }
@@ -10013,7 +10086,9 @@ body::after {
   color: var(--foreground);
   text-align: start;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .memory-mode-card:hover {
@@ -10059,7 +10134,9 @@ body::after {
   color: var(--foreground);
   text-align: center;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .memory-difficulty-card:hover {
@@ -10228,7 +10305,10 @@ body::after {
   color: var(--symbol-color);
   font-size: 2.2rem;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.15s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
   overflow: hidden;
 }
 
@@ -10293,7 +10373,8 @@ body::after {
 }
 
 @keyframes mistake-shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
   20% {
