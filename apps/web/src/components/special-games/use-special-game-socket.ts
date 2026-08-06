@@ -2,6 +2,7 @@
 
 import { io, type Socket } from 'socket.io-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type * as React from 'react';
 import type { SpecialGameMode } from '@tahaddi/domain';
 
 /* ------------------------------------------------------------------ */
