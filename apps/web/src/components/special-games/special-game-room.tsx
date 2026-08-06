@@ -97,13 +97,20 @@ function InfiltratorRoleReveal({
   onContinue: () => void;
 }) {
   return (
-    <div className="role-reveal" data-role={isInfiltrator ? 'infiltrator' : 'majority'}>
+    <div
+      className="role-reveal"
+      data-role={isInfiltrator ? 'infiltrator' : 'majority'}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="infiltrator-role-reveal-title"
+      aria-describedby="infiltrator-role-reveal-hint"
+    >
       <div className="role-reveal__card">
         <Fingerprint className="role-reveal__icon" aria-hidden="true" />
-        <h2 className="role-reveal__title">
+        <h2 className="role-reveal__title" id="infiltrator-role-reveal-title">
           {isInfiltrator ? 'أنت الدخيل 🕵️' : 'أنت من الأغلبية 👥'}
         </h2>
-        <p className="role-reveal__hint">
+        <p className="role-reveal__hint" id="infiltrator-role-reveal-hint">
           {isInfiltrator
             ? 'ستحصل على سؤال مختلف. تظاهر بأنك من الأغلبية وابقَ بعيداً عن الأضواء.'
             : 'ستحصل على سؤال مشترك. أجب بصدق وحاول اكتشاف الدخيل.'}
