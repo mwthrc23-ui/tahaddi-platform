@@ -9,7 +9,6 @@ import {
   Orbit,
   Play,
   QrCode as QrCodeIcon,
-  Radio,
   RotateCcw,
   Send,
   Sparkles,
@@ -22,6 +21,14 @@ import QRCode from 'react-qr-code';
 import { SPECIAL_GAME_META, type SpecialGameMode } from '@tahaddi/domain';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Button, ButtonLink, Card, Input } from '@/components/ui';
+import {
+  GAME_GUIDES,
+  Game3DCard,
+  GameConnectionStatus,
+  GameHowTo,
+  GameSoundToggle,
+  useGameSound,
+} from '@/components/games/shared';
 import { WaitingRoom } from './waiting-room';
 import {
   resolveSpecialGamesRealtimeUrl,
@@ -100,25 +107,40 @@ function InfiltratorRoleReveal({
     <div
       className="role-reveal"
       data-role={isInfiltrator ? 'infiltrator' : 'majority'}
+      data-game="infiltrator"
       role="dialog"
       aria-modal="true"
       aria-labelledby="infiltrator-role-reveal-title"
       aria-describedby="infiltrator-role-reveal-hint"
     >
-      <div className="role-reveal__card">
-        <Fingerprint className="role-reveal__icon" aria-hidden="true" />
-        <h2 className="role-reveal__title" id="infiltrator-role-reveal-title">
-          {isInfiltrator ? 'أنت الدخيل 🕵️' : 'أنت من الأغلبية 👥'}
-        </h2>
-        <p className="role-reveal__hint" id="infiltrator-role-reveal-hint">
-          {isInfiltrator
-            ? 'ستحصل على سؤال مختلف. تظاهر بأنك من الأغلبية وابقَ بعيداً عن الأضواء.'
-            : 'ستحصل على سؤال مشترك. أجب بصدق وحاول اكتشاف الدخيل.'}
-        </p>
-        <Button variant="gold" size="lg" onClick={onContinue}>
-          فهمت — ابدأ
-        </Button>
-      </div>
+      <Game3DCard
+        flipLabel="اكشف دورك السري"
+        front={
+          <>
+            <Fingerprint className="role-reveal__icon" aria-hidden="true" />
+            <h2 className="role-reveal__title" id="infiltrator-role-reveal-title">
+              بطاقتك السرية
+            </h2>
+            <p className="role-reveal__hint">اضغط البطاقة لكشف دورك. لا يراه غيرك.</p>
+          </>
+        }
+        back={
+          <>
+            <Fingerprint className="role-reveal__icon" aria-hidden="true" />
+            <h2 className="role-reveal__title">
+              {isInfiltrator ? 'أنت الدخيل 🕵️' : 'أنت من الأغلبية 👥'}
+            </h2>
+            <p className="role-reveal__hint" id="infiltrator-role-reveal-hint">
+              {isInfiltrator
+                ? 'ستحصل على سؤال مختلف. تظاهر بأنك من الأغلبية وابقَ بعيداً عن الأضواء.'
+                : 'ستحصل على سؤال مشترك. أجب بصدق وحاول اكتشاف الدخيل.'}
+            </p>
+            <Button variant="gold" size="lg" onClick={onContinue}>
+              فهمت — ابدأ
+            </Button>
+          </>
+        }
+      />
     </div>
   );
 }
@@ -256,6 +278,19 @@ export function SpecialGameRoom({
   // Infiltrator role-reveal gate (tracks the round whose role was acknowledged)
   const [revealedRoundId, setRevealedRoundId] = useState<string | null>(null);
 
+  const { muted, toggleMuted, play } = useGameSound();
+
+  const connectionState = connected ? 'connected' : connectionFailed ? 'failed' : 'connecting';
+
+  // Sound cues (optional; muted state persists locally, no autoplay
+  // before the user's first interaction thanks to lazy AudioContext).
+  useEffect(() => {
+    if (parallelAck) play(parallelAck.correct ? 'correct' : 'select');
+  }, [parallelAck, play]);
+  useEffect(() => {
+    if (gameEnd || parallelReveal || reverseResults || infiltratorReveal) play('result');
+  }, [gameEnd, parallelReveal, reverseResults, infiltratorReveal, play]);
+
   const shareUrl =
     room && typeof window !== 'undefined'
       ? `${window.location.origin}${window.location.pathname}?join=${room.pin}`
@@ -319,17 +354,14 @@ export function SpecialGameRoom({
   if (!room) {
     const isValidPin = effectivePin.replace(/\D/g, '').length === 6;
     return (
-      <section className="section special-game-entry">
+      <section className="section special-game-entry" data-game={mode}>
         <div className="container">
           <div className="special-game-entry__heading">
             <ButtonLink href="/games" variant="ghost">
               <RotateCcw aria-hidden="true" />
               كل الألعاب
             </ButtonLink>
-            <div className="special-status" data-connected={connected || undefined}>
-              <Radio aria-hidden="true" />
-              {connected ? 'متصل بخدمة اللعب' : connectionFailed ? 'تعذّر الاتصال' : 'جارٍ الاتصال'}
-            </div>
+            <GameConnectionStatus state={connectionState} />
           </div>
 
           <div className="special-entry-grid">
@@ -453,6 +485,8 @@ export function SpecialGameRoom({
               )}
             </Card>
           </div>
+
+          <GameHowTo guide={GAME_GUIDES[mode]} />
         </div>
       </section>
     );
@@ -470,7 +504,7 @@ export function SpecialGameRoom({
     revealedRoundId !== infiltratorRound.roundId;
 
   return (
-    <section className="section special-game-stage">
+    <section className="section special-game-stage" data-game={activeMode}>
       <div className="container">
         <header className="special-stage-header">
           <div>
@@ -478,10 +512,8 @@ export function SpecialGameRoom({
             <h1>{phaseTitle}</h1>
           </div>
           <div className="special-stage-header__signals">
-            <span className="special-status" data-connected={connected || undefined}>
-              <Radio aria-hidden="true" />
-              {connected ? 'LIVE' : 'OFFLINE'}
-            </span>
+            <GameSoundToggle muted={muted} onToggle={toggleMuted} />
+            <GameConnectionStatus state={connectionState} compact />
             <span className="special-room-pin">غرفة {room.pin}</span>
           </div>
         </header>

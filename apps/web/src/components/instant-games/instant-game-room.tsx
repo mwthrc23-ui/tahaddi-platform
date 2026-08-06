@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card } from '@/components/ui';
+import { GAME_GUIDES, GameHowTo } from '@/components/games/shared';
 import { toArabicDigits } from '@/lib/utils';
 import {
   type MemoryDifficulty,
@@ -746,7 +747,7 @@ export function InstantGameRoom({ mode }: { mode: 'memory-flash' | 'word-code' |
   const meta = useMemo(() => INSTANT_GAME_META[mode], [mode]);
 
   return (
-    <section className="section instant-game">
+    <section className="section instant-game" data-game={mode}>
       <div className="container instant-shell">
         <Link className="instant-back" href="/games">
           <ArrowRight aria-hidden="true" />
@@ -758,6 +759,7 @@ export function InstantGameRoom({ mode }: { mode: 'memory-flash' | 'word-code' |
           <p>{meta.description}</p>
         </header>
         {mode === 'memory-flash' ? <MemoryFlash /> : mode === 'word-code' ? <WordCode /> : <ColorRush />}
+        <GameHowTo guide={GAME_GUIDES[mode]} />
       </div>
     </section>
   );
