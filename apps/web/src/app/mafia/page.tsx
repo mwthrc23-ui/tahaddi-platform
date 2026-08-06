@@ -157,33 +157,67 @@ export default async function MafiaPage() {
                               defaultChecked={id === 'CLASSIC'}
                               onChange={(e) => {
                                 if (!e.currentTarget.checked) return;
-                                const timers = applyModeMultipliers(id, {
+                                const baseSettings = {
                                   nightSeconds: 45,
                                   daySeconds: 90,
                                   votingSeconds: 45,
                                   killerCount: 1,
                                   maxPlayers: 12,
+                                };
+                                const timers = applyModeMultipliers(id, baseSettings);
+                                const mode = MAFIA_GAME_MODES[id];
+                                const speedBoost = Math.max(
+                                  0,
+                                  (1 - mode.timeMultiplier) * 0.6,
+                                );
+                                const derivedMaxPlayers = Math.max(
+                                  5,
+                                  Math.min(
+                                    30,
+                                    Math.round(baseSettings.maxPlayers * (1 - speedBoost)),
+                                  ),
+                                );
+                                const getNum = (n: string) =>
+                                  document.getElementById(n) as
+                                    | (HTMLInputElement | HTMLSelectElement)
+                                    | null;
+                                const setNum = (
+                                  n: string,
+                                  v: number,
+                                  opts?: { clampMin?: number; clampMax?: number },
+                                ) => {
+                                  const el = getNum(n);
+                                  if (!el) return;
+                                  let next = v;
+                                  if (opts?.clampMin !== undefined)
+                                    next = Math.max(opts.clampMin, next);
+                                  if (opts?.clampMax !== undefined)
+                                    next = Math.min(opts.clampMax, next);
+                                  if (el instanceof HTMLInputElement) {
+                                    el.value = String(next);
+                                  } else {
+                                    el.value = String(next);
+                                  }
+                                  el.dispatchEvent(new Event('input', { bubbles: true }));
+                                  el.dispatchEvent(new Event('change', { bubbles: true }));
+                                };
+                                setNum('mafia-nightSeconds', timers.nightSeconds, {
+                                  clampMin: 20,
+                                  clampMax: 180,
                                 });
-                                const get = (n: string) =>
-                                  document.getElementById(n) as HTMLInputElement | null;
-                                get('mafia-nightSeconds')?.setAttribute(
-                                  'value',
-                                  String(timers.nightSeconds),
-                                );
-                                get('mafia-daySeconds')?.setAttribute(
-                                  'value',
-                                  String(timers.daySeconds),
-                                );
-                                get('mafia-votingSeconds')?.setAttribute(
-                                  'value',
-                                  String(timers.votingSeconds),
-                                );
-                                const kill = document.getElementById(
-                                  'mafia-killerCount',
-                                ) as HTMLSelectElement | null;
-                                if (kill) {
-                                  kill.value = String(Math.min(3, timers.killerCount));
-                                }
+                                setNum('mafia-daySeconds', timers.daySeconds, {
+                                  clampMin: 30,
+                                  clampMax: 300,
+                                });
+                                setNum('mafia-votingSeconds', timers.votingSeconds, {
+                                  clampMin: 20,
+                                  clampMax: 120,
+                                });
+                                setNum('mafia-killerCount', Math.min(3, timers.killerCount));
+                                setNum('mafia-maxPlayers', derivedMaxPlayers, {
+                                  clampMin: 5,
+                                  clampMax: 30,
+                                });
                               }}
                             />
                             <div className="mafia-mode-preset-head">
@@ -211,7 +245,14 @@ export default async function MafiaPage() {
 
                   <label>
                     الحد الأعلى للاعبين
-                    <input name="maxPlayers" type="number" min="5" max="30" defaultValue="12" />
+                    <input
+                      id="mafia-maxPlayers"
+                      name="maxPlayers"
+                      type="number"
+                      min="5"
+                      max="30"
+                      defaultValue="12"
+                    />
                   </label>
                   <label>
                     عدد القتلة
