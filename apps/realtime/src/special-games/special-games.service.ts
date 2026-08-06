@@ -199,7 +199,9 @@ export class SpecialGamesService {
     }
 
     room.players = room.players.filter((p) => p.id !== socketId);
-    room.readyPlayerIds = (room.readyPlayerIds ?? []).filter((id) => id !== socketId);
+    room.readyPlayerIds = (room.readyPlayerIds ?? []).filter(
+      (id) => id !== socketId,
+    );
     if (room.players.length === 0) {
       await this.redis.deleteSpecialRoom(pin);
       await this.redis.removeActivePin(pin);
