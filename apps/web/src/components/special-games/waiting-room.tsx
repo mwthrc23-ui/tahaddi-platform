@@ -70,11 +70,13 @@ export function WaitingRoom({
   }, [isHost, minimumReached, allReady, room.pin, socketRef, setBusy]);
 
   const handleLeave = () => {
+    setBusy(true);
     socketRef.current?.emit('special:room:leave', { pin: room.pin });
   };
 
   const handleReady = () => {
-    if (isReady) return;
+    if (isReady || busy) return;
+    setBusy(true);
     socketRef.current?.emit('special:player:ready', { pin: room.pin });
   };
 
