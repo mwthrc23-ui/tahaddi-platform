@@ -8,7 +8,7 @@ import {
   Play,
   UsersRound,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { SpecialGameMeta } from '@tahaddi/domain';
 import { Button } from '@/components/ui';
 import type { GameSocket, Player, Room } from './use-special-game-socket';
@@ -19,7 +19,7 @@ interface WaitingRoomProps {
   isHost: boolean;
   meta: SpecialGameMeta;
   busy: boolean;
-  socketRef: React.RefObject<GameSocket | null>;
+  socketRef: RefObject<GameSocket | null>;
   setBusy: (v: boolean) => void;
 }
 
