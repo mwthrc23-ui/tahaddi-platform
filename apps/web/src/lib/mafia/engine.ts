@@ -1,5 +1,6 @@
 import { getPrismaClient } from '@/lib/auth/prisma';
 import { determineMafiaWinner, type MafiaRoleName } from './rules';
+import { buildNarrativeEvent, renderEliminationText } from './narrative';
 
 function deadline(seconds: number, now = new Date()) {
   return new Date(now.getTime() + seconds * 1000);
@@ -73,26 +74,54 @@ async function resolveNight(gameId: string, expectedPhaseEndsAt: Date | null, fo
       .map((player) => player.role)
       .filter((role): role is MafiaRoleName => Boolean(role));
     const winner = determineMafiaWinner(aliveRoles);
-    const message = eliminated
-      ? `انتهى الليل. خرج ${eliminated.displayName} من اللعبة.`
+    const eliminationMessage = eliminated
+      ? renderEliminationText('NIGHT', eliminated.displayName, game.currentRound + eliminated.id.length)
       : killedId
-        ? 'انتهى الليل، لكن الحماية أنقذت المستهدف.'
-        : 'انتهى الليل من دون ضحية.';
+        ? 'انتهى الليل، لكن الحماية أنقذت المستهدف. لا أثر لقتل هذه الليلة.'
+        : 'انتهى الليل من دون ضحية. أشرقة الشمس على قرية لا تزال في أمان نسبي.';
 
-    const killer = game.participants.find((player) => player.role === 'KILLER');
-    const witness = game.participants.find((player) => player.role === 'WITNESS');
-    if (killer && witness) {
-      await tx.mafiaParticipant.update({
-        where: { id: witness.id },
-        data: {
-          privateNote: `دليل الجولة ${game.currentRound}: يبدأ اسم أحد القتلة بحرف «${killer.displayName.charAt(0)}».`,
-        },
+    const messages: { gameId: string; channel: 'SYSTEM'; body: string }[] = [];
+    messages.push({ gameId, channel: 'SYSTEM', body: eliminationMessage });
+    if (game.currentRound === 1 && eliminated) {
+      messages.push({
+        gameId,
+        channel: 'SYSTEM',
+        body: buildNarrativeEvent('start', winner, game.currentRound, aliveRoles.length, game.participants.filter((p) => p.role === 'KILLER').length).body,
       });
     }
 
-    await tx.mafiaMessage.create({
-      data: { gameId, channel: 'SYSTEM', body: message },
-    });
+    const killer = game.participants.find((player) => player.id === killedId)
+      ? game.participants.find((player) => player.role === 'KILLER')
+      : eliminated
+        ? game.participants.find((player) => player.role === 'KILLER')
+        : null;
+    const witness = game.participants.find((player) => player.role === 'WITNESS');
+    if (killer && witness && eliminated) {
+      const actualKiller = [...actions]
+        .filter((a) => a.type === 'KILL' && a.targetId === eliminated.id)
+        .map((a) => game.participants.find((p) => p.id === a.actorId))
+        .filter(Boolean)[0] ?? killer;
+      const killerName = actualKiller?.displayName ?? killer.displayName;
+      const clueVariants = [
+        `دليل الجولة ${game.currentRound}: يبدأ اسم أحد القتلة بحرف «${killerName.charAt(0)}».`,
+        `دليل الجولة ${game.currentRound}: أحد القتلة اسمه يتكون من ${killerName.length} حروف.`,
+        `دليل الجولة ${game.currentRound}: ينتهي اسم أحد القتلة بحرف «${killerName.charAt(killerName.length - 1)}».`,
+        `دليل الجولة ${game.currentRound}: اسم أحد القتلة يحتوي على حرف «${killerName[Math.floor(killerName.length / 2)]}».`,
+      ];
+      const seed = (game.currentRound + eliminated.id.length) % clueVariants.length;
+      await tx.mafiaParticipant.update({
+        where: { id: witness.id },
+        data: { privateNote: clueVariants[seed] },
+      });
+    }
+
+    for (const m of messages) {
+      await tx.mafiaMessage.create({ data: m });
+    }
+    if (winner) {
+      const ending = buildNarrativeEvent('end', winner, game.currentRound, aliveRoles.length, game.participants.filter((p) => p.role === 'KILLER').length);
+      await tx.mafiaMessage.create({ data: { gameId, channel: 'SYSTEM', body: ending.body } });
+    }
     await tx.mafiaGame.update({
       where: { id: gameId },
       data: winner
@@ -172,15 +201,19 @@ async function resolveVoting(gameId: string, expectedPhaseEndsAt: Date | null, f
       .map((player) => player.role)
       .filter((role): role is MafiaRoleName => Boolean(role));
     const winner = determineMafiaWinner(aliveRoles);
-    await tx.mafiaMessage.create({
-      data: {
-        gameId,
-        channel: 'SYSTEM',
-        body: eliminated
-          ? `اختار التصويت ${eliminated.displayName}، وقد خرج من اللعبة.`
-          : 'تعادلت الأصوات؛ لم يخرج أحد.',
-      },
-    });
+    const eliminationBody = eliminated
+      ? renderEliminationText('VOTING', eliminated.displayName, game.currentRound + eliminated.id.length)
+      : 'تعادلت الأصوات في هذه الجولة، ولم يخرج أحد. تعود اللعبة للليل لتتضح الصور مجدداً.';
+    const voteMessages: { gameId: string; channel: 'SYSTEM'; body: string }[] = [
+      { gameId, channel: 'SYSTEM', body: eliminationBody },
+    ];
+    if (winner) {
+      const ending = buildNarrativeEvent('end', winner, game.currentRound, aliveRoles.length, game.participants.filter((p) => p.role === 'KILLER').length);
+      voteMessages.push({ gameId, channel: 'SYSTEM', body: ending.body });
+    }
+    for (const m of voteMessages) {
+      await tx.mafiaMessage.create({ data: m });
+    }
     await tx.mafiaGame.update({
       where: { id: gameId },
       data: winner

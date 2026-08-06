@@ -1,5 +1,19 @@
 export type MafiaRoleName = 'KILLER' | 'DETECTIVE' | 'DOCTOR' | 'GUARD' | 'WITNESS' | 'CITIZEN';
 
+export type MafiaGameModeId = 'CLASSIC' | 'SPEED' | 'BLIND' | 'ASSASSIN' | 'CHAOS';
+
+export type MafiaEndingStyle = 'DRAMA' | 'TRAGEDY' | 'HOPE' | 'IRONY' | 'MYSTERY';
+
+export type MafiaCharacterArchetype =
+  | 'SCHOLAR'
+  | 'MERCHANT'
+  | 'FARMER'
+  | 'NOBLE'
+  | 'ARTISAN'
+  | 'SERVANT'
+  | 'OFFICER'
+  | 'TRAVELER';
+
 export const mafiaRoleLabels: Record<MafiaRoleName, string> = {
   KILLER: 'القاتل',
   DETECTIVE: 'المحقق',
@@ -63,6 +77,7 @@ export function resolveMafiaChatChannel({
   playerStatus: 'ALIVE' | 'ELIMINATED';
 }) {
   if (playerStatus === 'ELIMINATED') return 'GHOSTS' as const;
+  if (gameStatus === 'FINISHED') return 'PUBLIC' as const;
   if (gameStatus === 'NIGHT' && role === 'KILLER') return 'KILLERS' as const;
   if (gameStatus === 'LOBBY' || gameStatus === 'DAY' || gameStatus === 'VOTING') {
     return 'PUBLIC' as const;

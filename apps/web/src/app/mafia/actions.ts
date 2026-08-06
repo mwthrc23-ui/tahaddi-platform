@@ -6,7 +6,14 @@ import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
 import { getMafiaAccessToken } from '@/lib/mafia/access-cookie';
 import { advanceMafiaGame } from '@/lib/mafia/engine';
-import { buildMafiaRoles, resolveMafiaChatChannel, shuffled } from '@/lib/mafia/rules';
+import {
+  buildMafiaRoles,
+  resolveMafiaChatChannel,
+  shuffled,
+  type MafiaGameModeId,
+} from '@/lib/mafia/rules';
+import { buildNarrativeEvent, buildNarrative, pickArchetype } from '@/lib/mafia/narrative';
+import { MAFIA_GAME_MODES, applyModeMultipliers } from '@/lib/mafia/game-modes';
 import { generateUniqueActivityRoomCode } from '@/lib/quiz/room-code';
 
 function integerField(formData: FormData, key: string, fallback: number) {
@@ -28,21 +35,32 @@ export async function createMafiaGame(formData: FormData) {
   requireMafiaDatabase();
   const user = await requireActiveUser('/mafia');
   const prisma = getPrismaClient();
+  const mode = (formData.get('modeId') as MafiaGameModeId | null) ?? 'CLASSIC';
+  const modeObj = MAFIA_GAME_MODES[mode] ?? MAFIA_GAME_MODES.CLASSIC;
   const maxPlayers = Math.min(30, Math.max(5, integerField(formData, 'maxPlayers', 12)));
-  const killerCount = Math.min(3, Math.max(1, integerField(formData, 'killerCount', 1)));
+  const baseKiller = Math.min(3, Math.max(1, integerField(formData, 'killerCount', 1)));
   const roomCode = await generateUniqueActivityRoomCode(prisma);
+  const baseTimers = {
+    nightSeconds: Math.min(180, Math.max(20, integerField(formData, 'nightSeconds', 45))),
+    daySeconds: Math.min(300, Math.max(30, integerField(formData, 'daySeconds', 90))),
+    votingSeconds: Math.min(120, Math.max(20, integerField(formData, 'votingSeconds', 45))),
+    killerCount: baseKiller,
+    maxPlayers,
+  };
+  const adjusted = applyModeMultipliers(modeObj.id, baseTimers);
   const game = await prisma.mafiaGame.create({
     data: {
       hostId: user.id,
       roomCode,
       maxPlayers,
-      killerCount,
+      killerCount: adjusted.killerCount,
+      modeId: modeObj.id,
       autoMode: formData.get('autoMode') !== 'off',
       chatEnabled: formData.get('chatEnabled') !== 'off',
       slowModeSeconds: Math.min(30, Math.max(0, integerField(formData, 'slowModeSeconds', 2))),
-      daySeconds: Math.min(300, Math.max(30, integerField(formData, 'daySeconds', 90))),
-      nightSeconds: Math.min(180, Math.max(20, integerField(formData, 'nightSeconds', 45))),
-      votingSeconds: Math.min(120, Math.max(20, integerField(formData, 'votingSeconds', 45))),
+      daySeconds: adjusted.daySeconds,
+      nightSeconds: adjusted.nightSeconds,
+      votingSeconds: adjusted.votingSeconds,
     },
     select: { id: true },
   });
@@ -77,10 +95,26 @@ export async function startMafiaGame(formData: FormData) {
 
     const roles = shuffled(buildMafiaRoles(participants.length, game.killerCount));
     const now = new Date();
-    for (const [index, participant] of participants.entries()) {
+    const participantInfo = await tx.mafiaParticipant.findMany({
+      where: { gameId },
+      orderBy: { joinedAt: 'asc' },
+      select: { id: true, displayName: true, joinedAt: true },
+    });
+    const narratives = participantInfo.map((p, index) => {
+      const seed = (p.id.charCodeAt(p.id.length - 1) + index * 7) % 1000;
+      return buildNarrative(p.displayName, roles[index], seed);
+    });
+    for (const [index, participant] of participantInfo.entries()) {
+      const persona = narratives[index];
+      const intro = `أنت ${persona.title}. ${persona.backstory}. مهام دورك:\n${persona.roleFlavor}\nأفضل اقتباس لك: «${persona.quotes.intro}»`;
       await tx.mafiaParticipant.update({
         where: { id: participant.id },
-        data: { role: roles[index], status: 'ALIVE', privateNote: null, eliminatedAt: null },
+        data: {
+          role: roles[index],
+          status: 'ALIVE',
+          privateNote: intro,
+          eliminatedAt: null,
+        },
       });
     }
     await tx.mafiaGame.update({
@@ -92,11 +126,12 @@ export async function startMafiaGame(formData: FormData) {
         phaseEndsAt: new Date(now.getTime() + game.nightSeconds * 1000),
       },
     });
+    const startEvent = buildNarrativeEvent('start', null, 0, participantInfo.length, game.killerCount);
     await tx.mafiaMessage.create({
       data: {
         gameId: game.id,
         channel: 'SYSTEM',
-        body: 'بدأت اللعبة. افتح بطاقة دورك سرًا، فالليل قد حل.',
+        body: `بدأت اللعبة. افتح بطاقة دورك سرًا، فالليل قد حل. ${startEvent.body}`,
       },
     });
     return 'started' as const;
@@ -206,11 +241,15 @@ export async function submitMafiaVote(formData: FormData) {
       currentRound: true,
       participants: {
         where: { id: { in: [voterId, targetId] }, status: 'ALIVE' },
-        select: { id: true },
+        select: { id: true, role: true },
       },
     },
   });
   if (!game || game.status !== 'VOTING' || game.participants.length !== 2) return;
+  const voter = game.participants.find((item) => item.id === voterId);
+  const target = game.participants.find((item) => item.id === targetId);
+  if (!voter || !target) return;
+  if (voter.id === target.id) return;
   const authorizedVoter = await prisma.mafiaParticipant.findFirst({
     where: { id: voterId, gameId, accessToken: participantToken },
     select: { id: true },

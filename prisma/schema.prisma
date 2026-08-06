@@ -285,6 +285,7 @@ model MafiaGame {
   id                  String                @id @default(cuid())
   hostId              String
   roomCode            String                @unique @db.VarChar(8)
+  modeId              String                @default("CLASSIC")
   status              MafiaGameStatus       @default(LOBBY)
   winner              MafiaWinner?
   currentRound        Int                   @default(0)
