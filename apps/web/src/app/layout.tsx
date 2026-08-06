@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { SHARE_IMAGE, SHARE_IMAGE_URL, SITE_URL } from '@/lib/metadata/site';
 import './globals.css';
 import '../styles/prestige.css';
+import '../styles/game-catalog.css';
 
 const arabicFont = Readex_Pro({
   subsets: ['arabic', 'latin'],
