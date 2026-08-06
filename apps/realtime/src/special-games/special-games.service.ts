@@ -177,10 +177,7 @@ export class SpecialGamesService {
     return { ok: true, room };
   }
 
-  async leaveRoom(
-    socketId: string,
-    pinValue: string,
-  ): Promise<ActionResult> {
+  async leaveRoom(socketId: string, pinValue: string): Promise<ActionResult> {
     const pin = normalizePin(pinValue);
     const room = await this.load(pin);
     if (!room || room.phase !== 'lobby') {
@@ -198,10 +195,7 @@ export class SpecialGamesService {
     return { ok: true, room };
   }
 
-  async playerReady(
-    socketId: string,
-    pinValue: string,
-  ): Promise<ActionResult> {
+  async playerReady(socketId: string, pinValue: string): Promise<ActionResult> {
     const pin = normalizePin(pinValue);
     const room = await this.load(pin);
     if (!room) {
