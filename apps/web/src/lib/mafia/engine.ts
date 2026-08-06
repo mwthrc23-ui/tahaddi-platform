@@ -45,7 +45,7 @@ async function resolveNight(gameId: string, expectedPhaseEndsAt: Date | null, fo
 
     const actions = await tx.mafiaAction.findMany({
       where: { gameId, round: game.currentRound },
-      select: { type: true, targetId: true },
+      select: { type: true, targetId: true, actorId: true },
     });
     const killCounts = new Map<string, number>();
     for (const action of actions.filter((item) => item.type === 'KILL')) {

@@ -1,5 +1,30 @@
 import type { MafiaRoleName } from './rules';
 
+const ALL_ROLES: MafiaRoleName[] = ['KILLER', 'DETECTIVE', 'DOCTOR', 'GUARD', 'WITNESS', 'CITIZEN'];
+
+export const ARCHETYPE_LABELS: Record<MafiaCharacterArchetype, string> = {
+  SCHOLAR: 'العالِم',
+  MERCHANT: 'التاجر',
+  FARMER: 'الفلاح',
+  NOBLE: 'النبيل',
+  ARTISAN: 'الحرفي',
+  SERVANT: 'الخادم',
+  OFFICER: 'الضابط',
+  TRAVELER: 'المسافر',
+};
+
+export const ROLE_FLAVOR: Record<MafiaRoleName, Record<MafiaCharacterArchetype, string>> =
+  ALL_ROLES.reduce(
+    (acc, role) => {
+      (Object.keys(CHARACTER_ARCHETYPES_TMP) as MafiaCharacterArchetype[]).forEach((a) => {
+        acc[role] ??= {} as Record<MafiaCharacterArchetype, string>;
+        acc[role][a] = CHARACTER_ARCHETYPES_TMP[a].flavorText[role];
+      });
+      return acc;
+    },
+    {} as Record<MafiaRoleName, Record<MafiaCharacterArchetype, string>>,
+  );
+
 export type MafiaCharacterArchetype =
   | 'SCHOLAR'
   | 'MERCHANT'
@@ -27,7 +52,7 @@ export type MafiaNarrativeCharacter = {
   flavorText: Record<MafiaRoleName, string>;
 };
 
-export const CHARACTER_ARCHETYPES: Record<
+const CHARACTER_ARCHETYPES_TMP: Record<
   MafiaCharacterArchetype,
   Omit<MafiaNarrativeCharacter, 'displayName'>
 > = {
@@ -201,6 +226,8 @@ export const CHARACTER_ARCHETYPES: Record<
   },
 };
 
+export const CHARACTER_ARCHETYPES = CHARACTER_ARCHETYPES_TMP;
+
 export function pickArchetype(seed: number): MafiaCharacterArchetype {
   const keys = Object.keys(CHARACTER_ARCHETYPES) as MafiaCharacterArchetype[];
   return keys[Math.abs(seed) % keys.length];
@@ -211,10 +238,12 @@ export function buildNarrative(displayName: string, role: MafiaRoleName, seed: n
   const base = CHARACTER_ARCHETYPES[archetype];
   return {
     archetype,
+    title: ARCHETYPE_LABELS[archetype],
     displayName,
+    role,
     backstory: base.backstory,
     quotes: base.quotes,
-    flavorRole: base.flavorText[role],
+    roleFlavor: base.flavorText[role],
   } as const;
 }
 

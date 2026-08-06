@@ -191,7 +191,6 @@ function GameCatalogShell({ sessionUserName }: { sessionUserName: string | null 
                 >
                   {catalog.visibleGames.map((game, i) => (
                     <div role="listitem" key={game.id} style={{ display: 'contents' }}>
-                      {/* @ts-expect-error async Server Component boundary fine */}
                       <GameCardWrap
                         game={game}
                         index={i}
