@@ -4,7 +4,6 @@ import {
   Check,
   Clipboard,
   Clock3,
-  Crown,
   Fingerprint,
   LoaderCircle,
   Orbit,
@@ -20,167 +19,21 @@ import {
   X,
 } from 'lucide-react';
 import QRCode from 'react-qr-code';
-import { io, type Socket } from 'socket.io-client';
 import { SPECIAL_GAME_META, type SpecialGameMode } from '@tahaddi/domain';
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Button, ButtonLink, Card, Input } from '@/components/ui';
+import { WaitingRoom } from './waiting-room';
+import {
+  resolveSpecialGamesRealtimeUrl,
+  useSpecialGameSocket,
+} from './use-special-game-socket';
+import type { Player } from './use-special-game-socket';
 
-type Player = { id: string; name: string; score: number };
-type Room = {
-  pin: string;
-  hostId: string;
-  mode: SpecialGameMode;
-  phase:
-    | 'lobby'
-    | 'parallel-answering'
-    | 'parallel-reveal'
-    | 'reverse-writing'
-    | 'reverse-voting'
-    | 'reverse-results'
-    | 'infiltrator-answering'
-    | 'infiltrator-voting'
-    | 'infiltrator-reveal'
-    | 'finished';
-  roundIndex: number;
-  roundCount: number;
-  players: Player[];
-};
-type ParallelRound = {
-  roundId: string;
-  roundNumber: number;
-  roundCount: number;
-  face: string;
-  faceLabel: string;
-  prompt: string;
-  options: string[];
-  startsAt: number;
-  timeLimit: number;
-};
-type ParallelReveal = {
-  answer: string;
-  reveal: string;
-  results: Array<{
-    playerId: string;
-    playerName: string;
-    faceLabel: string;
-    prompt: string;
-    selectedAnswer: string | null;
-    correct: boolean;
-  }>;
-};
-type ReverseRound = {
-  roundId: string;
-  roundNumber: number;
-  roundCount: number;
-  answer: string;
-  category: string;
-  hint: string;
-  startsAt: number;
-  timeLimit: number;
-};
-type ReverseVoting = {
-  answer: string;
-  submissions: Array<{ id: string; text: string; isOwn: boolean }>;
-};
-type ReverseResults = {
-  answer: string;
-  results: Array<{ id: string; playerName: string; text: string; votes: number }>;
-};
-type InfiltratorRound = {
-  roundId: string;
-  roundNumber: number;
-  roundCount: number;
-  prompt: string;
-  options: string[];
-  isInfiltrator: boolean;
-  startsAt: number;
-  timeLimit: number;
-};
-type InfiltratorVoting = {
-  answers: Array<{ playerId: string; answer: string; isOwn: boolean }>;
-  isInfiltrator: boolean;
-  majorityOptions: string[];
-};
-type InfiltratorReveal = {
-  infiltratorId: string;
-  infiltratorName: string;
-  caught: boolean;
-  survived: boolean;
-  guessedMajority: boolean;
-  infiltratorWon: boolean;
-  majorityQuestion: string;
-  answers: Array<{ playerId: string; playerName: string; answer: string }>;
-  voteCounts: Record<string, number>;
-};
-type GameEnd = { players: Player[]; mode: SpecialGameMode };
+export { resolveSpecialGamesRealtimeUrl };
 
-type ServerEvents = {
-  'special:room:state': (payload: Room) => void;
-  'special:error': (payload: { code: string; message: string }) => void;
-  'special:game:end': (payload: GameEnd) => void;
-  'parallel:round': (payload: ParallelRound) => void;
-  'parallel:answer:ack': (payload: {
-    correct: boolean;
-    earned: number;
-    selectedAnswer: string;
-  }) => void;
-  'parallel:reveal': (payload: ParallelReveal) => void;
-  'reverse:round': (payload: ReverseRound) => void;
-  'reverse:question:ack': (payload: { question: string }) => void;
-  'reverse:voting': (payload: ReverseVoting) => void;
-  'reverse:vote:ack': (payload: { submissionId: string }) => void;
-  'reverse:results': (payload: ReverseResults) => void;
-  'infiltrator:round': (payload: InfiltratorRound) => void;
-  'infiltrator:answer:ack': (payload: { selectedAnswer: string }) => void;
-  'infiltrator:voting': (payload: InfiltratorVoting) => void;
-  'infiltrator:vote:ack': (payload: { playerId: string }) => void;
-  'infiltrator:majority:guess:ack': (payload: { question: string }) => void;
-  'infiltrator:reveal': (payload: InfiltratorReveal) => void;
-};
-type ClientEvents = {
-  'special:room:create': (payload: { mode: SpecialGameMode }) => void;
-  'special:room:join': (payload: { pin: string; playerName: string }) => void;
-  'special:game:start': (payload: { pin: string }) => void;
-  'special:round:next': (payload: { pin: string }) => void;
-  'parallel:answer:submit': (payload: { pin: string; roundId: string; answer: string }) => void;
-  'parallel:reveal': (payload: { pin: string }) => void;
-  'reverse:question:submit': (payload: { pin: string; roundId: string; question: string }) => void;
-  'reverse:voting:start': (payload: { pin: string }) => void;
-  'reverse:vote': (payload: { pin: string; submissionId: string }) => void;
-  'reverse:reveal': (payload: { pin: string }) => void;
-  'infiltrator:answer:submit': (payload: { pin: string; roundId: string; answer: string }) => void;
-  'infiltrator:voting:start': (payload: { pin: string }) => void;
-  'infiltrator:vote': (payload: { pin: string; playerId: string }) => void;
-  'infiltrator:majority:guess': (payload: { pin: string; question: string }) => void;
-  'infiltrator:reveal': (payload: { pin: string }) => void;
-};
-type GameSocket = Socket<ServerEvents, ClientEvents>;
-
-const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '[::1]']);
-
-export function resolveSpecialGamesRealtimeUrl(
-  configuredUrl: string | undefined,
-  currentOrigin: string,
-) {
-  const normalizedUrl = configuredUrl?.trim().replace(/\/+$/, '');
-  if (!normalizedUrl) return '/special-games';
-
-  try {
-    const configured = new URL(normalizedUrl);
-    const current = new URL(currentOrigin);
-    const configuredIsLoopback = LOOPBACK_HOSTS.has(configured.hostname);
-    const currentIsLoopback = LOOPBACK_HOSTS.has(current.hostname);
-    const wouldUseMixedContent = current.protocol === 'https:' && configured.protocol === 'http:';
-
-    if ((!currentIsLoopback && configuredIsLoopback) || wouldUseMixedContent) {
-      return `${current.origin}/special-games`;
-    }
-  } catch {
-    return '/special-games';
-  }
-
-  return `${normalizedUrl}/special-games`;
-}
+/* ------------------------------------------------------------------ */
+/* Timer                                                                 */
+/* ------------------------------------------------------------------ */
 
 function Timer({ startsAt, timeLimit }: { startsAt: number; timeLimit: number }) {
   const [remaining, setRemaining] = useState(timeLimit);
@@ -203,6 +56,10 @@ function Timer({ startsAt, timeLimit }: { startsAt: number; timeLimit: number })
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* PlayerRail (in-game sidebar)                                          */
+/* ------------------------------------------------------------------ */
 
 function PlayerRail({ players, currentSocketId }: { players: Player[]; currentSocketId?: string }) {
   return (
@@ -228,6 +85,121 @@ function PlayerRail({ players, currentSocketId }: { players: Player[]; currentSo
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* Role reveal overlay for infiltrator                                  */
+/* ------------------------------------------------------------------ */
+
+function InfiltratorRoleReveal({
+  isInfiltrator,
+  onContinue,
+}: {
+  isInfiltrator: boolean;
+  onContinue: () => void;
+}) {
+  return (
+    <div
+      className="role-reveal"
+      data-role={isInfiltrator ? 'infiltrator' : 'majority'}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="infiltrator-role-reveal-title"
+      aria-describedby="infiltrator-role-reveal-hint"
+    >
+      <div className="role-reveal__card">
+        <Fingerprint className="role-reveal__icon" aria-hidden="true" />
+        <h2 className="role-reveal__title" id="infiltrator-role-reveal-title">
+          {isInfiltrator ? 'أنت الدخيل 🕵️' : 'أنت من الأغلبية 👥'}
+        </h2>
+        <p className="role-reveal__hint" id="infiltrator-role-reveal-hint">
+          {isInfiltrator
+            ? 'ستحصل على سؤال مختلف. تظاهر بأنك من الأغلبية وابقَ بعيداً عن الأضواء.'
+            : 'ستحصل على سؤال مشترك. أجب بصدق وحاول اكتشاف الدخيل.'}
+        </p>
+        <Button variant="gold" size="lg" onClick={onContinue}>
+          فهمت — ابدأ
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Infiltrator end screen (professional)                                */
+/* ------------------------------------------------------------------ */
+
+function InfiltratorEndScreen({
+  players,
+  durationMs,
+  mode,
+  activeMode,
+  onReplay,
+  isHost,
+}: {
+  players: Player[];
+  durationMs: number;
+  mode: SpecialGameMode;
+  activeMode: SpecialGameMode;
+  onReplay?: () => void;
+  isHost: boolean;
+}) {
+  const winner = players[0];
+  const durationMinutes = Math.floor(durationMs / 60000);
+  const durationSeconds = Math.round((durationMs % 60000) / 1000);
+
+  return (
+    <Card className="special-final-panel infiltrator-end">
+      <Trophy className="infiltrator-end__trophy" aria-hidden="true" />
+      <div className="infiltrator-end__header">
+        <h2>اكتملت اللعبة</h2>
+        <p className="infiltrator-end__duration">
+          المدة:{' '}
+          {durationMinutes > 0
+            ? `${durationMinutes.toLocaleString('ar-SA')} د ${durationSeconds.toLocaleString('ar-SA')} ث`
+            : `${durationSeconds.toLocaleString('ar-SA')} ثانية`}
+        </p>
+      </div>
+
+      {winner && (
+        <div className="infiltrator-end__mvp">
+          <span className="infiltrator-end__mvp-label">MVP 🏆</span>
+          <strong className="infiltrator-end__mvp-name">{winner.name}</strong>
+          <b className="infiltrator-end__mvp-score">
+            {winner.score.toLocaleString('ar-SA')} نقطة
+          </b>
+        </div>
+      )}
+
+      <ol className="infiltrator-end__scores">
+        {players.map((player, index) => (
+          <li key={player.id} data-rank={index + 1 <= 3 ? index + 1 : undefined}>
+            <span className="infiltrator-end__rank">{(index + 1).toLocaleString('ar-SA')}</span>
+            <strong className="infiltrator-end__pname">{player.name}</strong>
+            <b className="infiltrator-end__pscore">
+              {player.score.toLocaleString('ar-SA')} نقطة
+            </b>
+          </li>
+        ))}
+      </ol>
+
+      <div className="infiltrator-end__actions">
+        {isHost && onReplay && (
+          <Button variant="gold" size="lg" onClick={onReplay}>
+            <RotateCcw aria-hidden="true" />
+            العب مجدداً
+          </Button>
+        )}
+        <ButtonLink href={`/games/${activeMode}`} variant="outline">
+          غرفة جديدة
+        </ButtonLink>
+      </div>
+    </Card>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Main component                                                        */
+/* ------------------------------------------------------------------ */
+
 export function SpecialGameRoom({
   mode,
   initialPin,
@@ -236,158 +208,53 @@ export function SpecialGameRoom({
   initialPin: string;
 }) {
   const meta = SPECIAL_GAME_META[mode];
-  const socketRef = useRef<GameSocket | null>(null);
-  const [connected, setConnected] = useState(false);
-  const [connectionFailed, setConnectionFailed] = useState(false);
-  const [socketId, setSocketId] = useState('');
-  const [room, setRoom] = useState<Room | null>(null);
+  const {
+    connected,
+    connectionFailed,
+    socketId,
+    room,
+    error,
+    busy,
+    parallelRound,
+    parallelAck,
+    parallelReveal,
+    reverseRound,
+    reverseQuestion,
+    submittedQuestion,
+    voting,
+    selectedVote,
+    reverseResults,
+    infiltratorRound,
+    infiltratorAnswer,
+    infiltratorVoting,
+    infiltratorVote,
+    infiltratorGuess,
+    infiltratorReveal,
+    gameEnd,
+    setError,
+    setBusy,
+    setReverseQuestion,
+    socketRef,
+    resetRoundState,
+  } = useSpecialGameSocket();
+
   const [joinMode, setJoinMode] = useState(Boolean(initialPin));
   const [pin, setPin] = useState(initialPin);
-  const [playerName, setPlayerName] = useState('');
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [playerName, setPlayerName] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('tahaddi-player-name') ?? '';
+  });
   const [copied, setCopied] = useState(false);
-  const [parallelRound, setParallelRound] = useState<ParallelRound | null>(null);
-  const [parallelAck, setParallelAck] = useState<{
-    correct: boolean;
-    earned: number;
-    selectedAnswer: string;
-  } | null>(null);
-  const [parallelReveal, setParallelReveal] = useState<ParallelReveal | null>(null);
-  const [reverseRound, setReverseRound] = useState<ReverseRound | null>(null);
-  const [reverseQuestion, setReverseQuestion] = useState('');
-  const [submittedQuestion, setSubmittedQuestion] = useState('');
-  const [voting, setVoting] = useState<ReverseVoting | null>(null);
-  const [selectedVote, setSelectedVote] = useState('');
-  const [reverseResults, setReverseResults] = useState<ReverseResults | null>(null);
-  const [infiltratorRound, setInfiltratorRound] = useState<InfiltratorRound | null>(null);
-  const [infiltratorAnswer, setInfiltratorAnswer] = useState('');
-  const [infiltratorVoting, setInfiltratorVoting] = useState<InfiltratorVoting | null>(null);
-  const [infiltratorVote, setInfiltratorVote] = useState('');
-  const [infiltratorGuess, setInfiltratorGuess] = useState('');
-  const [infiltratorReveal, setInfiltratorReveal] = useState<InfiltratorReveal | null>(null);
-  const [gameEnd, setGameEnd] = useState<GameEnd | null>(null);
 
-  const resetRoundState = useCallback(() => {
-    setError('');
-    setParallelRound(null);
-    setParallelAck(null);
-    setParallelReveal(null);
-    setReverseRound(null);
-    setReverseQuestion('');
-    setSubmittedQuestion('');
-    setVoting(null);
-    setSelectedVote('');
-    setReverseResults(null);
-    setInfiltratorRound(null);
-    setInfiltratorAnswer('');
-    setInfiltratorVoting(null);
-    setInfiltratorVote('');
-    setInfiltratorGuess('');
-    setInfiltratorReveal(null);
-  }, []);
+  // Track last-used pin in localStorage
+  const [lastPin] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('tahaddi-last-pin') ?? '';
+  });
+  const effectivePin = pin || lastPin;
 
-  useEffect(() => {
-    const realtimeUrl = resolveSpecialGamesRealtimeUrl(
-      process.env.NEXT_PUBLIC_REALTIME_URL,
-      window.location.origin,
-    );
-    const socket: GameSocket = io(realtimeUrl, {
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 5,
-    });
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      setConnected(true);
-      setConnectionFailed(false);
-      setSocketId(socket.id ?? '');
-      setError('');
-    });
-    socket.on('disconnect', () => {
-      setConnected(false);
-      setSocketId('');
-    });
-    socket.on('connect_error', () => {
-      setConnected(false);
-      setConnectionFailed(true);
-      setBusy(false);
-      setError('تعذّر الاتصال بخدمة اللعب المباشر. تحقق من اتصالك ثم أعد تحميل الصفحة.');
-    });
-    socket.on('special:error', ({ message }) => {
-      setBusy(false);
-      setError(message);
-    });
-    socket.on('special:room:state', (payload) => {
-      setBusy(false);
-      setRoom(payload);
-    });
-    socket.on('parallel:round', (payload) => {
-      resetRoundState();
-      setParallelRound(payload);
-    });
-    socket.on('parallel:answer:ack', (payload) => {
-      setBusy(false);
-      setParallelAck(payload);
-    });
-    socket.on('parallel:reveal', (payload) => {
-      setBusy(false);
-      setParallelReveal(payload);
-    });
-    socket.on('reverse:round', (payload) => {
-      resetRoundState();
-      setReverseRound(payload);
-    });
-    socket.on('reverse:question:ack', ({ question }) => {
-      setBusy(false);
-      setSubmittedQuestion(question);
-    });
-    socket.on('reverse:voting', (payload) => {
-      setBusy(false);
-      setVoting(payload);
-    });
-    socket.on('reverse:vote:ack', ({ submissionId }) => {
-      setBusy(false);
-      setSelectedVote(submissionId);
-    });
-    socket.on('reverse:results', (payload) => {
-      setBusy(false);
-      setReverseResults(payload);
-    });
-    socket.on('infiltrator:round', (payload) => {
-      resetRoundState();
-      setInfiltratorRound(payload);
-    });
-    socket.on('infiltrator:answer:ack', ({ selectedAnswer }) => {
-      setBusy(false);
-      setInfiltratorAnswer(selectedAnswer);
-    });
-    socket.on('infiltrator:voting', (payload) => {
-      setBusy(false);
-      setInfiltratorVoting(payload);
-    });
-    socket.on('infiltrator:vote:ack', ({ playerId }) => {
-      setBusy(false);
-      setInfiltratorVote(playerId);
-    });
-    socket.on('infiltrator:majority:guess:ack', ({ question }) => {
-      setBusy(false);
-      setInfiltratorGuess(question);
-    });
-    socket.on('infiltrator:reveal', (payload) => {
-      setBusy(false);
-      setInfiltratorReveal(payload);
-    });
-    socket.on('special:game:end', (payload) => {
-      setBusy(false);
-      setGameEnd(payload);
-    });
-
-    return () => {
-      socket.disconnect();
-      socketRef.current = null;
-    };
-  }, [resetRoundState]);
+  // Infiltrator role-reveal gate (tracks the round whose role was acknowledged)
+  const [revealedRoundId, setRevealedRoundId] = useState<string | null>(null);
 
   const shareUrl =
     room && typeof window !== 'undefined'
@@ -403,6 +270,7 @@ export function SpecialGameRoom({
     if (!room) return;
     setBusy(true);
     resetRoundState();
+    setRevealedRoundId(null);
     socketRef.current?.emit('special:round:next', { pin: room.pin });
   };
 
@@ -415,11 +283,13 @@ export function SpecialGameRoom({
 
   const joinRoom = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const cleanPin = pin.replace(/\D/g, '').slice(0, 6);
+    const cleanPin = effectivePin.replace(/\D/g, '').slice(0, 6);
     if (cleanPin.length !== 6 || playerName.trim().length < 2) {
       setError('أدخل رمزًا من 6 أرقام واسمًا من حرفين على الأقل.');
       return;
     }
+    localStorage.setItem('tahaddi-last-pin', cleanPin);
+    localStorage.setItem('tahaddi-player-name', playerName.trim());
     setBusy(true);
     setError('');
     socketRef.current?.emit('special:room:join', {
@@ -442,7 +312,12 @@ export function SpecialGameRoom({
     return 'النتيجة النهائية';
   }, [activeMeta.title, room]);
 
+  /* ---------------------------------------------------------------- */
+  /* Entry screen (no room yet)                                        */
+  /* ---------------------------------------------------------------- */
+
   if (!room) {
+    const isValidPin = effectivePin.replace(/\D/g, '').length === 6;
     return (
       <section className="section special-game-entry">
         <div className="container">
@@ -521,18 +396,28 @@ export function SpecialGameRoom({
                   <Input
                     id="special-room-pin"
                     label="رمز الغرفة"
-                    value={pin}
+                    value={effectivePin}
                     onChange={(event) => {
-                      setPin(event.target.value.replace(/\D/g, '').slice(0, 6));
+                      const cleaned = event.target.value.replace(/\D/g, '').slice(0, 6);
+                      setPin(cleaned);
                       setError('');
                     }}
-                    placeholder="000000"
+                    placeholder={lastPin || '000000'}
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     maxLength={6}
-                    error={error || undefined}
+                    error={
+                      effectivePin && !isValidPin
+                        ? 'الرمز يجب أن يكون 6 أرقام'
+                        : (error || undefined)
+                    }
                   />
-                  <Button type="submit" size="lg" loading={busy} disabled={!connected || busy}>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    loading={busy}
+                    disabled={!connected || busy || !isValidPin || playerName.trim().length < 2}
+                  >
                     <Play aria-hidden="true" />
                     ادخل الغرفة
                   </Button>
@@ -573,6 +458,17 @@ export function SpecialGameRoom({
     );
   }
 
+  /* ---------------------------------------------------------------- */
+  /* In-room stage                                                      */
+  /* ---------------------------------------------------------------- */
+
+  // Show role reveal overlay before infiltrator round begins
+  const showRoleReveal =
+    room.phase === 'infiltrator-answering' &&
+    !isHost &&
+    infiltratorRound &&
+    revealedRoundId !== infiltratorRound.roundId;
+
   return (
     <section className="section special-game-stage">
       <div className="container">
@@ -589,6 +485,18 @@ export function SpecialGameRoom({
             <span className="special-room-pin">غرفة {room.pin}</span>
           </div>
         </header>
+
+        {/* Role reveal overlay */}
+        {showRoleReveal && (
+          <InfiltratorRoleReveal
+            isInfiltrator={infiltratorRound!.isInfiltrator}
+            onContinue={() => {
+              if (infiltratorRound) {
+                setRevealedRoundId(infiltratorRound.roundId);
+              }
+            }}
+          />
+        )}
 
         {room.phase === 'lobby' && (
           <div className="special-lobby-grid">
@@ -618,35 +526,15 @@ export function SpecialGameRoom({
             </Card>
 
             <div className="special-lobby-control">
-              <PlayerRail players={room.players} currentSocketId={currentSocketId} />
-              {isHost ? (
-                <>
-                  <p className="special-minimum-note" data-ready={minimumReached || undefined}>
-                    {minimumReached
-                      ? 'اكتمل الحد الأدنى. الجولة جاهزة.'
-                      : `بانتظار ${Math.max(0, meta.minimumPlayers - room.players.length).toLocaleString('ar-SA')} لاعبين.`}
-                  </p>
-                  <Button
-                    variant="gold"
-                    size="lg"
-                    fullWidth
-                    loading={busy}
-                    disabled={!minimumReached || busy}
-                    onClick={() => {
-                      setBusy(true);
-                      socketRef.current?.emit('special:game:start', { pin: room.pin });
-                    }}
-                  >
-                    <Play aria-hidden="true" />
-                    ابدأ الجولة
-                  </Button>
-                </>
-              ) : (
-                <p className="special-waiting" role="status">
-                  <LoaderCircle className="spin" aria-hidden="true" />
-                  أنت داخل الغرفة. المضيف سيبدأ بعد اكتمال اللاعبين.
-                </p>
-              )}
+              <WaitingRoom
+                room={room}
+                socketId={currentSocketId}
+                isHost={isHost}
+                meta={activeMeta}
+                busy={busy}
+                socketRef={socketRef}
+                setBusy={setBusy}
+              />
             </div>
           </div>
         )}
@@ -914,7 +802,7 @@ export function SpecialGameRoom({
 
               {room.phase === 'reverse-results' && reverseResults && (
                 <Card className="special-results-panel">
-                  <Crown aria-hidden="true" />
+                  <Trophy aria-hidden="true" />
                   <span>الإجابة: {reverseResults.answer}</span>
                   <h2>السؤال الأذكى</h2>
                   <ol>
@@ -956,7 +844,8 @@ export function SpecialGameRoom({
                       اعرض الإجابات المجهولة
                     </Button>
                   </Card>
-                ) : infiltratorRound ? (
+                ) : infiltratorRound &&
+                  revealedRoundId === infiltratorRound.roundId ? (
                   <Card className="special-question-panel">
                     <div className="special-round-meta">
                       <span data-role={infiltratorRound.isInfiltrator ? 'infiltrator' : 'majority'}>
@@ -1013,7 +902,7 @@ export function SpecialGameRoom({
                       </p>
                     )}
                   </Card>
-                ) : (
+                ) : showRoleReveal ? null : (
                   <Card className="special-waiting">
                     <LoaderCircle className="spin" aria-hidden="true" />
                     جارٍ تسليم دورك السري…
@@ -1145,24 +1034,42 @@ export function SpecialGameRoom({
         )}
 
         {(room.phase === 'finished' || gameEnd) && (
-          <Card className="special-final-panel">
-            <Trophy aria-hidden="true" />
-            <h2>اكتملت اللعبة</h2>
-            <p>انتهت جولات {activeMeta.title}. هذا هو الترتيب النهائي.</p>
-            <ol>
-              {(gameEnd?.players ?? room.players).map((player, index) => (
-                <li key={player.id}>
-                  <span>{(index + 1).toLocaleString('ar-SA')}</span>
-                  <strong>{player.name}</strong>
-                  <b>{player.score.toLocaleString('ar-SA')} نقطة</b>
-                </li>
-              ))}
-            </ol>
-            <ButtonLink href={`/games/${activeMode}`} variant="gold">
-              <RotateCcw aria-hidden="true" />
-              غرفة جديدة
-            </ButtonLink>
-          </Card>
+          activeMode === 'infiltrator' ? (
+            <InfiltratorEndScreen
+              players={gameEnd?.players ?? room.players}
+              durationMs={gameEnd?.durationMs ?? 0}
+              mode={mode}
+              activeMode={activeMode}
+              isHost={isHost}
+              onReplay={
+                isHost
+                  ? () => {
+                      setBusy(true);
+                      socketRef.current?.emit('special:game:start', { pin: room.pin });
+                    }
+                  : undefined
+              }
+            />
+          ) : (
+            <Card className="special-final-panel">
+              <Trophy aria-hidden="true" />
+              <h2>اكتملت اللعبة</h2>
+              <p>انتهت جولات {activeMeta.title}. هذا هو الترتيب النهائي.</p>
+              <ol>
+                {(gameEnd?.players ?? room.players).map((player, index) => (
+                  <li key={player.id}>
+                    <span>{(index + 1).toLocaleString('ar-SA')}</span>
+                    <strong>{player.name}</strong>
+                    <b>{player.score.toLocaleString('ar-SA')} نقطة</b>
+                  </li>
+                ))}
+              </ol>
+              <ButtonLink href={`/games/${activeMode}`} variant="gold">
+                <RotateCcw aria-hidden="true" />
+                غرفة جديدة
+              </ButtonLink>
+            </Card>
+          )
         )}
 
         {error && room.phase !== 'reverse-writing' && (

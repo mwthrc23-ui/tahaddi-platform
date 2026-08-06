@@ -163,6 +163,11 @@ describe('SpecialGameRoom', () => {
       } as never);
     });
 
+    expect(
+      screen.getByRole('dialog', { name: /أنت الدخيل/ }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /فهمت/ }));
+
     expect(screen.getByText('أنت الدخيل')).toBeInTheDocument();
     expect(screen.getByText(/تظاهر أن سؤالك/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'الرياض' }));
