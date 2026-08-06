@@ -183,11 +183,25 @@ export class SpecialGamesService {
     if (!room || room.phase !== 'lobby') {
       return { ok: false, code: 'LEAVE_FAILED', message: 'تعذّرت المغادرة.' };
     }
+
+    if (room.hostId === socketId) {
+      this.io.to(room.pin).emit('special:error', {
+        code: 'HOST_LEFT',
+        message: 'غادر المضيف وانتهت الغرفة. أنشئ غرفة جديدة للمتابعة.',
+      });
+      await this.redis.deleteSpecialRoom(room.pin);
+      await this.redis.removeActivePin(room.pin);
+      return {
+        ok: false,
+        code: 'HOST_LEFT',
+        message: 'غادر المضيف وانتهت الغرفة. أنشئ غرفة جديدة للمتابعة.',
+      };
+    }
+
     room.players = room.players.filter((p) => p.id !== socketId);
-    room.readyPlayerIds = (room.readyPlayerIds ?? []).filter(
-      (id) => id !== socketId,
-    );
+    room.readyPlayerIds = (room.readyPlayerIds ?? []).filter((id) => id !== socketId);
     if (room.players.length === 0) {
+      await this.redis.deleteSpecialRoom(pin);
       await this.redis.removeActivePin(pin);
     } else {
       await this.redis.saveSpecialRoom(pin, room);
