@@ -38,6 +38,7 @@ export type SpecialGameRoom = {
   phase: SpecialGamePhase;
   roundIndex: number;
   players: SpecialGamePlayer[];
+  readyPlayerIds: string[];
   parallelAssignments: Record<string, number>;
   parallelAnswers: Record<string, string>;
   reverseSubmissions: ReverseSubmission[];
@@ -48,6 +49,7 @@ export type SpecialGameRoom = {
   infiltratorVotes: Record<string, string>;
   infiltratorMajorityGuess: string | null;
   createdAt: number;
+  gameStartedAt?: number;
 };
 
 export type SpecialRoomSnapshot = Pick<
@@ -55,6 +57,7 @@ export type SpecialRoomSnapshot = Pick<
   'pin' | 'hostId' | 'mode' | 'phase' | 'roundIndex' | 'players'
 > & {
   roundCount: number;
+  readyPlayerIds: string[];
 };
 
 export type ParallelRoundPayload = {
@@ -83,6 +86,8 @@ export type InfiltratorRoundPayload = {
 export type ClientToServerSpecialEvents = {
   'special:room:create': (payload: { mode: SpecialGameMode }) => void;
   'special:room:join': (payload: { pin: string; playerName: string }) => void;
+  'special:room:leave': (payload: { pin: string }) => void;
+  'special:player:ready': (payload: { pin: string }) => void;
   'special:game:start': (payload: { pin: string }) => void;
   'special:round:next': (payload: { pin: string }) => void;
   'parallel:answer:submit': (payload: {
@@ -119,6 +124,7 @@ export type ServerToClientSpecialEvents = {
   'special:game:end': (payload: {
     players: SpecialGamePlayer[];
     mode: SpecialGameMode;
+    durationMs: number;
   }) => void;
   'parallel:round': (payload: ParallelRoundPayload) => void;
   'parallel:answer:ack': (payload: {

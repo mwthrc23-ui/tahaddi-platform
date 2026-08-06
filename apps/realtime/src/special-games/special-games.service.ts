@@ -84,6 +84,7 @@ export class SpecialGamesService {
           ? PARALLEL_WORLD_BANK.length
           : REVERSE_TIME_BANK.length,
       players: rankedPlayers(room.players),
+      readyPlayerIds: room.readyPlayerIds ?? [],
     };
   }
 
@@ -103,6 +104,7 @@ export class SpecialGamesService {
       phase: 'lobby',
       roundIndex: -1,
       players: [],
+      readyPlayerIds: [],
       parallelAssignments: {},
       parallelAnswers: {},
       reverseSubmissions: [],
@@ -172,6 +174,71 @@ export class SpecialGamesService {
 
     room.players.push({ id: socketId, name, score: 0 });
     await this.redis.saveSpecialRoom(pin, room);
+    return { ok: true, room };
+  }
+
+  async leaveRoom(socketId: string, pinValue: string): Promise<ActionResult> {
+    const pin = normalizePin(pinValue);
+    const room = await this.load(pin);
+    if (!room || room.phase !== 'lobby') {
+      return { ok: false, code: 'LEAVE_FAILED', message: 'تعذّرت المغادرة.' };
+    }
+
+    if (room.hostId === socketId) {
+      this.io.to(room.pin).emit('special:error', {
+        code: 'HOST_LEFT',
+        message: 'غادر المضيف وانتهت الغرفة. أنشئ غرفة جديدة للمتابعة.',
+      });
+      await this.redis.deleteSpecialRoom(room.pin);
+      await this.redis.removeActivePin(room.pin);
+      return {
+        ok: false,
+        code: 'HOST_LEFT',
+        message: 'غادر المضيف وانتهت الغرفة. أنشئ غرفة جديدة للمتابعة.',
+      };
+    }
+
+    room.players = room.players.filter((p) => p.id !== socketId);
+    room.readyPlayerIds = (room.readyPlayerIds ?? []).filter(
+      (id) => id !== socketId,
+    );
+    if (room.players.length === 0) {
+      await this.redis.deleteSpecialRoom(pin);
+      await this.redis.removeActivePin(pin);
+    } else {
+      await this.redis.saveSpecialRoom(pin, room);
+    }
+    return { ok: true, room };
+  }
+
+  async playerReady(socketId: string, pinValue: string): Promise<ActionResult> {
+    const pin = normalizePin(pinValue);
+    const room = await this.load(pin);
+    if (!room) {
+      return {
+        ok: false,
+        code: 'ROOM_NOT_FOUND',
+        message: 'الغرفة غير موجودة.',
+      };
+    }
+    if (room.phase !== 'lobby') {
+      return {
+        ok: false,
+        code: 'GAME_STARTED',
+        message: 'اللعبة بدأت بالفعل.',
+      };
+    }
+    if (!room.players.some((p) => p.id === socketId)) {
+      return {
+        ok: false,
+        code: 'NOT_PLAYER',
+        message: 'انضم إلى الغرفة أولًا.',
+      };
+    }
+    if (!(room.readyPlayerIds ?? []).includes(socketId)) {
+      room.readyPlayerIds = [...(room.readyPlayerIds ?? []), socketId];
+      await this.redis.saveSpecialRoom(pin, room);
+    }
     return { ok: true, room };
   }
 
@@ -265,10 +332,14 @@ export class SpecialGamesService {
       this.io.to(room.pin).emit('special:game:end', {
         mode: room.mode,
         players: rankedPlayers(room.players),
+        durationMs: room.gameStartedAt ? Date.now() - room.gameStartedAt : 0,
       });
       return { ok: true, room };
     }
 
+    if (nextIndex === 0) {
+      room.gameStartedAt = Date.now();
+    }
     room.roundIndex = nextIndex;
     room.parallelAssignments = {};
     room.parallelAnswers = {};
@@ -1049,6 +1120,9 @@ export class SpecialGamesService {
 
     const wasInfiltrator = room.infiltratorId === socketId;
     room.players = room.players.filter((player) => player.id !== socketId);
+    room.readyPlayerIds = (room.readyPlayerIds ?? []).filter(
+      (id) => id !== socketId,
+    );
     room.reverseSubmissions = room.reverseSubmissions.filter(
       (submission) => submission.playerId !== socketId,
     );

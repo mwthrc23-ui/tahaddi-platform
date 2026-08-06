@@ -140,6 +140,7 @@ export class SpecialGamesGateway
       roundIndex: room.roundIndex,
       roundCount: getRoundCount(room.mode),
       players: room.players,
+      readyPlayerIds: room.readyPlayerIds ?? [],
     });
   }
 
@@ -173,6 +174,64 @@ export class SpecialGamesGateway
       roundIndex: result.room.roundIndex,
       roundCount: getRoundCount(result.room.mode),
       players: [...result.room.players].sort((a, b) => b.score - a.score),
+      readyPlayerIds: result.room.readyPlayerIds ?? [],
+    });
+  }
+
+  @SubscribeMessage('special:room:leave')
+  async leaveRoom(
+    @ConnectedSocket() client: SpecialSocket,
+    @MessageBody() payload: { pin?: string },
+  ) {
+    if (!payload?.pin) return;
+    const pin = payload.pin;
+    const result = await this.runLocked(client, pin, () =>
+      this.games.leaveRoom(client.id, pin),
+    );
+    if (!result) return;
+    if (!result.ok) {
+      await client.leave(pin);
+      this.socketRooms.delete(client.id);
+      this.emitError(client, result);
+      return;
+    }
+    await client.leave(pin);
+    this.socketRooms.delete(client.id);
+    this.server.to(pin).emit('special:room:state', {
+      pin: result.room.pin,
+      hostId: result.room.hostId,
+      mode: result.room.mode,
+      phase: result.room.phase,
+      roundIndex: result.room.roundIndex,
+      roundCount: getRoundCount(result.room.mode),
+      players: result.room.players,
+      readyPlayerIds: result.room.readyPlayerIds ?? [],
+    });
+  }
+
+  @SubscribeMessage('special:player:ready')
+  async playerReady(
+    @ConnectedSocket() client: SpecialSocket,
+    @MessageBody() payload: { pin?: string },
+  ) {
+    if (!payload?.pin) return;
+    const result = await this.runLocked(client, payload.pin, () =>
+      this.games.playerReady(client.id, payload.pin!),
+    );
+    if (!result) return;
+    if (!result.ok) {
+      this.emitError(client, result);
+      return;
+    }
+    this.server.to(result.room.pin).emit('special:room:state', {
+      pin: result.room.pin,
+      hostId: result.room.hostId,
+      mode: result.room.mode,
+      phase: result.room.phase,
+      roundIndex: result.room.roundIndex,
+      roundCount: getRoundCount(result.room.mode),
+      players: result.room.players,
+      readyPlayerIds: result.room.readyPlayerIds ?? [],
     });
   }
 
