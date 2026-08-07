@@ -250,6 +250,7 @@
   color: var(--foreground);
   cursor: pointer;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .gc-filter-button-badge {
@@ -350,6 +351,7 @@
   cursor: pointer;
   font-weight: 600;
   transition: background 160ms var(--ease-out);
+  white-space: nowrap;
 }
 
 .gc-chip[data-active='true'] {
