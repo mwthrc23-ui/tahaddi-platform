@@ -101,15 +101,6 @@
 }
 .mafia-role-icon > svg { inline-size: 2.8rem; block-size: 2.8rem; color: #ffd8d8; }
 
-.mafia-private-note {
-  margin-block-start: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border-radius: 0.75rem;
-  background: linear-gradient(90deg, rgba(255, 193, 7, 0.16), rgba(255, 109, 0, 0.08));
-  border-inline-start: 3px solid #ff9800;
-  font-size: 0.95rem;
-  line-height: 1.7;
-}
 .mafia-private-note strong { color: #ffb74d; }
 
 .mafia-kill-flash {
@@ -229,17 +220,6 @@
   box-shadow: 0 0 12px var(--primary);
 }
 
-.mafia-mode-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: 0.75rem;
-  border: 1px dashed color-mix(in srgb, var(--primary) 50%, var(--border));
-  background: color-mix(in srgb, var(--primary) 8%, transparent);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
 
 .mafia-toast {
   position: fixed;
@@ -437,6 +417,15 @@ fieldset.mafia-mode-presets > legend {
   gap: var(--space-2);
   margin-block-end: var(--space-2);
 }
+.mafia-mode-experimental {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: #fcd34d;
+  border: 1px solid color-mix(in srgb, var(--warning) 28%, transparent);
+}
 .mafia-mode-preset ul {
   list-style: none;
   padding: 0;
@@ -601,5 +590,150 @@ fieldset.mafia-mode-presets > legend {
   .mafia-guess-row { grid-template-columns: 1fr; }
   .mafia-guess-select { min-inline-size: 100%; }
   .mafia-guess-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Mode Cards ---------- */
+.mafia-mode-cards-field {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.mafia-mode-cards-field > legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin: 0 0 var(--space-3);
+}
+.mafia-mode-cards-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+/* ---------- Role Reveal ---------- */
+.mafia-reveal-warning-title {
+  font-size: clamp(1.2rem, 3.5vw, 1.6rem);
+  font-weight: 800;
+  margin: var(--space-3) 0 0;
+  text-align: center;
+}
+.mafia-reveal-shield {
+  color: color-mix(in srgb, var(--primary) 70%, var(--foreground));
+  display: grid;
+  place-items: center;
+  animation: mafia-reveal-shield-pulse 2s ease-in-out infinite;
+}
+@keyframes mafia-reveal-shield-pulse {
+  0%, 100% { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--primary) 40%, transparent)); }
+  50% { filter: drop-shadow(0 0 20px color-mix(in srgb, var(--primary) 70%, transparent)); }
+}
+.mafia-reveal-btn {
+  inline-size: min(20rem, 90vw);
+  margin-inline: auto;
+}
+.mafia-reveal-card-details {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-start: var(--space-4);
+  text-align: start;
+  inline-size: 100%;
+}
+.mafia-reveal-detail-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--space-1);
+}
+.mafia-reveal-detail-label svg { inline-size: 0.85rem; block-size: 0.85rem; }
+.mafia-reveal-detail-text {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--foreground);
+  line-height: 1.65;
+}
+
+/* ---------- Phase Header ---------- */
+.mafia-phase-header {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+}
+.mafia-phase-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.mafia-phase-header-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.mafia-round-label {
+  font-size: 0.88rem;
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+/* ---------- Lobby Player ---------- */
+.mafia-lobby-player-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-block-start: 0.2rem;
+}
+.mafia-lobby-player-actions { flex-shrink: 0; }
+
+/* ---------- Primary Task ---------- */
+.mafia-primary-task-header svg { inline-size: 1.2rem; block-size: 1.2rem; color: var(--primary); flex-shrink: 0; }
+.mafia-primary-task-body h3 {
+  font-size: clamp(1rem, 3vw, 1.25rem);
+  margin: 0 0 var(--space-3);
+  line-height: 1.4;
+}
+.mafia-mission-steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding-inline-start: 1.4rem;
+}
+.mafia-mission-steps li { color: var(--muted-foreground); font-size: 0.9rem; line-height: 1.6; }
+.mafia-mission-steps li::marker { color: var(--primary); font-weight: 700; }
+.mafia-mission-next {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: var(--space-3) 0 0;
+}
+
+/* ---------- Player Picker ---------- */
+/* Removed duplicate .mafia-player-pick-selected rules.
+   Selection state is handled by .mafia-player-pick:has(input[type='radio']:checked) in mafia-design-system.css. */
+
+/* ---------- Vote Panel ---------- */
+.mafia-vote-current {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--muted-foreground);
+  margin: var(--space-3) 0 0;
+}
+.mafia-vote-current strong { color: var(--foreground); }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 640px) {
+  .mafia-mode-cards-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 375px) {
+  .mafia-phase-header-row { flex-direction: column; align-items: flex-start; }
 }
 

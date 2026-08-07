@@ -28,7 +28,7 @@ test('تعرض الصفحة الرئيسية التصميم المعتمد وم�
 test('يبقي مدخل لعبة القاتل واضحًا ومتجاوبًا', async ({ page }) => {
   await page.goto('/mafia');
 
-  await expect(page.getByRole('heading', { level: 1, name: 'من هو القاتل؟' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'القاتل' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'ادخل برمز الغرفة' })).toBeVisible();
   await expect(page.getByLabel('اسم اللاعب')).toBeVisible();
   await expect(page.getByLabel('رمز الغرفة')).toBeVisible();

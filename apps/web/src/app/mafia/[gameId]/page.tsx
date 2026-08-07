@@ -1,7 +1,6 @@
 import {
   MessageCircle,
   Play,
-  ShieldCheck,
   SkipForward,
   Users,
   Volume2,
@@ -11,19 +10,22 @@ import { notFound } from 'next/navigation';
 import {
   advanceMafiaPhase,
   deleteMafiaMessage,
-  moderateMafiaParticipant,
   startMafiaGame,
   toggleMafiaChat,
 } from '@/app/mafia/actions';
 import { SiteLayout } from '@/components/layout';
 import { RoomPoller } from '@/components/live';
-import { MafiaPhaseTimer } from '@/components/mafia/mafia-phase-timer';
+import {
+  MafiaLobbyPlayer,
+  MafiaPhaseHeader,
+} from '@/components/mafia';
 import { RoomCode } from '@/components/quiz';
 import { Badge, Button, Card, EmptyState } from '@/components/ui';
+import { cn } from '@/lib/utils';
 import { getPrismaClient } from '@/lib/auth/prisma';
 import { requireActiveUser } from '@/lib/auth/session';
 import { mafiaPhaseGuides, type MafiaPhaseName } from '@/lib/mafia/guidance';
-import { mafiaPhaseLabels, mafiaRoleLabels, type MafiaRoleName } from '@/lib/mafia/rules';
+import { mafiaPhaseLabels } from '@/lib/mafia/rules';
 
 export default async function MafiaHostPage({
   params,
@@ -52,6 +54,7 @@ export default async function MafiaHostPage({
       nightSeconds: true,
       votingSeconds: true,
       maxPlayers: true,
+      killerCount: true,
       participants: {
         orderBy: { joinedAt: 'asc' },
         select: { id: true, displayName: true, role: true, status: true, isMuted: true },
@@ -80,35 +83,52 @@ export default async function MafiaHostPage({
           ? game.votingSeconds
           : null;
 
+  const phaseGuide = mafiaPhaseGuides[phase];
+
+  const isActiveGame = game.status !== 'FINISHED';
+  const hostParticipants = game.participants.map((participant) => ({
+    id: participant.id,
+    displayName: participant.displayName,
+    status: participant.status,
+    isMuted: participant.isMuted,
+    ...(isActiveGame ? {} : { role: participant.role }),
+  }));
+
+  const hostMessages = game.messages.filter((message) => {
+    if (message.channel === 'SYSTEM') return true;
+    if (message.channel === 'PUBLIC') return true;
+    if (!isActiveGame) return true;
+    return false;
+  });
+
   return (
     <SiteLayout user={{ name: user.name }}>
-      <main className="section mafia-page">
-        <div className="container">
-          {game.status !== 'FINISHED' && <RoomPoller endpoint={`/api/mafia/${game.id}/tick`} />}
-          <div className="page-header">
-            <div>
-              <span className="eyebrow">
-                <ShieldCheck aria-hidden="true" />
-                لوحة المضيف
-              </span>
-              <h1>{mafiaPhaseLabels[game.status]}</h1>
-              <p>
-                الجولة {game.currentRound.toLocaleString('ar-SA')} ·{' '}
-                {game.autoMode ? 'إدارة تلقائية مع تجاوز يدوي' : 'إدارة يدوية'}
-              </p>
-            </div>
-            <Badge className="badge-live">{game.roomCode}</Badge>
-          </div>
-
-          {game.status !== 'LOBBY' && game.status !== 'FINISHED' && (
-            <MafiaPhaseTimer
-              phase={phase}
-              phaseEndsAt={game.phaseEndsAt?.toISOString() ?? null}
-              durationSeconds={phaseDuration}
-              autoMode={game.autoMode}
-              tickEndpoint={`/api/mafia/${game.id}/tick`}
-            />
+      <main className="section mafia-page mafia-surface-lobby">
+        <div className="container mafia-game-shell">
+          {game.status !== 'FINISHED' && (
+            <RoomPoller endpoint={`/api/mafia/${game.id}/tick`} />
           )}
+
+          <MafiaPhaseHeader
+            phase={phase}
+            currentRound={game.currentRound}
+            phaseEndsAt={game.phaseEndsAt?.toISOString() ?? null}
+            durationSeconds={phaseDuration}
+            autoMode={game.autoMode}
+            tickEndpoint={`/api/mafia/${game.id}/tick`}
+          />
+
+          <div className="mafia-lobby-room-row">
+            <div className="mafia-room-code-block">
+              <span className="mafia-room-code" aria-label="رمز الغرفة">
+                {game.roomCode}
+              </span>
+              <RoomCode code={game.roomCode} url={`/join/${game.roomCode}`} />
+            </div>
+            <Badge className="mafia-phase-badge mafia-phase-badge-lobby">
+              {mafiaPhaseLabels[game.status]}
+            </Badge>
+          </div>
 
           {query.error === 'players' && (
             <p className="text-danger" role="alert">
@@ -116,91 +136,56 @@ export default async function MafiaHostPage({
             </p>
           )}
 
-          <div className="card-grid two mafia-host-grid">
-            <div>
-              <RoomCode code={game.roomCode} url={`/join/${game.roomCode}`} />
-              <Card>
-                <div className="inline-between">
-                  <div>
-                    <h2>التحكم في المرحلة</h2>
-                    <p className="muted">{mafiaPhaseGuides[phase].summary}</p>
-                  </div>
-                  <Badge>{mafiaPhaseLabels[game.status]}</Badge>
-                </div>
-                <div className="mafia-host-task">
-                  <strong>مهمة المضيف</strong>
-                  <p>{mafiaPhaseGuides[phase].hostTask}</p>
-                  <span>التالي: {mafiaPhaseGuides[phase].next}</span>
-                </div>
-                <div className="dashboard-actions">
-                  {game.status === 'LOBBY' ? (
-                    <form action={startMafiaGame}>
-                      <input type="hidden" name="gameId" value={game.id} />
-                      <Button type="submit" disabled={game.participants.length < 5}>
-                        <Play aria-hidden="true" />
-                        بدء اللعبة
-                      </Button>
-                    </form>
-                  ) : game.status !== 'FINISHED' ? (
-                    <form action={advanceMafiaPhase}>
-                      <input type="hidden" name="gameId" value={game.id} />
-                      <Button type="submit" variant="secondary">
-                        <SkipForward aria-hidden="true" />
-                        المرحلة التالية الآن
-                      </Button>
-                    </form>
-                  ) : (
-                    <p className="text-success">
-                      الفائز: {game.winner === 'KILLERS' ? 'القتلة' : 'المواطنون'}
-                    </p>
-                  )}
-                  <form action={toggleMafiaChat}>
-                    <input type="hidden" name="gameId" value={game.id} />
-                    <input type="hidden" name="enabled" value={String(!game.chatEnabled)} />
-                    <Button type="submit" variant="outline">
-                      {game.chatEnabled ? <VolumeX /> : <Volume2 />}
-                      {game.chatEnabled ? 'إيقاف الدردشة' : 'تشغيل الدردشة'}
-                    </Button>
-                  </form>
-                </div>
-              </Card>
-            </div>
-
-            <Card>
-              <div className="inline-between">
-                <h2>
-                  <Users aria-hidden="true" />
-                  اللاعبون
-                </h2>
-                <Badge>
-                  {game.participants.length.toLocaleString('ar-SA')} /{' '}
-                  {game.maxPlayers.toLocaleString('ar-SA')}
-                </Badge>
+          {game.status === 'LOBBY' && (
+            <div className="mafia-lobby-composition">
+              <div className="mafia-composition-header">
+                <h3>التكوين المتوقع</h3>
               </div>
+              <div className="mafia-composition-roles">
+                {Array.from({ length: game.killerCount }).map((_, i) => (
+                  <span key={`k-${i}`} className="mafia-role-chip mafia-role-chip-killer">
+                    قاتل
+                  </span>
+                ))}
+                <span className="mafia-role-chip mafia-role-chip-special">محقق</span>
+                <span className="mafia-role-chip mafia-role-chip-special">طبيب</span>
+                {game.maxPlayers >= 7 && (
+                  <span className="mafia-role-chip mafia-role-chip-special">حارس</span>
+                )}
+                {game.maxPlayers >= 8 && (
+                  <span className="mafia-role-chip mafia-role-chip-special">شاهد</span>
+                )}
+                <span className="mafia-role-chip mafia-role-chip-civilian">
+                  {game.maxPlayers - game.killerCount - (game.maxPlayers >= 7 ? 3 : 2) - (game.maxPlayers >= 8 ? 1 : 0)} مواطن
+                </span>
+              </div>
+            </div>
+          )}
+
+          <Card className="mafia-lobby-players-card">
+            <div className="mafia-card-header">
+              <h2>
+                <Users aria-hidden="true" />
+                اللاعبون
+              </h2>
+              <Badge>
+                {game.participants.length.toLocaleString('ar-SA')} / {game.maxPlayers.toLocaleString('ar-SA')}
+              </Badge>
+            </div>
+            <div className="mafia-card-body">
               {game.participants.length ? (
-                <div className="mafia-player-list">
-                  {game.participants.map((participant) => (
-                    <div className="mafia-player-row" key={participant.id}>
-                      <div>
-                        <strong>{participant.displayName}</strong>
-                        <span>
-                          {participant.role
-                            ? mafiaRoleLabels[participant.role as MafiaRoleName]
-                            : 'ينتظر توزيع الدور'}
-                          {' · '}
-                          {participant.status === 'ALIVE' ? 'حي' : 'مستبعد'}
-                        </span>
-                      </div>
-                      <form action={moderateMafiaParticipant}>
-                        <input type="hidden" name="gameId" value={game.id} />
-                        <input type="hidden" name="participantId" value={participant.id} />
-                        <input type="hidden" name="muted" value={String(!participant.isMuted)} />
-                        <Button type="submit" size="sm" variant="ghost">
-                          {participant.isMuted ? <Volume2 /> : <VolumeX />}
-                          {participant.isMuted ? 'إلغاء الكتم' : 'كتم'}
-                        </Button>
-                      </form>
-                    </div>
+                <div className="mafia-player-grid">
+                  {hostParticipants.map((participant) => (
+                    <MafiaLobbyPlayer
+                      key={participant.id}
+                      participant={{
+                        id: participant.id,
+                        displayName: participant.displayName,
+                        role: participant.role,
+                        status: participant.status,
+                        isMuted: participant.isMuted,
+                      }}
+                    />
                   ))}
                 </div>
               ) : (
@@ -209,40 +194,121 @@ export default async function MafiaHostPage({
                   description="شارك الرمز أو رمز QR حتى ينضم خمسة لاعبين على الأقل."
                 />
               )}
+            </div>
+          </Card>
+
+          {game.status === 'LOBBY' && (
+            <form action={startMafiaGame} className="mafia-start-form">
+              <input type="hidden" name="gameId" value={game.id} />
+              <Button
+                type="submit"
+                size="lg"
+                fullWidth
+                disabled={game.participants.length < 5}
+              >
+                <Play aria-hidden="true" />
+                بدء اللعبة
+                {game.participants.length < 5 && (
+                  <span className="mafia-start-hint">
+                    (تحتاج ٥ لاعبين على الأقل)
+                  </span>
+                )}
+              </Button>
+            </form>
+          )}
+
+          {game.status !== 'LOBBY' && game.status !== 'FINISHED' && (
+            <Card className="mafia-host-controls-card">
+              <div className="mafia-card-header">
+                <h2>التحكم في المرحلة</h2>
+                <Badge>{mafiaPhaseLabels[game.status]}</Badge>
+              </div>
+              <div className="mafia-card-body">
+                <p className="mafia-text-muted">{phaseGuide.summary}</p>
+                <div className="mafia-host-task">
+                  <strong>مهمتك</strong>
+                  <p>{phaseGuide.hostTask}</p>
+                  <span>التالي: {phaseGuide.next}</span>
+                </div>
+                <form action={advanceMafiaPhase} className="mafia-host-actions">
+                  <input type="hidden" name="gameId" value={game.id} />
+                  <Button type="submit" variant="secondary" fullWidth>
+                    <SkipForward aria-hidden="true" />
+                    المرحلة التالية الآن
+                  </Button>
+                </form>
+                <form action={toggleMafiaChat} className="mafia-host-actions">
+                  <input type="hidden" name="gameId" value={game.id} />
+                  <input type="hidden" name="enabled" value={String(!game.chatEnabled)} />
+                  <Button type="submit" variant="outline" fullWidth>
+                    {game.chatEnabled ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
+                    {game.chatEnabled ? 'إيقاف الدردشة' : 'تشغيل الدردشة'}
+                  </Button>
+                </form>
+              </div>
             </Card>
-          </div>
+          )}
+
+          {game.status === 'FINISHED' && (
+            <Card className="mafia-finished-card">
+              <div className="mafia-card-body" style={{ textAlign: 'center' }}>
+                <Badge className="mafia-phase-badge mafia-phase-badge-finished">
+                  انتهت اللعبة
+                </Badge>
+                <h2 style={{ margin: 'var(--space-3) 0 0' }}>
+                  الفائز: {game.winner === 'KILLERS' ? 'القتلة' : 'المواطنون'}
+                </h2>
+              </div>
+            </Card>
+          )}
 
           <Card className="mafia-chat-card">
-            <div className="inline-between">
+            <div className="mafia-card-header">
               <h2>
                 <MessageCircle aria-hidden="true" />
                 سجل الغرفة
               </h2>
-              <Badge>{game.chatEnabled ? 'الدردشة مفعلة' : 'الدردشة متوقفة'}</Badge>
+              <Badge>{game.chatEnabled ? 'الدردشة مفعلة' : 'متوقفة'}</Badge>
             </div>
-            <div className="mafia-messages">
-              {[...game.messages].reverse().map((message) => (
-                <div className="mafia-message" key={message.id}>
-                  <div>
-                    <strong>{message.participant?.displayName ?? 'النظام'}</strong>
-                    <span>
-                      {message.channel} ·{' '}
-                      {message.createdAt.toLocaleTimeString('ar-SA', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
+            <div className="mafia-card-body">
+              <div className="mafia-messages" role="log" aria-label="سجل الرسائل">
+                {[...hostMessages].reverse().map((message) => (
+                  <div
+                    className={cn(
+                      'mafia-chat-message',
+                      message.channel === 'SYSTEM' && 'mafia-chat-message-system',
+                      message.channel === 'KILLERS' && 'mafia-chat-message-killers',
+                      message.channel === 'GHOSTS' && 'mafia-chat-message-ghosts',
+                    )}
+                    key={message.id}
+                  >
+                    <div className="mafia-chat-message-head">
+                      <span className="mafia-chat-message-author">
+                        {message.participant?.displayName ?? 'النظام'}
+                      </span>
+                      <span className="mafia-chat-message-time">
+                        {message.createdAt.toLocaleTimeString('ar-SA', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                      {message.channel !== 'PUBLIC' && message.channel !== 'SYSTEM' && (
+                        <span className="mafia-chat-message-channel">
+                          {message.channel === 'KILLERS' ? 'قناة القتلة' : 'قناة المستبعدين'}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mafia-chat-message-body">{message.body}</p>
+                    <form action={deleteMafiaMessage} style={{ marginBlockStart: 'var(--space-2)' }}>
+                      <input type="hidden" name="gameId" value={game.id} />
+                      <input type="hidden" name="messageId" value={message.id} />
+                      <Button type="submit" size="sm" variant="ghost">
+                        حذف
+                      </Button>
+                    </form>
                   </div>
-                  <p>{message.body}</p>
-                  <form action={deleteMafiaMessage}>
-                    <input type="hidden" name="gameId" value={game.id} />
-                    <input type="hidden" name="messageId" value={message.id} />
-                    <Button type="submit" size="sm" variant="ghost">
-                      حذف
-                    </Button>
-                  </form>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </Card>
         </div>
