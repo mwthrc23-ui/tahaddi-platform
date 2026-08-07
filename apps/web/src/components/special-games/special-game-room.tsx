@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { SPECIAL_GAME_META, type SpecialGameMode } from '@tahaddi/domain';
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Button, ButtonLink, Card, Input } from '@/components/ui';
 import {
   GAME_GUIDES,
@@ -152,14 +152,12 @@ function InfiltratorRoleReveal({
 function InfiltratorEndScreen({
   players,
   durationMs,
-  mode,
   activeMode,
   onReplay,
   isHost,
 }: {
   players: Player[];
   durationMs: number;
-  mode: SpecialGameMode;
   activeMode: SpecialGameMode;
   onReplay?: () => void;
   isHost: boolean;
@@ -297,7 +295,6 @@ export function SpecialGameRoom({
       : '';
   const isHost = Boolean(room && socketId === room.hostId);
   const currentSocketId = socketId;
-  const minimumReached = (room?.players.length ?? 0) >= meta.minimumPlayers;
   const activeMode = room?.mode ?? mode;
   const activeMeta = SPECIAL_GAME_META[activeMode];
 
@@ -1070,7 +1067,6 @@ export function SpecialGameRoom({
             <InfiltratorEndScreen
               players={gameEnd?.players ?? room.players}
               durationMs={gameEnd?.durationMs ?? 0}
-              mode={mode}
               activeMode={activeMode}
               isHost={isHost}
               onReplay={

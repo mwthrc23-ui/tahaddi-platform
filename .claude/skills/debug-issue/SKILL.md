@@ -21,6 +21,14 @@ Use the knowledge graph to systematically trace and debug issues.
 - Look at affected flows to find the entry point that triggers the bug.
 - Recent changes are the most common source of new issues.
 
+## Tahaddi Debug Checklist
+
+- For build or lifecycle failures, inspect database env alignment first: `.env`, `.env.example`, `compose.yaml`, and `prisma.config.ts`.
+- For realtime issues, trace the flow across `apps/web`, `packages/contracts`, `packages/domain`, and `apps/realtime` instead of debugging one layer in isolation.
+- For host/join/play regressions, verify server-owned time, state versioning, and idempotent identifiers before suspecting the UI.
+- For visual regressions, confirm RTL, token usage, and alignment with `design.md` before treating them as isolated CSS bugs.
+- Use `debug-lifecycle-exit-code.md` and `docs/architecture.md` as project-specific context when the issue touches infra or runtime flow.
+
 ## Token Efficiency Rules
 - ALWAYS start with `get_minimal_context(task="<your task>")` before any other graph tool.
 - Use `detail_level="minimal"` on all calls. Only escalate to "standard" when minimal is insufficient.

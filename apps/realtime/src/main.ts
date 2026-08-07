@@ -1,15 +1,23 @@
 import { NestFactory } from '@nestjs/core';
+import type { Express, Request, Response } from 'express';
 import type { Server as HttpServer } from 'node:http';
 import { AppModule } from './app.module';
+import { AppService } from './app.service.js';
 import { getAllowedWebOrigins } from './config/web-origins.js';
 import { RedisIoAdapter } from './redis-io.adapter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const appService = app.get(AppService);
   const allowedOrigins = getAllowedWebOrigins();
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
+  });
+  const httpAdapter = app.getHttpAdapter();
+  const server = httpAdapter.getInstance() as Express;
+  server.get('/health', (_req: Request, res: Response) => {
+    res.json(appService.getHealth());
   });
   app.setGlobalPrefix('realtime');
   app.enableShutdownHooks();

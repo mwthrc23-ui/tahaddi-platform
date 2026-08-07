@@ -66,6 +66,7 @@ export function GameCard({
     <article
       className="gc-card"
       data-kind={game.kind}
+      data-view={view}
       style={
         {
           '--game-accent': game.accent,

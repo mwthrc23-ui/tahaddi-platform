@@ -15,6 +15,7 @@ next-env.d.ts
 .agents/
 .codex/
 .serena/
+.dbg/
 .turbo/
 .vercel/
 /packages/database/src/generated/

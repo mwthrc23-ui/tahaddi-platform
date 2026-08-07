@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Gamepad2, Search as SearchIcon, Sparkles, Users, Zap } from 'lucide-react';
+import { Gamepad2, Search as SearchIcon, Sparkles, Zap } from 'lucide-react';
 import { useGameCatalog } from './use-game-catalog';
 import { GameSearch } from './game-search';
 import { GameFilters } from './game-filters';
@@ -233,22 +233,20 @@ function GameCardWrap({
 }: {
   game: Parameters<typeof GameCard>[0]['game'];
   index: number;
-  view: 'grid' | 'list';
+  view: Parameters<typeof GameCard>[0]['view'];
   prefetch: boolean;
 }) {
   return (
-    <LinkWrap href={`/games/${game.mode}`} prefetch={prefetch}>
+    <LinkWrap prefetch={prefetch}>
       <GameCard game={game} index={index} view={view} />
     </LinkWrap>
   );
 }
 
 function LinkWrap({
-  href,
   prefetch,
   children,
 }: {
-  href: string;
   prefetch: boolean;
   children: React.ReactNode;
 }) {

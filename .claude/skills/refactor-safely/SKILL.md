@@ -22,6 +22,14 @@ Use the knowledge graph to plan and execute refactoring with confidence.
 - Use `get_affected_flows_tool` to ensure no critical paths are broken.
 - Run `find_large_functions` to identify decomposition targets.
 
+## Tahaddi Refactor Guardrails
+
+- Refactor contract and domain code together when the change affects live-session payloads, validation, or scoring rules.
+- Preserve server authority around time, state transitions, and accepted answers; do not move critical trust decisions into the client.
+- Avoid mixing visual cleanup with behavioral refactors in `apps/web` when the page is part of host/join/live flows.
+- Treat `prisma` schema edits, migration naming, and database env changes as separate, reviewable steps.
+- After refactors, run the smallest relevant checks first for the touched area, then expand only if needed.
+
 ## Token Efficiency Rules
 - ALWAYS start with `get_minimal_context(task="<your task>")` before any other graph tool.
 - Use `detail_level="minimal"` on all calls. Only escalate to "standard" when minimal is insufficient.

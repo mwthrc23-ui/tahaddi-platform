@@ -9,6 +9,7 @@
   },
   "scripts": {
     "postinstall": "prisma generate",
+    "setup:env": "node scripts/setup-local-env.mjs",
     "dev": "turbo dev",
     "dev:web": "pnpm --filter @tahaddi/web dev",
     "dev:realtime": "pnpm --filter @tahaddi/realtime dev",

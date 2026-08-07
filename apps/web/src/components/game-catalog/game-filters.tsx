@@ -30,22 +30,22 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <section
-      className="gc-filter-section"
-      aria-expanded={open}
-      aria-labelledby={id}
-    >
+    <section className="gc-filter-section" aria-labelledby={id}>
       <h4>
         <span id={id}>{title}</span>
         <button
           type="button"
           aria-label={open ? 'طي القسم' : 'فتح القسم'}
+          aria-expanded={open}
+          aria-controls={`${id}-body`}
           onClick={() => setOpen((v) => !v)}
         >
           {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
       </h4>
-      <div className="gc-filter-section-body">{children}</div>
+      <div id={`${id}-body`} className="gc-filter-section-body" hidden={!open}>
+        {children}
+      </div>
     </section>
   );
 }

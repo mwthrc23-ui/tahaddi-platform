@@ -10,13 +10,13 @@
 
 ## بدء التشغيل محليًا
 
-1. انسخ `.env.example` إلى `.env` وعدّل القيم المحلية عند الحاجة.
+1. أنشئ ملف البيئة المحلي عبر `pnpm setup:env` أو انسخ `.env.example` إلى `.env` يدويًا.
 2. ثبّت الحزم: `pnpm install`.
 3. شغّل PostgreSQL وRedis: `pnpm infra:up`.
 4. تحقق من Prisma: `pnpm db:validate` ثم `pnpm db:generate`.
 5. شغّل التطبيقين: `pnpm dev`.
 
-الواجهة تعمل افتراضيًا على `http://localhost:3000`، وفحص خدمة الزمن الحقيقي على `http://localhost:3001/health`.
+الواجهة تعمل افتراضيًا على `http://localhost:3000`، وفحص خدمة الزمن الحقيقي على `http://localhost:3001/health` مع بقاء المسار المسبق `http://localhost:3001/realtime/health` متاحًا.
 
 صفحة مرجع الواجهة متاحة في `/design-system`. يبدأ مسار الجلسة المباشرة من `/host` بعد تسجيل دخول المضيف، ويفضّل Google OAuth عند توفره. ينضم اللاعب كزائر دون حساب من `/join` أو رابط دعوة مثل `/join/[code]`، ثم ينتقل إلى `/live/[sessionId]/play`.
 

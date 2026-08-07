@@ -180,7 +180,6 @@ export function useGameCatalog() {
   const applySuggestion = useCallback(
     (s: GameSearchSuggestion) => {
       if (s.type === 'game') {
-        const id = s.id.replace(/^game:/, '');
         setFilterPatch({ query: s.label });
       } else if (s.type === 'category') {
         const cat = s.label.replace(/^التصنيف:\s*/, '').trim();
