@@ -17,7 +17,7 @@ function RatingStars({ value }: { value: number }) {
   const half = value - full >= 0.5;
   const empty = 5 - full - (half ? 1 : 0);
   return (
-    <span className="gc-rating" aria-label={`تقييم ${value.toFixed(1)} من 5`}>
+    <span className="gc-rating" role="img" aria-label={`تقييم ${value.toFixed(1)} من 5`}>
       {Array.from({ length: full }).map((_, i) => (
         <Star key={`f-${i}`} fill="currentColor" aria-hidden="true" />
       ))}
@@ -139,7 +139,7 @@ export function GameCard({
           style={isDisabled ? { pointerEvents: 'none', opacity: 0.55 } : undefined}
         >
           {cta}
-          <ArrowRight aria-hidden="true" size={14} />
+          <ArrowRight className="cc-btn__chevron" dir="ltr" aria-hidden="true" size={14} />
         </Link>
       </div>
     </article>
