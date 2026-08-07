@@ -77,7 +77,7 @@ export function GameCard({
       }
     >
       <div className="gc-card-head">
-        <span className="gc-card-index" aria-hidden="true" dir="ltr">
+        <span className="gc-card-index game-card__index" aria-hidden="true" dir="ltr">
           {String(index + 1).padStart(2, '0')}
         </span>
         <span className="gc-card-kind" data-kind={game.kind}>
@@ -99,7 +99,7 @@ export function GameCard({
           {game.title}
         </h3>
         <p className="gc-card-desc">{game.description}</p>
-        <div className="gc-meta-row">
+        <div className="gc-meta-row game-card__meta">
           {game.requiresRealtime ? (
             <span className="gc-meta-chip" data-realtime="true">
               <Wifi aria-hidden="true" size={12} />

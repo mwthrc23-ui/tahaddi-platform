@@ -20,7 +20,7 @@ import {
 } from './game-catalog-types';
 
 const SEARCH_DEBOUNCE_MS = 160;
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 200;
 
 type FilterChangeDelta =
   | Partial<GameFilterState>

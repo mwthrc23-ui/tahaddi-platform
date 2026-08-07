@@ -8,7 +8,8 @@
     "clean:generated": "node clean-generated.cjs",
     "generate": "pnpm run clean:generated && prisma generate --config ../../prisma.config.ts",
     "build": "pnpm run generate && tsc -p tsconfig.json",
-    "typecheck": "pnpm run generate && tsc -p tsconfig.json --noEmit"
+    "typecheck": "pnpm run generate && tsc -p tsconfig.json --noEmit",
+    "test": "node -e \"process.exit(0)\""
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

@@ -46,7 +46,10 @@ function GameCatalogShell({ sessionUserName }: { sessionUserName: string | null 
               <Sparkles aria-hidden="true" size={16} />
               {formatArabicModeCount(catalog.allGames.length)} وضع لعب — RTL 100%
             </span>
-            <h1 className="gc-hero-title">اكتشف وتصفّح كل ألعاب تحدّي</h1>
+            <h1 className="gc-hero-title">اختر قانون الجولة</h1>
+            <p className="gc-hero-desc" style={{ marginBottom: '0.3rem' }}>
+              اختر وضع اللعب، ثم افتح الغرفة وشارك رمز الدعوة — أو ابدأ تحديًا فوريًا من جهازك بلا حساب.
+            </p>
             <p className="gc-hero-desc">
               استخدم الفلاتر متعددة الأبعاد للعثور على التحدي المناسب: غرف جماعية بث لحظي أو تحديات
               فورية من جهازك، مع اقتراحات ذكية للبحث وترتيبات متقدّمة حسب الشعبية والنشاط والتقييم.
@@ -206,22 +209,35 @@ function GameCatalogShell({ sessionUserName }: { sessionUserName: string | null 
               </div>
             ) : (
               <>
-                <div
-                  className={isGrid ? 'gc-grid' : 'gc-list'}
-                  role="list"
-                  aria-label="قائمة الألعاب"
-                >
-                  {catalog.visibleGames.map((game, i) => (
-                    <div role="listitem" key={game.id} style={{ display: 'contents' }}>
-                      <GameCardWrap
-                        game={game}
-                        index={i}
-                        view={catalog.filters.view}
-                        prefetch={prefetch.has(game.id)}
-                      />
-                    </div>
-                  ))}
-                </div>
+                {(['room', 'instant', 'upcoming'] as const).map((kind) => {
+                  const group = catalog.visibleGames.filter((g) => g.kind === kind);
+                  if (!group.length) return null;
+                  const label = kind === 'room' ? 'الألعاب الجماعية' : kind === 'instant' ? 'الألعاب الفورية' : 'الألعاب القادمة';
+                  return (
+                    <section key={kind} style={{ marginBottom: '2.5rem' }}>
+                      <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem', color: 'var(--foreground)' }}>{label}</h2>
+                      <div
+                        className={isGrid ? 'gc-grid' : 'gc-list'}
+                        role="list"
+                        aria-label={label}
+                      >
+                        {group.map((game, i) => {
+                          const globalIndex = catalog.visibleGames.findIndex((g) => g.id === game.id);
+                          return (
+                            <div role="listitem" key={game.id} style={{ display: 'contents' }}>
+                              <GameCardWrap
+                                game={game}
+                                index={globalIndex >= 0 ? globalIndex : i}
+                                view={catalog.filters.view}
+                                prefetch={prefetch.has(game.id)}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  );
+                })}
                 <div
                   className="gc-floating-sentinel"
                   ref={catalog.sentinelRef as unknown as React.RefObject<HTMLDivElement>}

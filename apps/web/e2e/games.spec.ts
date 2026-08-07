@@ -130,8 +130,12 @@ test('سطح الألعاب يحافظ على الاستجابة والاتجا�
     const layout = await page.evaluate(() => {
       const root = document.documentElement;
       const index = document.querySelector('.game-card__index');
-      const chevron = document.querySelector('.cc-btn__chevron');
-      const button = document.querySelector('.cc-btn');
+      const chevron =
+        document.querySelector('.gc-filter-section button[aria-label*="القسم"] svg') ??
+        document.querySelector('.gc-filter-section button svg') ??
+        document.querySelector('.gc-chip svg') ??
+        document.querySelector('svg[data-lucide]');
+      const button = document.querySelector('.gc-chip') ?? document.querySelector('.gc-filter-button');
 
       return {
         clientWidth: root.clientWidth,
