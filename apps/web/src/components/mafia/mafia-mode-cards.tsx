@@ -14,13 +14,12 @@ const MODE_META: Record<MafiaGameModeId, { icon: typeof Zap; color: string }> = 
   CHAOS: { icon: Zap, color: '#f472b6' },
 };
 
-export function MafiaModeCards({ name, onSelect }: { name: string; onSelect: (id: MafiaGameModeId) => void }) {
+export function MafiaModeCards({ name }: { name: string }) {
   const radioName = useId();
   const [selected, setSelected] = useState<MafiaGameModeId>('CLASSIC');
 
   const handleChange = (id: MafiaGameModeId) => {
     setSelected(id);
-    onSelect(id);
     syncFormFields(id);
   };
 

@@ -76,7 +76,7 @@ export default async function MafiaPage() {
                 <h2>أنشئ غرفة قاتل</h2>
                 {session?.user ? (
                   <form action={createMafiaGame} className="stack-form" id="mafia-create-form">
-                    <MafiaModeCards name="modeId" onSelect={() => {}} />
+                    <MafiaModeCards name="modeId" />
 
                     <MafiaCompositionPreview
                       maxPlayers={12}
