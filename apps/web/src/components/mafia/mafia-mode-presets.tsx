@@ -93,14 +93,17 @@ export function MafiaModePresets() {
                   });
                 }}
               />
-              <div className="mafia-mode-preset-head">
-                <strong>{mode.label}</strong>
-                <Badge>
-                  {mode.timeMultiplier === 1
-                    ? 'وقت عادي'
-                    : `سرعة ${mode.timeMultiplier < 1 ? 'أسرع' : 'أبطأ'}`}
-                </Badge>
-              </div>
+               <div className="mafia-mode-preset-head">
+                 <strong>{mode.label}</strong>
+                 <Badge>
+                   {mode.timeMultiplier === 1
+                     ? 'وقت عادي'
+                     : `سرعة ${mode.timeMultiplier < 1 ? 'أسرع' : 'أبطأ'}`}
+                 </Badge>
+                 {mode.experimental && (
+                   <span className="mafia-mode-experimental">تجريبي</span>
+                 )}
+               </div>
               <p className="muted">{mode.tagline}</p>
               <ul>
                 {mode.features.slice(0, 2).map((f) => (

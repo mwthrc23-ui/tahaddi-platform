@@ -27,6 +27,7 @@ export type MafiaGameMode = {
   tagline: string;
   timeMultiplier: number;
   killerMultiplier: number;
+  experimental?: boolean;
   features: readonly string[];
 };
 
@@ -77,10 +78,10 @@ export const MAFIA_GAME_MODES: Record<MafiaGameModeId, MafiaGameMode> = {
     tagline: 'الغموض تام: لا أدلة واضحة حتى النهاية.',
     timeMultiplier: 1,
     killerMultiplier: 1.1,
+    experimental: true,
     features: [
-      'بطاقة الدور تظهر لك بعد الإقصاء الأول',
-      'نتائج التحقيق تظهر بشكل ملخبط كاملاً',
-      'اسماء المستبعدين تكشف في النهاية فقط',
+      'تجربة غامضة',
+      'قواعد خاصة بالوضع',
     ] as const,
   },
   ASSASSIN: {
@@ -91,10 +92,10 @@ export const MAFIA_GAME_MODES: Record<MafiaGameModeId, MafiaGameMode> = {
     tagline: 'فارسالي واحد ضد قرية بأسرها. من سينتصر؟',
     timeMultiplier: 1,
     killerMultiplier: 0.6,
+    experimental: true,
     features: [
-      'قاتل واحد بمهارات خاصة',
-      'إذا كشف القاتل في أول جولتين → انتهت اللعبة فورًا',
-      'مواطنون أكثر قوة (تحقيق إضافي كل جولة)',
+      'قاتل واحد فقط',
+      'ضغط إضافي على المواطنين',
     ] as const,
   },
   CHAOS: {
@@ -105,10 +106,10 @@ export const MAFIA_GAME_MODES: Record<MafiaGameModeId, MafiaGameMode> = {
     tagline: 'كل شيء يمكن أن يتغير في أمر لا متوقع.',
     timeMultiplier: 0.75,
     killerMultiplier: 1.2,
+    experimental: true,
     features: [
-      'تبديل عشوائي للأدوار بعد الجولة الثانية',
-      'قرارات ليلية يمكن عكس بعضها',
-      'رسائل سرية خاطئة تصل عشوائيًا',
+      'سرعة أعلى وتقلبات',
+      'تجربة لا يمكن التنبؤ بها',
     ] as const,
   },
 };

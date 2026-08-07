@@ -9,6 +9,7 @@ import './globals.css';
 import '../styles/prestige.css';
 import '../styles/game-catalog.css';
 import '../styles/mafia-enhanced.css';
+import '../styles/mafia-design-system.css';
 
 const arabicFont = Readex_Pro({
   subsets: ['arabic', 'latin'],
