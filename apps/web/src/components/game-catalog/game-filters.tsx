@@ -86,6 +86,7 @@ function Chips<T extends string>({
 
 function Slider({
   id,
+  ariaLabel,
   min,
   max,
   value,
@@ -93,6 +94,7 @@ function Slider({
   labelOf,
 }: {
   id: string;
+  ariaLabel: string;
   min: number;
   max: number;
   value: number;
@@ -111,6 +113,7 @@ function Slider({
       <input
         id={id}
         type="range"
+        aria-label={ariaLabel}
         min={min}
         max={max}
         step={1}
@@ -200,6 +203,7 @@ export function GameFilters({
         <div style={{ display: 'grid', gap: '0.6rem' }}>
           <Slider
             id="gc-diff-min"
+            ariaLabel="الحد الأدنى للصعوبة"
             min={1}
             max={5}
             value={filters.difficultyMin}
@@ -208,6 +212,7 @@ export function GameFilters({
           />
           <Slider
             id="gc-diff-max"
+            ariaLabel="الحد الأقصى للصعوبة"
             min={1}
             max={5}
             value={filters.difficultyMax}
@@ -229,6 +234,7 @@ export function GameFilters({
       <Section id="gc-filter-rating" title="التقييم الأدنى">
         <Slider
           id="gc-rating"
+          ariaLabel="الحد الأدنى للتقييم"
           min={0}
           max={5}
           value={filters.ratingMin}
@@ -256,6 +262,7 @@ export function GameFilters({
         <div style={{ display: 'grid', gap: '0.6rem' }}>
           <Slider
             id="gc-players-min"
+            ariaLabel="الحد الأدنى للاعبين"
             min={0}
             max={20}
             value={filters.playersMin}
@@ -264,6 +271,7 @@ export function GameFilters({
           />
           <Slider
             id="gc-players-max"
+            ariaLabel="الحد الأقصى للاعبين"
             min={1}
             max={20}
             value={filters.playersMax}
