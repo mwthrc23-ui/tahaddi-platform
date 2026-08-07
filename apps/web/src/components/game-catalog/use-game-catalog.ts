@@ -7,7 +7,6 @@ import {
   collectAllCategories,
   collectAllTags,
   collectAllYears,
-  computeGamePopularityScore,
   DEFAULT_FILTER_STATE,
   mergeCatalogWithExisting,
   summarizeGames,
@@ -112,23 +111,35 @@ export function useGameCatalog() {
     [toggleArray],
   );
   const setDifficultyMin = useCallback(
-    (v: DifficultyValue) => setFilterPatch({ difficultyMin: v }),
+    (v: DifficultyValue) =>
+      setFilterPatch((prev) => ({
+        difficultyMin: Math.min(Math.max(1, v) as DifficultyValue, prev.difficultyMax) as DifficultyValue,
+      })),
     [setFilterPatch],
   );
   const setDifficultyMax = useCallback(
-    (v: DifficultyValue) => setFilterPatch({ difficultyMax: v }),
+    (v: DifficultyValue) =>
+      setFilterPatch((prev) => ({
+        difficultyMax: Math.max(Math.min(5, v) as DifficultyValue, prev.difficultyMin) as DifficultyValue,
+      })),
     [setFilterPatch],
   );
   const setRatingMin = useCallback(
-    (v: number) => setFilterPatch({ ratingMin: v }),
+    (v: number) => setFilterPatch({ ratingMin: Math.max(0, Math.min(5, v)) }),
     [setFilterPatch],
   );
   const setPlayersMin = useCallback(
-    (v: number) => setFilterPatch({ playersMin: v }),
+    (v: number) =>
+      setFilterPatch((prev) => ({
+        playersMin: Math.min(Math.max(0, v), prev.playersMax),
+      })),
     [setFilterPatch],
   );
   const setPlayersMax = useCallback(
-    (v: number) => setFilterPatch({ playersMax: v }),
+    (v: number) =>
+      setFilterPatch((prev) => ({
+        playersMax: Math.max(Math.min(20, v), prev.playersMin),
+      })),
     [setFilterPatch],
   );
   const toggleNowPlayingOnly = useCallback(
@@ -182,16 +193,20 @@ export function useGameCatalog() {
       if (s.type === 'game') {
         setFilterPatch({ query: s.label });
       } else if (s.type === 'category') {
-        const cat = s.label.replace(/^التصنيف:\s*/, '').trim();
-        toggleCategory(cat);
+        const cat = s.label.replace(/^التصنيف:\s*/, '').trim() as GameFilterState['categories'][number];
+        setFilterPatch((prev) =>
+          prev.categories.includes(cat) ? {} : { categories: [...prev.categories, cat] },
+        );
       } else if (s.type === 'tag') {
         const tag = s.label.replace(/^الوسم:\s*/, '').trim();
-        toggleTag(tag);
+        setFilterPatch((prev) =>
+          prev.tags.includes(tag) ? {} : { tags: [...prev.tags, tag] },
+        );
       }
       setSuggestionsOpen(false);
       setActiveSuggestionIndex(-1);
     },
-    [setFilterPatch, toggleCategory, toggleTag],
+    [setFilterPatch],
   );
 
   const loadMore = useCallback(() => {
@@ -264,7 +279,6 @@ export function useGameCatalog() {
     closeSuggestions,
     PAGE_SIZE,
     sentinelRef,
-    computePopularity: computeGamePopularityScore,
   };
 }
 

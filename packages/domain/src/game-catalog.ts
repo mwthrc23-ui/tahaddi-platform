@@ -296,6 +296,28 @@ export const DEFAULT_FILTER_STATE: GameFilterState = {
   view: 'grid',
 };
 
+export function normalizeCatalogFilters(filters: GameFilterState): GameFilterState {
+  const difficultyMin = Math.min(
+    Math.max(1, filters.difficultyMin) as DifficultyValue,
+    Math.max(1, filters.difficultyMax) as DifficultyValue,
+  ) as DifficultyValue;
+  const difficultyMax = Math.max(
+    Math.min(5, filters.difficultyMin) as DifficultyValue,
+    Math.min(5, filters.difficultyMax) as DifficultyValue,
+  ) as DifficultyValue;
+  const playersMin = Math.min(Math.max(0, filters.playersMin), Math.max(0, filters.playersMax));
+  const playersMax = Math.max(Math.min(20, filters.playersMin), Math.min(20, filters.playersMax));
+  const ratingMin = Math.max(0, Math.min(5, filters.ratingMin));
+  return {
+    ...filters,
+    difficultyMin,
+    difficultyMax,
+    playersMin,
+    playersMax,
+    ratingMin,
+  };
+}
+
 export function computeGamePopularityScore(game: EnhancedGameMeta): number {
   const sessions = Math.log1p(game.sessionsCount);
   const active = Math.log1p(game.nowPlaying) * 2.2;
@@ -306,24 +328,25 @@ export function computeGamePopularityScore(game: EnhancedGameMeta): number {
 }
 
 export function gameMatchesFilters(game: EnhancedGameMeta, filters: GameFilterState): boolean {
-  if (filters.kinds.length > 0 && !filters.kinds.includes(game.kind)) return false;
-  if (filters.categories.length > 0 && !game.categories.some((c) => filters.categories.includes(c))) {
+  const f = normalizeCatalogFilters(filters);
+  if (f.kinds.length > 0 && !f.kinds.includes(game.kind)) return false;
+  if (f.categories.length > 0 && !game.categories.some((c) => f.categories.includes(c))) {
     return false;
   }
-  if (game.difficulty < filters.difficultyMin || game.difficulty > filters.difficultyMax) {
+  if (game.difficulty < f.difficultyMin || game.difficulty > f.difficultyMax) {
     return false;
   }
-  if (filters.platforms.length > 0 && !game.platforms.some((p) => filters.platforms.includes(p))) {
+  if (f.platforms.length > 0 && !game.platforms.some((p) => f.platforms.includes(p))) {
     return false;
   }
-  if (game.rating < filters.ratingMin) return false;
-  if (filters.nowPlayingOnly && game.nowPlaying <= 0) return false;
-  if (game.maximumPlayers < filters.playersMin) return false;
-  if (game.minimumPlayers > filters.playersMax) return false;
-  if (filters.years.length > 0 && !filters.years.includes(game.year)) return false;
-  if (filters.tags.length > 0 && !game.tags.some((t) => filters.tags.includes(t))) return false;
-  if (filters.query.trim()) {
-    const q = filters.query.trim().toLocaleLowerCase('ar');
+  if (game.rating < f.ratingMin) return false;
+  if (f.nowPlayingOnly && game.nowPlaying <= 0) return false;
+  if (game.maximumPlayers < f.playersMin) return false;
+  if (game.minimumPlayers > f.playersMax) return false;
+  if (f.years.length > 0 && !f.years.includes(game.year)) return false;
+  if (f.tags.length > 0 && !game.tags.some((t) => f.tags.includes(t))) return false;
+  if (f.query.trim()) {
+    const q = f.query.trim().toLocaleLowerCase('ar');
     const haystack = [
       game.title,
       game.shortTitle,
@@ -500,7 +523,8 @@ export function applyCatalogFilters(
   games: EnhancedGameMeta[],
   filters: GameFilterState,
 ): EnhancedGameMeta[] {
-  return sortGames(games.filter((g) => gameMatchesFilters(g, filters)), filters);
+  const normalized = normalizeCatalogFilters(filters);
+  return sortGames(games.filter((g) => gameMatchesFilters(g, normalized)), normalized);
 }
 
 export function summarizeGames(games: EnhancedGameMeta[]) {

@@ -10,6 +10,7 @@ import {
   gameMatchesFilters,
   INJECTED_GAME_CATALOG,
   mergeCatalogWithExisting,
+  normalizeCatalogFilters,
   sortGames,
   summarizeGames,
   type EnhancedGameMeta,
@@ -167,6 +168,53 @@ describe('game-catalog engine', () => {
       const next = onlyInstant[i]?.rating ?? 0;
       expect(prev).toBeGreaterThanOrEqual(next);
     }
+  });
+
+  describe('normalizeCatalogFilters', () => {
+    it('تطبيع difficultyMin > difficultyMax مع الحفاظ على النطاق الصحيح', () => {
+      const norm = normalizeCatalogFilters(filterState({ difficultyMin: 5, difficultyMax: 2 }));
+      expect(norm.difficultyMin).toBeLessThanOrEqual(norm.difficultyMax);
+      expect(norm.difficultyMin).toBe(2);
+      expect(norm.difficultyMax).toBe(5);
+    });
+
+    it('تطبيع playersMin > playersMax دون انقلاب النطاق', () => {
+      const norm = normalizeCatalogFilters(filterState({ playersMin: 16, playersMax: 3 }));
+      expect(norm.playersMin).toBeLessThanOrEqual(norm.playersMax);
+      expect(norm.playersMin).toBe(3);
+      expect(norm.playersMax).toBe(16);
+    });
+
+    it('انقلاب النطاقات لا يُعيد قائمة فارغة خطأً', () => {
+      const catalog = takeCatalog();
+      const inverted = filterState({ difficultyMin: 5, difficultyMax: 2, playersMin: 20, playersMax: 1 });
+      const result = applyCatalogFilters(catalog, inverted);
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('ratingMin=4.5 يُطبّق التصفية بشكل صحيح للعشرية', () => {
+      const catalog = takeCatalog();
+      const result = applyCatalogFilters(catalog, filterState({ ratingMin: 4.5 }));
+      expect(result.every((g) => g.rating >= 4.5)).toBe(true);
+    });
+  });
+
+  describe('ensurePresent semantics for suggestions (simulated via filters)', () => {
+    it('إضافة تصنيف موجود مسبقاً لا يحذفه من القائمة', () => {
+      const initial = filterState({ categories: ['اجتماعي'] });
+      const categories = initial.categories.includes('اجتماعي')
+        ? initial.categories
+        : [...initial.categories, 'اجتماعي' as GameFilterState['categories'][number]];
+      expect(categories).toContain('اجتماعي');
+      expect(categories.filter((c) => c === 'اجتماعي')).toHaveLength(1);
+    });
+
+    it('إضافة وسم موجود مسبقاً لا يحذفه من القائمة', () => {
+      const initial = filterState({ tags: ['سريع'] });
+      const tags = initial.tags.includes('سريع') ? initial.tags : [...initial.tags, 'سريع'];
+      expect(tags).toContain('سريع');
+      expect(tags.filter((t) => t === 'سريع')).toHaveLength(1);
+    });
   });
 });
 

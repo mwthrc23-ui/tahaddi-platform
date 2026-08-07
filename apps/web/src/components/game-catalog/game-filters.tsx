@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, X as CloseIcon } from 'lucide-react';
 import type { UseGameCatalogReturn } from './use-game-catalog';
 import type { DifficultyValue, GameKind, PlatformValue } from './game-catalog-types';
@@ -55,23 +55,25 @@ function Chips<T extends string>({
   active,
   onToggle,
   labelOf,
+  legend,
 }: {
   items: readonly T[];
   active: readonly T[];
   onToggle: (v: T) => void;
   labelOf: (v: T) => { label: string; icon?: string };
+  legend?: string;
 }) {
-  return (
-    <div className="gc-chips" role="group">
+  const body = (
+    <>
       {items.map((v) => {
         const meta = labelOf(v);
+        const isActive = active.includes(v);
         return (
           <button
             key={v}
             type="button"
-            role="switch"
-            aria-checked={active.includes(v)}
-            data-active={active.includes(v)}
+            aria-pressed={isActive}
+            data-active={isActive}
             className="gc-chip"
             onClick={() => onToggle(v)}
           >
@@ -80,6 +82,19 @@ function Chips<T extends string>({
           </button>
         );
       })}
+    </>
+  );
+  if (legend) {
+    return (
+      <fieldset className="gc-chips" style={{ border: 0, padding: 0, margin: 0, minInlineSize: 0 }}>
+        <legend style={{ padding: 0, marginBottom: '0.4rem', fontSize: '0.85rem', color: 'var(--text-soft)' }}>{legend}</legend>
+        {body}
+      </fieldset>
+    );
+  }
+  return (
+    <div className="gc-chips" role="group" aria-label={legend}>
+      {body}
     </div>
   );
 }
@@ -91,6 +106,9 @@ function Slider({
   value,
   onChange,
   labelOf,
+  label,
+  ariaLabel,
+  step = 1,
 }: {
   id: string;
   min: number;
@@ -98,22 +116,36 @@ function Slider({
   value: number;
   onChange: (v: number) => void;
   labelOf: (v: number) => string;
+  label?: string;
+  ariaLabel?: string;
+  step?: number;
 }) {
   return (
     <div className="gc-range">
-      <div className="gc-range-labels">
-        <span>{labelOf(min)}</span>
-        <span dir="ltr" aria-live="polite">
-          {labelOf(value)}
-        </span>
-        <span>{labelOf(max)}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+        {label ? (
+          <label htmlFor={id} style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--foreground)' }}>
+            {label}
+          </label>
+        ) : null}
+        <div
+          className="gc-range-labels"
+          style={label ? { justifyContent: 'flex-end', flex: 1, marginInlineStart: '0.75rem' } : undefined}
+        >
+          <span>{labelOf(min)}</span>
+          <span dir="ltr" aria-live="polite">
+            {labelOf(value)}
+          </span>
+          <span>{labelOf(max)}</span>
+        </div>
       </div>
       <input
         id={id}
         type="range"
+        aria-label={label ? undefined : ariaLabel}
         min={min}
         max={max}
-        step={1}
+        step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
       />
@@ -150,13 +182,25 @@ export function GameFilters({
     activeFiltersCount,
   } = catalog;
 
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const firstFocusRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const target = firstFocusRef.current ?? panelRef.current?.querySelector<HTMLElement>('button, [role="switch"], input[type="range"]');
+    target?.focus();
+  }, [open]);
+
   return (
-    <aside
+    <div
+      ref={panelRef}
+      role="dialog"
+      aria-labelledby="gc-filter-title"
       className="gc-filters-panel"
       data-open={open}
-      aria-label="فلترة الألعاب"
     >
       <button
+        ref={firstFocusRef}
         type="button"
         className="gc-filters-close"
         aria-label="إغلاق لوحة الفلاتر"
@@ -165,7 +209,7 @@ export function GameFilters({
         <CloseIcon size={16} />
       </button>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h3 style={{ margin: 0, fontSize: '1.05rem' }}>الفلاتر</h3>
+        <h3 id="gc-filter-title" style={{ margin: 0, fontSize: '1.05rem' }}>الفلاتر</h3>
         {activeFiltersCount > 0 ? (
           <button
             type="button"
@@ -184,6 +228,7 @@ export function GameFilters({
           active={filters.kinds}
           onToggle={toggleKind}
           labelOf={(k) => KIND_META[k]}
+          legend="نوع اللعب"
         />
       </Section>
 
@@ -193,26 +238,29 @@ export function GameFilters({
           active={filters.categories}
           onToggle={toggleCategory}
           labelOf={(c) => ({ label: c })}
+          legend="التصنيفات"
         />
       </Section>
 
       <Section id="gc-filter-diff" title="الصعوبة">
         <div style={{ display: 'grid', gap: '0.6rem' }}>
           <Slider
-            id="gc-diff-min"
+            id="difficulty-min"
             min={1}
             max={5}
             value={filters.difficultyMin}
             onChange={(v) => setDifficultyMin(v as DifficultyValue)}
             labelOf={(v) => `${'★'.repeat(v)}${'☆'.repeat(5 - v)}`}
+            label="الصعوبة الدنيا"
           />
           <Slider
-            id="gc-diff-max"
+            id="difficulty-max"
             min={1}
             max={5}
             value={filters.difficultyMax}
             onChange={(v) => setDifficultyMax(v as DifficultyValue)}
             labelOf={(v) => `${'★'.repeat(v)}${'☆'.repeat(5 - v)}`}
+            label="الصعوبة القصوى"
           />
         </div>
       </Section>
@@ -223,17 +271,20 @@ export function GameFilters({
           active={filters.platforms}
           onToggle={togglePlatform}
           labelOf={(p) => PLATFORM_META[p]}
+          legend="المنصات"
         />
       </Section>
 
       <Section id="gc-filter-rating" title="التقييم الأدنى">
         <Slider
-          id="gc-rating"
+          id="rating-min"
           min={0}
           max={5}
+          step={0.1}
           value={filters.ratingMin}
           onChange={setRatingMin}
           labelOf={(v) => (v === 0 ? 'الكل' : `${v.toFixed(1)} ★`)}
+          label="التقييم الأدنى للألعاب"
         />
       </Section>
 
@@ -241,8 +292,8 @@ export function GameFilters({
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
-            role="switch"
-            aria-checked={filters.nowPlayingOnly}
+            aria-pressed={filters.nowPlayingOnly}
+            aria-labelledby="gc-filter-now"
             data-active={filters.nowPlayingOnly}
             className="gc-chip"
             onClick={toggleNowPlayingOnly}
@@ -255,20 +306,22 @@ export function GameFilters({
       <Section id="gc-filter-players" title="سعة اللاعبين">
         <div style={{ display: 'grid', gap: '0.6rem' }}>
           <Slider
-            id="gc-players-min"
+            id="players-min"
             min={0}
             max={20}
             value={filters.playersMin}
             onChange={setPlayersMin}
             labelOf={(v) => (v === 0 ? '—' : `+${v}`)}
+            label="الحد الأدنى لعدد اللاعبين"
           />
           <Slider
-            id="gc-players-max"
+            id="players-max"
             min={1}
             max={20}
             value={filters.playersMax}
             onChange={setPlayersMax}
             labelOf={(v) => (v === 20 ? '∞' : `${v}`)}
+            label="الحد الأقصى لعدد اللاعبين"
           />
         </div>
       </Section>
@@ -279,26 +332,30 @@ export function GameFilters({
           active={filters.years.map(String)}
           onToggle={(v) => toggleYear(Number(v))}
           labelOf={(v) => ({ label: v })}
+          legend="سنوات النشر"
         />
       </Section>
 
       <Section id="gc-filter-tags" title="جدار الوسوم" defaultOpen={false}>
-        <div className="gc-tag-wall">
-          {allTags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              role="switch"
-              aria-checked={filters.tags.includes(tag)}
-              data-active={filters.tags.includes(tag)}
-              className="gc-chip"
-              onClick={() => toggleTag(tag)}
-            >
-              #{tag}
-            </button>
-          ))}
-        </div>
+        <fieldset className="gc-tag-wall" style={{ border: 0, padding: 0, margin: 0, minInlineSize: 0 }} aria-labelledby="gc-filter-tags">
+          <legend style={{ padding: 0, marginBottom: '0.4rem', fontSize: '0.85rem', color: 'var(--text-soft)' }}>جدار الوسوم</legend>
+          {allTags.map((tag) => {
+            const pressed = filters.tags.includes(tag);
+            return (
+              <button
+                key={tag}
+                type="button"
+                aria-pressed={pressed}
+                data-active={pressed}
+                className="gc-chip"
+                onClick={() => toggleTag(tag)}
+              >
+                #{tag}
+              </button>
+            );
+          })}
+        </fieldset>
       </Section>
-    </aside>
+    </div>
   );
 }

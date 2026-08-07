@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Gamepad2, Search as SearchIcon, Sparkles, Zap } from 'lucide-react';
 import { useGameCatalog } from './use-game-catalog';
@@ -14,6 +14,24 @@ function GameCatalogShell({ sessionUserName }: { sessionUserName: string | null 
   const catalog = useGameCatalog();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const isGrid = catalog.filters.view === 'grid';
+  const filtersTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const closeFilters = useCallback(() => {
+    setFiltersOpen(false);
+    setTimeout(() => filtersTriggerRef.current?.focus(), 0);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeFilters();
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [filtersOpen, closeFilters]);
 
   const prefetch = useMemo(() => new Set(catalog.visibleGames.slice(0, 6).map((g) => g.id)), [
     catalog.visibleGames,
@@ -169,12 +187,16 @@ function GameCatalogShell({ sessionUserName }: { sessionUserName: string | null 
       </section>
 
       <section className="container">
-        <GameSortBar catalog={catalog} onOpenFilters={() => setFiltersOpen(true)} />
+        <GameSortBar
+          ref={filtersTriggerRef}
+          catalog={catalog}
+          onOpenFilters={() => setFiltersOpen(true)}
+        />
         <div className="gc-main">
           <GameFilters
             catalog={catalog}
             open={filtersOpen}
-            onClose={() => setFiltersOpen(false)}
+            onClose={closeFilters}
           />
           <div className="gc-results" id="gc-results" aria-live="polite">
             {catalog.filtered.length === 0 ? (
@@ -220,7 +242,7 @@ function GameCatalogShell({ sessionUserName }: { sessionUserName: string | null 
         </div>
       </section>
 
-      <div className="gc-backdrop" onClick={() => setFiltersOpen(false)} aria-hidden="true" />
+      <div className="gc-backdrop" onClick={closeFilters} aria-hidden="true" />
     </div>
   );
 }
@@ -237,21 +259,19 @@ function GameCardWrap({
   prefetch: boolean;
 }) {
   return (
-    <LinkWrap prefetch={prefetch}>
-      <GameCard game={game} index={index} view={view} />
+    <LinkWrap>
+      <GameCard game={game} index={index} view={view} prefetch={prefetch} />
     </LinkWrap>
   );
 }
 
 function LinkWrap({
-  prefetch,
   children,
 }: {
-  prefetch: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div style={{ display: 'contents' }} data-prefetch={prefetch ? 'true' : 'false'}>
+    <div style={{ display: 'contents' }}>
       {children}
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { forwardRef } from 'react';
 import { Grid3X3, List, SlidersHorizontal } from 'lucide-react';
 import type { UseGameCatalogReturn } from './use-game-catalog';
 import type { GameSortKey } from './game-catalog-types';
@@ -14,13 +15,10 @@ const SORT_OPTIONS: Array<{ key: GameSortKey; label: string }> = [
   { key: 'manual', label: 'ترتيب المسؤول' },
 ];
 
-export function GameSortBar({
-  catalog,
-  onOpenFilters,
-}: {
+export const GameSortBar = forwardRef<HTMLButtonElement, {
   catalog: UseGameCatalogReturn;
   onOpenFilters: () => void;
-}) {
+}>(function GameSortBar({ catalog, onOpenFilters }, ref) {
   const { filters, setSort, setView, filtered, activeFiltersCount } = catalog;
   return (
     <div className="gc-toolbar" role="toolbar" aria-label="أدوات عرض الألعاب">
@@ -32,10 +30,12 @@ export function GameSortBar({
       </div>
       <div className="gc-toolbar-right">
         <button
+          ref={ref}
           type="button"
           className="gc-filter-button"
           onClick={onOpenFilters}
           aria-label="فتح لوحة الفلاتر"
+          aria-haspopup="dialog"
         >
           <SlidersHorizontal aria-hidden="true" size={16} />
           الفلاتر
@@ -85,4 +85,4 @@ export function GameSortBar({
       </div>
     </div>
   );
-}
+});

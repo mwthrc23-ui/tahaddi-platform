@@ -33,8 +33,23 @@ export function GameSearch({ catalog }: { catalog: UseGameCatalogReturn }) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [closeSuggestions]);
 
+  function handleBlur(event: React.FocusEvent<HTMLInputElement>) {
+    const relatedTarget = event.relatedTarget as Node | null;
+    const container = wrapperRef.current;
+    if (container && relatedTarget && container.contains(relatedTarget)) {
+      return;
+    }
+    closeSuggestions();
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (!suggestions.length) return;
+    if (!suggestions.length) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeSuggestions();
+      }
+      return;
+    }
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       const next = (activeSuggestionIndex + 1) % suggestions.length;
@@ -74,6 +89,7 @@ export function GameSearch({ catalog }: { catalog: UseGameCatalogReturn }) {
           value={filters.query}
           onChange={(event) => setQuery(event.target.value)}
           onFocus={() => setSuggestionsOpen(!!suggestions.length || filters.query.length > 0)}
+          onBlur={handleBlur}
           onKeyDown={onKeyDown}
         />
         {filters.query ? (
@@ -103,6 +119,7 @@ export function GameSearch({ catalog }: { catalog: UseGameCatalogReturn }) {
               role="option"
               aria-selected={activeSuggestionIndex === i}
               className="gc-suggestion"
+              onMouseDown={(e) => e.preventDefault()}
               onMouseEnter={() => {
                 setActiveSuggestionIndex(i);
               }}

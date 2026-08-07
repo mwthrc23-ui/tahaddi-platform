@@ -49,10 +49,12 @@ export function GameCard({
   game,
   index,
   view,
+  prefetch,
 }: {
   game: EnhancedGameMeta;
   index: number;
   view: 'grid' | 'list';
+  prefetch?: boolean;
 }) {
   const href = game.kind === 'upcoming' ? '/games' : `/games/${game.mode}`;
   const isDisabled = game.kind === 'upcoming';
@@ -135,6 +137,7 @@ export function GameCard({
         )}
         <Link
           href={href}
+          prefetch={prefetch ?? false}
           aria-labelledby={`gc-title-${game.id}`}
           aria-disabled={isDisabled || undefined}
           style={isDisabled ? { pointerEvents: 'none', opacity: 0.55 } : undefined}
