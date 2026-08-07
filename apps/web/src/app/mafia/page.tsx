@@ -5,42 +5,45 @@ import {
   MessageCircle,
   Moon,
   Shield,
-  Sparkles,
   Sun,
   UserRoundSearch,
   Users,
   Vote,
-  Zap,
 } from 'lucide-react';
 import { createMafiaGame } from '@/app/mafia/actions';
 import { GAME_GUIDES, GameHowTo } from '@/components/games/shared';
 import { JoinQuizForm } from '@/components/home/join-quiz-form';
 import { SiteLayout } from '@/components/layout';
+import { MafiaModePresets } from '@/components/mafia/mafia-mode-presets';
 import { Badge, Button, ButtonLink, Card, EmptyState } from '@/components/ui';
-import {
-  MAFIA_GAME_MODES,
-  applyModeMultipliers,
-  type MafiaGameModeId,
-} from '@/lib/mafia/game-modes';
 import { getPrismaClient, hasDatabaseUrl } from '@/lib/auth/prisma';
 import { getCurrentSession } from '@/lib/auth/session';
 
 export default async function MafiaPage() {
   const session = await getCurrentSession();
-  const games =
-    session?.user?.id && hasDatabaseUrl()
-      ? await getPrismaClient().mafiaGame.findMany({
-          where: { hostId: session.user.id },
-          orderBy: { createdAt: 'desc' },
-          take: 6,
-          select: {
-            id: true,
-            roomCode: true,
-            status: true,
-            _count: { select: { participants: true } },
-          },
-        })
-      : [];
+  let games: Array<{
+    id: string;
+    roomCode: string;
+    status: string;
+    _count: { participants: number };
+  }> = [];
+  if (session?.user?.id && hasDatabaseUrl()) {
+    try {
+      games = await getPrismaClient().mafiaGame.findMany({
+        where: { hostId: session.user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 6,
+        select: {
+          id: true,
+          roomCode: true,
+          status: true,
+          _count: { select: { participants: true } },
+        },
+      });
+    } catch (error) {
+      console.error('[mafia] optional history query failed, falling back to empty', error);
+    }
+  }
 
   return (
     <SiteLayout user={session?.user ? { name: session.user.name } : null}>
@@ -134,114 +137,7 @@ export default async function MafiaPage() {
               <h2>أنشئ غرفة قاتل</h2>
               {session?.user ? (
                 <form action={createMafiaGame} className="stack-form" id="mafia-create-form">
-                  <fieldset className="mafia-mode-presets">
-                    <legend>
-                      <Sparkles aria-hidden="true" />
-                      اختيار سريع لأسلوب اللعبة
-                    </legend>
-                    <div className="mafia-mode-presets-grid">
-                      {(Object.keys(MAFIA_GAME_MODES) as MafiaGameModeId[]).map((id) => {
-                        const mode = MAFIA_GAME_MODES[id];
-                        return (
-                          <label
-                            key={id}
-                            className="mafia-mode-preset"
-                            data-mode={id}
-                            htmlFor={`mafia-mode-${id}`}
-                          >
-                            <input
-                              id={`mafia-mode-${id}`}
-                              type="radio"
-                              name="modeId"
-                              value={id}
-                              defaultChecked={id === 'CLASSIC'}
-                              onChange={(e) => {
-                                if (!e.currentTarget.checked) return;
-                                const baseSettings = {
-                                  nightSeconds: 45,
-                                  daySeconds: 90,
-                                  votingSeconds: 45,
-                                  killerCount: 1,
-                                  maxPlayers: 12,
-                                };
-                                const timers = applyModeMultipliers(id, baseSettings);
-                                const mode = MAFIA_GAME_MODES[id];
-                                const speedBoost = Math.max(
-                                  0,
-                                  (1 - mode.timeMultiplier) * 0.6,
-                                );
-                                const derivedMaxPlayers = Math.max(
-                                  5,
-                                  Math.min(
-                                    30,
-                                    Math.round(baseSettings.maxPlayers * (1 - speedBoost)),
-                                  ),
-                                );
-                                const getNum = (n: string) =>
-                                  document.getElementById(n) as
-                                    | (HTMLInputElement | HTMLSelectElement)
-                                    | null;
-                                const setNum = (
-                                  n: string,
-                                  v: number,
-                                  opts?: { clampMin?: number; clampMax?: number },
-                                ) => {
-                                  const el = getNum(n);
-                                  if (!el) return;
-                                  let next = v;
-                                  if (opts?.clampMin !== undefined)
-                                    next = Math.max(opts.clampMin, next);
-                                  if (opts?.clampMax !== undefined)
-                                    next = Math.min(opts.clampMax, next);
-                                  if (el instanceof HTMLInputElement) {
-                                    el.value = String(next);
-                                  } else {
-                                    el.value = String(next);
-                                  }
-                                  el.dispatchEvent(new Event('input', { bubbles: true }));
-                                  el.dispatchEvent(new Event('change', { bubbles: true }));
-                                };
-                                setNum('mafia-nightSeconds', timers.nightSeconds, {
-                                  clampMin: 20,
-                                  clampMax: 180,
-                                });
-                                setNum('mafia-daySeconds', timers.daySeconds, {
-                                  clampMin: 30,
-                                  clampMax: 300,
-                                });
-                                setNum('mafia-votingSeconds', timers.votingSeconds, {
-                                  clampMin: 20,
-                                  clampMax: 120,
-                                });
-                                setNum('mafia-killerCount', Math.min(3, timers.killerCount));
-                                setNum('mafia-maxPlayers', derivedMaxPlayers, {
-                                  clampMin: 5,
-                                  clampMax: 30,
-                                });
-                              }}
-                            />
-                            <div className="mafia-mode-preset-head">
-                              <strong>{mode.label}</strong>
-                              <Badge>
-                                {mode.timeMultiplier === 1
-                                  ? 'وقت عادي'
-                                  : `سرعة ${mode.timeMultiplier < 1 ? 'أسرع' : 'أبطأ'}`}
-                              </Badge>
-                            </div>
-                            <p className="muted">{mode.tagline}</p>
-                            <ul>
-                              {mode.features.slice(0, 2).map((f) => (
-                                <li key={f}>
-                                  <Zap aria-hidden="true" />
-                                  {f}
-                                </li>
-                              ))}
-                            </ul>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </fieldset>
+                  <MafiaModePresets />
 
                   <label>
                     الحد الأعلى للاعبين
