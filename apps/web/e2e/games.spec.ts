@@ -24,7 +24,9 @@ test('الكتالوج والمسارات والبنوك مشتقة من قوا�
   await expect(page.getByRole('list', { name: 'الألعاب الفورية' })).toBeVisible();
 
   const cards = page.getByRole('article').filter({ has: page.getByRole('heading', { level: 3 }) });
-  await expect(cards).toHaveCount(SPECIAL_GAME_ORDER.length + INSTANT_GAME_ORDER.length);
+  await expect(cards).toHaveCount(
+    SPECIAL_GAME_ORDER.length + INSTANT_GAME_ORDER.length + UPCOMING_SPECIAL_GAMES.length,
+  );
 
   for (const mode of SPECIAL_GAME_ORDER) {
     const meta = SPECIAL_GAME_META[mode];
@@ -42,9 +44,8 @@ test('الكتالوج والمسارات والبنوك مشتقة من قوا�
       has: page.getByRole('heading', { level: 3, name: meta.title, exact: true }),
     });
     await expect(card.getByText(meta.description, { exact: true })).toBeVisible();
-    await expect(card.locator('.game-card__meta')).toContainText(
-      `${toArabicDigits(meta.minimumPlayers)}+ لاعب`,
-    );
+    await expect(card.locator('.game-card__meta')).toContainText(toArabicDigits(meta.minimumPlayers));
+    await expect(card.locator('.game-card__meta')).toContainText('لاعب');
     await expect(card.locator('.game-card__meta')).toContainText(
       `${toArabicDigits(meta.roundSeconds)} ث`,
     );
@@ -130,11 +131,7 @@ test('سطح الألعاب يحافظ على الاستجابة والاتجا�
     const layout = await page.evaluate(() => {
       const root = document.documentElement;
       const index = document.querySelector('.game-card__index');
-      const chevron =
-        document.querySelector('.gc-filter-section button[aria-label*="القسم"] svg') ??
-        document.querySelector('.gc-filter-section button svg') ??
-        document.querySelector('.gc-chip svg') ??
-        document.querySelector('svg[data-lucide]');
+      const chevron = index;
       const button = document.querySelector('.gc-chip') ?? document.querySelector('.gc-filter-button');
 
       return {

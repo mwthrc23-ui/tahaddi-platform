@@ -56,7 +56,7 @@ export function GameCard({
   view: 'grid' | 'list';
   prefetch?: boolean;
 }) {
-  const href = game.kind === 'upcoming' ? '/games' : `/games/${game.mode}`;
+  const href = game.kind === 'upcoming' ? '/games/' : `/games/${game.mode}/`;
   const isDisabled = game.kind === 'upcoming';
   const cta =
     game.kind === 'room'
